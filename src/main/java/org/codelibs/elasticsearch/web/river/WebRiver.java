@@ -6,6 +6,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
 
 import java.util.Map;
 
+import org.codelibs.elasticsearch.web.service.S2ContainerService;
 import org.codelibs.elasticsearch.web.service.ScheduleService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
@@ -23,6 +24,8 @@ import org.quartz.JobExecutionException;
 import org.quartz.Trigger;
 
 public class WebRiver extends AbstractRiverComponent implements River {
+    private static final String S2_CONTAINER = "s2Container";
+
     private static final String TRIGGER_ID_SUFFIX = "Trigger";
 
     private static final String JOB_ID_SUFFIX = "Job";
@@ -33,16 +36,21 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
     private final ScheduleService scheduleService;
 
+    private S2ContainerService containerService;
+
     private String groupId;
 
     private String id;
 
     @Inject
     public WebRiver(final RiverName riverName, final RiverSettings settings,
-            final Client client, final ScheduleService scheduleService) {
+            final Client client, final ScheduleService scheduleService,
+            final S2ContainerService containerService) {
         super(riverName, settings);
         this.client = client;
         this.scheduleService = scheduleService;
+        this.containerService = containerService;
+
         groupId = riverName.type() == null ? "web" : riverName.type();
         id = riverName.name();
 
@@ -55,6 +63,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
         final JobDataMap jobDataMap = new JobDataMap();
         jobDataMap.put(ES_CLIENT, client);
+        jobDataMap.put(S2_CONTAINER, containerService.getContainer());
         final JobDetail crawlJob = newJob(CrawlJob.class)
                 .withIdentity(id + JOB_ID_SUFFIX, groupId)
                 .usingJobData(jobDataMap).build();
@@ -93,6 +102,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
             final JobDataMap data = context.getMergedJobDataMap();
             logger.info("client: " + data.get(ES_CLIENT));
+            logger.info("container: " + data.get(S2_CONTAINER));
         }
 
     }
