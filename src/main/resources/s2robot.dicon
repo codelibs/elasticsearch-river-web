@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE components PUBLIC "-//SEASAR//DTD S2Container 2.4//EN"
+	"http://www.seasar.org/dtd/components24.dtd">
+<components>
+	<include path="s2robot_client.dicon"/>
+	<include path="s2robot_rule.dicon"/>
+	<include path="s2robot_filter.dicon"/>
+	<include path="s2robot_interval.dicon"/>
+	<include path="s2robot_extractor.dicon"/>
+	<include path="s2robot_mimetype.dicon"/>
+	<include path="s2robot_encoding.dicon"/>
+	<include path="s2robot_urlconverter.dicon"/>
+	<include path="s2robot_log.dicon"/>
+	<include path="s2robot_sitemaps.dicon"/>
+
+	<!-- S2Robot -->
+	<component name="s2Robot" class="org.seasar.robot.S2Robot" instance="prototype">
+	</component>
+
+	<!-- Robot Thread -->
+	<component name="robotThread" class="org.seasar.robot.S2RobotThread" instance="prototype">
+	</component>
+	
+	<!-- Entity -->
+	<component name="accessResult" class="org.seasar.robot.entity.AccessResultImpl" instance="prototype">
+	</component>
+	<component name="urlQueue" class="org.seasar.robot.entity.UrlQueueImpl" instance="prototype">
+	</component>
+
+	<!-- Service -->
+	<component name="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper">
+		<initMethod name="setDateFormat">
+			<arg>new java.text.SimpleDateFormat("yyyyMMdd'T'HHmmss.SSSZ")</arg>
+		</initMethod>
+		<initMethod name="setSerializationInclusion">
+			<arg>@com.fasterxml.jackson.annotation.JsonInclude$Include@NON_NULL</arg>
+		</initMethod>
+	</component>
+	<component name="urlQueueService" class="org.codelibs.elasticsearch.web.service.impl.EsUrlQueueService">
+		<property name="index">"robot_queue"</property>
+	</component>
+	<component name="dataService" class="org.codelibs.elasticsearch.web.service.impl.EsDataService">
+		<property name="index">"robot_data"</property>
+	</component>
+	<component name="urlFilterService" class="org.codelibs.elasticsearch.web.service.impl.EsUrlFilterService">
+		<property name="index">"robot_filter"</property>
+	</component>
+
+</components>
