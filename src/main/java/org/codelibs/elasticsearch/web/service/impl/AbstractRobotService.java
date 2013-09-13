@@ -76,8 +76,7 @@ public abstract class AbstractRobotService {
         }
     }
 
-    protected boolean exists(final String sessionId, final String url) {
-        final String id = IdUtil.getId(url);
+    protected boolean exists(final String sessionId, final String id) {
         final GetResponse response = client.prepareGet(index, sessionId, id)
                 .execute().actionGet();
         return response.isExists();
@@ -104,6 +103,8 @@ public abstract class AbstractRobotService {
                 .setTypes(sessionId);
         if (queryBuilder != null) {
             builder.setQuery(queryBuilder);
+        } else {
+            builder.setQuery(allDataQuery);
         }
         if (from != null) {
             builder.setFrom(from);

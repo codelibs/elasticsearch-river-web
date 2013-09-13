@@ -1,9 +1,20 @@
-Elasticsearch River Reb
+Elasticsearch River Web
 =======================
+
+## Overview
+
+Elasticsearch River Web Plugin provides a feature for crawling web sites and storing the contents by XPath.
 
 ## Installation
 
+### Download River Web Plugin
+
+
+You can download River Web Plugin from [here](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/).
+
 ### Install River Web Plugin
+
+    $ $ES_HOME/bin/plugin -url file:$DOWNLOAD_DIR/elasticsearch-river-web-*.zip -install river-web
 
 ### Create Index For Crawling
 
@@ -15,35 +26,47 @@ Elasticsearch River Reb
 
 ### Register Crawl Data
 
-    $ curl -XPUT 'localhost:9200/_river/my_web/_meta' -d '{
-        "type" : "web",
-        "crawl" : {
-            "index" : "web",
-            "url" : ["http://www.codelibs.org", "http://fess.codelibs.org/"],
-            "maxDepth" : 1,
-            "target" : [
+    $ curl -XPUT 'localhost:9200/_river/my_web/_meta' -d "{
+        \"type\" : \"web\",
+        \"crawl\" : {
+            \"index\" : \"web\",
+            \"url\" : [\"http:\/\/www.codelibs.org\/\", \"http:\/\/fess.codelibs.org/\"],
+            \"maxDepth\" : 1,
+            \"target\" : [
               {
-                "urlPattern" : "http://www.codelibs.org.*",
-                "properties" : {
-                  "title" : "//TITLE",
-                  "body" : "//BODY",
-                  "projects" : "//UL[@class='nav-list']/LI/A"
+                \"urlPattern\" : \"http:\/\/www.codelibs.org\/.*\",
+                \"properties\" : {
+                  \"title\" : {
+                    \"path\" : \"\/\/TITLE\"
+                  },
+                  \"body\" : {
+                    \"path\" : \"\/\/BODY\"
+                  },
+                  \"projects\" : {
+                    \"path\" : \"\/\/UL[@class='nav nav-list']\/LI\/A\"
+                  }
                 }
               },
               {
-                "urlPattern" : "http://fess.codelibs.org.*",
-                "properties" : {
-                  "title" : "//TITLE",
-                  "body" : "//BODY",
-                  "menus" : "//UL[@class='nav-list']/LI/A"
+                \"urlPattern\" : \"http:\/\/fess.codelibs.org\/.*\",
+                \"properties\" : {
+                  \"title\" : {
+                    \"path\" : \"\/\/TITLE\"
+                  },
+                  \"body\" : {
+                    \"path\" : \"\/\/BODY\"
+                  },
+                  \"menus\" : {
+                    \"path\" : \"\/\/UL[@class='nav nav-list']/LI/A\"
+                  }
                 }
               }
             ]
         },
-        "schedule" : {
-            "cron" : "0 * * * * ?"
+        \"schedule\" : {
+            \"cron\" : \"0 * * * * ?\"
         }
-    }'
+    }"
 
 ### Unregister Crawl Data
 

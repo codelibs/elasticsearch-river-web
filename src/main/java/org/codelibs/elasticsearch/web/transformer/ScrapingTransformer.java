@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 import javax.xml.transform.TransformerException;
 
 import org.apache.xpath.objects.XObject;
+import org.codelibs.elasticsearch.web.util.IdUtil;
 import org.cyberneko.html.parsers.DOMParser;
 import org.elasticsearch.client.Client;
 import org.seasar.framework.beans.util.Beans;
@@ -32,7 +33,7 @@ public class ScrapingTransformer extends
     private static final Logger logger = LoggerFactory
             .getLogger(XpathTransformer.class);
 
-    protected Map<Pattern, Map<String, String>> scrapingPatternMap = new HashMap<Pattern, Map<String, String>>();
+    protected Map<Pattern, Map<String, Map<String, String>>> scrapingPatternMap = new HashMap<Pattern, Map<String, Map<String, String>>>();
 
     protected Client client;
 
@@ -47,7 +48,7 @@ public class ScrapingTransformer extends
     @Override
     protected void storeData(final ResponseData responseData,
             final ResultData resultData) {
-        final Map<String, String> scrapingRuleMap = getScrapingRuleMap(responseData);
+        final Map<String, Map<String, String>> scrapingRuleMap = getScrapingRuleMap(responseData);
         if (scrapingRuleMap == null) {
             return;
         }
@@ -69,8 +70,10 @@ public class ScrapingTransformer extends
         final Map<String, Object> dataMap = new HashMap<String, Object>();
         Beans.copy(responseData, dataMap).includes(copiedResonseDataFields)
                 .execute();
-        for (final Map.Entry<String, String> entry : scrapingRuleMap.entrySet()) {
-            final String path = entry.getValue();
+        for (final Map.Entry<String, Map<String, String>> entry : scrapingRuleMap
+                .entrySet()) {
+            final Map<String, String> params = entry.getValue();
+            final String path = params.get("path");
             try {
                 final XObject xObj = getXPathAPI().eval(document, path);
                 final int type = xObj.getType();
@@ -117,10 +120,12 @@ public class ScrapingTransformer extends
             }
         }
 
+        final String id = IdUtil.getId(responseData.getUrl());
         try {
+
             final String content = objectMapper.writeValueAsString(dataMap);
-            client.prepareIndex(indexName, responseData.getSessionId())
-                    .setSource(content).execute().actionGet();
+            client.prepareIndex(indexName, responseData.getSessionId(), id)
+                    .setRefresh(true).setSource(content).execute().actionGet();
         } catch (final Exception e) {
             logger.warn("Could not write a content into index.", e);
         }
@@ -137,13 +142,13 @@ public class ScrapingTransformer extends
     }
 
     public void addScrapingRule(final Pattern urlPattern,
-            final Map<String, String> scrapingRuleMap) {
+            final Map<String, Map<String, String>> scrapingRuleMap) {
         scrapingPatternMap.put(urlPattern, scrapingRuleMap);
     }
 
-    private Map<String, String> getScrapingRuleMap(
+    private Map<String, Map<String, String>> getScrapingRuleMap(
             final ResponseData responseData) {
-        for (final Map.Entry<Pattern, Map<String, String>> entry : scrapingPatternMap
+        for (final Map.Entry<Pattern, Map<String, Map<String, String>>> entry : scrapingPatternMap
                 .entrySet()) {
             if (entry.getKey().matcher(responseData.getUrl()).matches()) {
                 return entry.getValue();

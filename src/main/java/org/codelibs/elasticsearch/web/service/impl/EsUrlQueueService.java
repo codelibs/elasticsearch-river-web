@@ -19,6 +19,8 @@ public class EsUrlQueueService extends AbstractRobotService implements
     @Resource
     protected EsDataService dataService;
 
+    public int pollingFetchSize = 20;
+
     @Override
     public void updateSessionId(final String oldSessionId,
             final String newSessionId) {
@@ -61,14 +63,20 @@ public class EsUrlQueueService extends AbstractRobotService implements
     @Override
     public UrlQueue poll(final String sessionId) {
         final List<UrlQueueImpl> urlQueueList = getList(UrlQueueImpl.class,
-                sessionId, null, 0, 1);
+                sessionId, null, 0, pollingFetchSize);
         if (urlQueueList.isEmpty()) {
             return null;
         }
-        final UrlQueueImpl urlQueue = urlQueueList.get(0);
-        final String id = IdUtil.getId(urlQueue);
-        super.delete(sessionId, id);
-        return urlQueue;
+        for (final UrlQueueImpl urlQueue : urlQueueList) {
+            synchronized (client) {
+                final String id = IdUtil.getId(urlQueue);
+                if (exists(sessionId, id)) {
+                    super.delete(sessionId, id);
+                    return urlQueue;
+                }
+            }
+        }
+        return null;
     }
 
     @Override
@@ -78,7 +86,7 @@ public class EsUrlQueueService extends AbstractRobotService implements
 
     @Override
     public boolean visited(final UrlQueue urlQueue) {
-        return exists(urlQueue.getSessionId(), urlQueue.getUrl());
+        return exists(urlQueue.getSessionId(), IdUtil.getId(urlQueue));
     }
 
     @Override

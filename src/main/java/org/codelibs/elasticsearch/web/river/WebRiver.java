@@ -6,7 +6,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.codelibs.elasticsearch.web.service.ScheduleService;
@@ -38,7 +38,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
     private static final String SETTINGS = "settings";
 
-    private static final String IS_RUNNING = "isRunning";
+    private static final String RUNNING_JOB = "runningJob";
 
     private static final String TRIGGER_ID_SUFFIX = "Trigger";
 
@@ -54,7 +54,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
     private String id;
 
-    private AtomicBoolean isRunning = new AtomicBoolean(false);
+    private AtomicReference<CrawlJob> runningJob = new AtomicReference<CrawlJob>();
 
     @Inject
     public WebRiver(final RiverName riverName, final RiverSettings settings,
@@ -76,7 +76,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
         final JobDataMap jobDataMap = new JobDataMap();
         jobDataMap.put(SETTINGS, settings);
         jobDataMap.put(ES_CLIENT, client);
-        jobDataMap.put(IS_RUNNING, isRunning);
+        jobDataMap.put(RUNNING_JOB, runningJob);
         final JobDetail crawlJob = newJob(CrawlJob.class)
                 .withIdentity(id + JOB_ID_SUFFIX, groupId)
                 .usingJobData(jobDataMap).build();
@@ -102,19 +102,26 @@ public class WebRiver extends AbstractRiverComponent implements River {
     public void close() {
         logger.info("Unscheduling  CrawlJob...");
 
+        final CrawlJob crawlJob = runningJob.get();
+        if (crawlJob != null) {
+            crawlJob.stop();
+        }
         scheduleService.unschedule(groupId, id + JOB_ID_SUFFIX);
     }
 
     public static class CrawlJob implements Job {
+        private S2Robot s2Robot;
 
         @Override
         public void execute(final JobExecutionContext context)
                 throws JobExecutionException {
 
             final JobDataMap data = context.getMergedJobDataMap();
-            final AtomicBoolean isRunning = (AtomicBoolean) data
-                    .get(IS_RUNNING);
-            if (isRunning.getAndSet(true)) {
+            @SuppressWarnings("unchecked")
+            final AtomicReference<Job> runningJob = (AtomicReference<Job>) data
+                    .get(RUNNING_JOB);
+            if (!runningJob.compareAndSet(null, this)) {
+                logger.info(context.getJobDetail().getKey() + " is running.");
                 return;
             }
 
@@ -140,8 +147,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
                 final ObjectMapper objectMapper = SingletonS2Container
                         .getComponent(ObjectMapper.class);
-                final S2Robot s2Robot = SingletonS2Container
-                        .getComponent(S2Robot.class);
+                s2Robot = SingletonS2Container.getComponent(S2Robot.class);
                 // url
                 @SuppressWarnings("unchecked")
                 final List<String> urlList = (List<String>) crawlSettings
@@ -190,7 +196,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
                     final String urlPattern = (String) targetMap
                             .get("urlPattern");
                     @SuppressWarnings("unchecked")
-                    final Map<String, String> propMap = (Map<String, String>) targetMap
+                    final Map<String, Map<String, String>> propMap = (Map<String, Map<String, String>>) targetMap
                             .get("properties");
                     if (urlPattern != null && propMap != null) {
                         transformer.addScrapingRule(
@@ -210,10 +216,17 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 // run s2robot
                 final String sessionId = s2Robot.execute();
 
+                s2Robot.stop();
                 // clean up
                 s2Robot.cleanup(sessionId);
             } finally {
-                isRunning.set(false);
+                runningJob.set(null);
+            }
+        }
+
+        public void stop() {
+            if (s2Robot != null) {
+                s2Robot.stop();
             }
         }
 
@@ -227,4 +240,5 @@ public class WebRiver extends AbstractRiverComponent implements River {
             return defaultValue;
         }
     }
+
 }
