@@ -84,21 +84,21 @@ A crawling configuration is created by registering a river as below:
 
 The configuration is:
 
-| Property | Type | Description |
-|-|-|-|
-| crawl.index | string | Stored index name. |
-| crawl.url | array | Start point of URL for crawling. |
-| crawl.includeFilter | array | White list of URL for crawling. |
-| crawl.excludeFilter | array | Black list of URL for crawling. |
-| crawl.maxDepth | int | Depth of crawling documents. |
-| crawl.maxAccessCount | int | The number of crawling documents. |
-| crawl.numOfThread | int | The number of crawler threads. |
-| crawl.interval | int | Interval time (ms) to crawl documents. |
-| crawl.target.urlPattern | string | URL pattern to extract contents by XPath. |
-| crawl.target.properties.name | string | "name" is used as a property name in the index. |
-| crawl.target.properties.name.path | string | XPath for the property value. |
-| crawl.target.properties.name.writeAsXml | boolean | Write a value as XML if true. |
-| schedule.cron | string | cron format to start a crawler. |
+| Property                                | Type    | Description                                     |
+|:----------------------------------------|:-------:|:------------------------------------------------|
+| crawl.index                             | string  | Stored index name.                              |
+| crawl.url                               | array   | Start point of URL for crawling.                |
+| crawl.includeFilter                     | array   | White list of URL for crawling.                 |
+| crawl.excludeFilter                     | array   | Black list of URL for crawling.                 |
+| crawl.maxDepth                          | int     | Depth of crawling documents.                    |
+| crawl.maxAccessCount                    | int     | The number of crawling documents.               |
+| crawl.numOfThread                       | int     | The number of crawler threads.                  |
+| crawl.interval                          | int     | Interval time (ms) to crawl documents.          |
+| crawl.target.urlPattern                 | string  | URL pattern to extract contents by XPath.       |
+| crawl.target.properties.name            | string  | "name" is used as a property name in the index. |
+| crawl.target.properties.name.path       | string  | XPath for the property value.                   |
+| crawl.target.properties.name.writeAsXml | boolean | Write a value as XML if true.                   |
+| schedule.cron                           | string  | cron format to start a crawler.                 |
 
 
 ### Unregister Crawl Data
@@ -107,7 +107,7 @@ If you want to stop the crawler, type as below: (replace my\_web with your river
 
     $ curl -XDELETE 'localhost:9200/_river/my_web/'
 
-## Example
+## Examples
 
 ### Aggregate a title/content from news.yahoo.com
 
