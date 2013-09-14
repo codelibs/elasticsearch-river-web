@@ -30,34 +30,42 @@ You can download River Web Plugin from [here](http://maven.codelibs.org/org/code
         \"type\" : \"web\",
         \"crawl\" : {
             \"index\" : \"web\",
-            \"url\" : [\"http:\/\/www.codelibs.org\/\", \"http:\/\/fess.codelibs.org/\"],
+            \"url\" : [\"http://www.codelibs.org/\", \"http://fess.codelibs.org/\"],
+            \"includeFilter\" : [\"http://www.codelibs.org/.*\", \"http://fess.codelibs.org/.*\"],
             \"maxDepth\" : 1,
+            \"maxAccessCount\" : 100,
+            \"numOfThread\" : 5,
+            \"interval\" : 1000,
             \"target\" : [
               {
-                \"urlPattern\" : \"http:\/\/www.codelibs.org\/.*\",
+                \"urlPattern\" : \"http://www.codelibs.org/.*\",
                 \"properties\" : {
                   \"title\" : {
-                    \"path\" : \"\/\/TITLE\"
+                    \"path\" : \"//TITLE\"
                   },
                   \"body\" : {
-                    \"path\" : \"\/\/BODY\"
+                    \"path\" : \"//BODY\"
+                  },
+                  \"bodyAsXml\" : {
+                    \"path\" : \"//BODY\",
+                    \"writeAsXml\" : true
                   },
                   \"projects\" : {
-                    \"path\" : \"\/\/UL[@class='nav nav-list']\/LI\/A\"
+                    \"path\" : \"//UL[@class='nav nav-list']/LI/A\"
                   }
                 }
               },
               {
-                \"urlPattern\" : \"http:\/\/fess.codelibs.org\/.*\",
+                \"urlPattern\" : \"http://fess.codelibs.org/.*\",
                 \"properties\" : {
                   \"title\" : {
-                    \"path\" : \"\/\/TITLE\"
+                    \"path\" : \"//TITLE\"
                   },
                   \"body\" : {
-                    \"path\" : \"\/\/BODY\"
+                    \"path\" : \"//BODY\"
                   },
                   \"menus\" : {
-                    \"path\" : \"\/\/UL[@class='nav nav-list']/LI/A\"
+                    \"path\" : \"//UL[@class='nav nav-list']/LI/A\"
                   }
                 }
               }

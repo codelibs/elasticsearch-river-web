@@ -1,15 +1,23 @@
 package org.codelibs.elasticsearch.web.transformer;
 
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.apache.xpath.objects.XObject;
 import org.codelibs.elasticsearch.web.util.IdUtil;
+import org.codelibs.elasticsearch.web.util.ParameterUtil;
 import org.cyberneko.html.parsers.DOMParser;
 import org.elasticsearch.client.Client;
 import org.seasar.framework.beans.util.Beans;
@@ -33,11 +41,11 @@ public class ScrapingTransformer extends
     private static final Logger logger = LoggerFactory
             .getLogger(XpathTransformer.class);
 
-    protected Map<Pattern, Map<String, Map<String, String>>> scrapingPatternMap = new HashMap<Pattern, Map<String, Map<String, String>>>();
+    protected Map<String, Map<Pattern, Map<String, Map<String, String>>>> sessionPatternParamMap = new HashMap<String, Map<Pattern, Map<String, Map<String, String>>>>();
 
     protected Client client;
 
-    protected String indexName;
+    protected Map<String, String> indexNameMap = new ConcurrentHashMap<String, String>();
 
     protected ObjectMapper objectMapper;
 
@@ -48,7 +56,7 @@ public class ScrapingTransformer extends
     @Override
     protected void storeData(final ResponseData responseData,
             final ResultData resultData) {
-        final Map<String, Map<String, String>> scrapingRuleMap = getScrapingRuleMap(responseData);
+        final Map<String, Map<String, String>> scrapingRuleMap = getPatternParamMap(responseData);
         if (scrapingRuleMap == null) {
             return;
         }
@@ -74,6 +82,8 @@ public class ScrapingTransformer extends
                 .entrySet()) {
             final Map<String, String> params = entry.getValue();
             final String path = params.get("path");
+            final Boolean writeAsXml = ParameterUtil.getValue(params,
+                    "writeAsXml", Boolean.FALSE);
             try {
                 final XObject xObj = getXPathAPI().eval(document, path);
                 final int type = xObj.getType();
@@ -95,7 +105,13 @@ public class ScrapingTransformer extends
                     final List<String> strList = new ArrayList<String>();
                     for (int i = 0; i < nodeList.getLength(); i++) {
                         final Node node = nodeList.item(i);
-                        strList.add(node.getTextContent());
+                        String content;
+                        if (writeAsXml.booleanValue()) {
+                            content = toXmlString(node);
+                        } else {
+                            content = node.getTextContent();
+                        }
+                        strList.add(content);
                     }
                     dataMap.put(entry.getKey(), strList);
                     break;
@@ -121,11 +137,12 @@ public class ScrapingTransformer extends
         }
 
         final String id = IdUtil.getId(responseData.getUrl());
+        final String sessionId = responseData.getSessionId();
+        final String indexName = getIndexName(sessionId);
         try {
-
             final String content = objectMapper.writeValueAsString(dataMap);
-            client.prepareIndex(indexName, responseData.getSessionId(), id)
-                    .setRefresh(true).setSource(content).execute().actionGet();
+            client.prepareIndex(indexName, sessionId, id).setRefresh(true)
+                    .setSource(content).execute().actionGet();
         } catch (final Exception e) {
             logger.warn("Could not write a content into index.", e);
         }
@@ -141,20 +158,54 @@ public class ScrapingTransformer extends
         return null;
     }
 
-    public void addScrapingRule(final Pattern urlPattern,
+    public void addScrapingRule(final String sessionId,
+            final Pattern urlPattern,
             final Map<String, Map<String, String>> scrapingRuleMap) {
-        scrapingPatternMap.put(urlPattern, scrapingRuleMap);
+        final Map<Pattern, Map<String, Map<String, String>>> patternParamMap = getPatternParamMap(sessionId);
+        patternParamMap.put(urlPattern, scrapingRuleMap);
     }
 
-    private Map<String, Map<String, String>> getScrapingRuleMap(
+    private Map<Pattern, Map<String, Map<String, String>>> getPatternParamMap(
+            final String sessionId) {
+        Map<Pattern, Map<String, Map<String, String>>> patternParamMap = sessionPatternParamMap
+                .get(sessionId);
+        if (patternParamMap == null) {
+            patternParamMap = new HashMap<Pattern, Map<String, Map<String, String>>>();
+            sessionPatternParamMap.put(sessionId, patternParamMap);
+        }
+        return patternParamMap;
+    }
+
+    private Map<String, Map<String, String>> getPatternParamMap(
             final ResponseData responseData) {
-        for (final Map.Entry<Pattern, Map<String, Map<String, String>>> entry : scrapingPatternMap
+        final Map<Pattern, Map<String, Map<String, String>>> patternParamMap = getPatternParamMap(responseData
+                .getSessionId());
+        for (final Map.Entry<Pattern, Map<String, Map<String, String>>> entry : patternParamMap
                 .entrySet()) {
             if (entry.getKey().matcher(responseData.getUrl()).matches()) {
                 return entry.getValue();
             }
         }
         return null;
+    }
+
+    private String toXmlString(final Node node) {
+        try {
+            final TransformerFactory transformerFactory = TransformerFactory
+                    .newInstance();
+            final Transformer transformer = transformerFactory.newTransformer();
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,
+                    "yes");
+
+            final StringWriter sw = new StringWriter();
+            final StreamResult result = new StreamResult(sw);
+            final DOMSource source = new DOMSource(node);
+            transformer.transform(source, result);
+            return sw.toString();
+        } catch (final Exception e) {
+            logger.warn("Could not convert a node to XML.", e);
+        }
+        return "";
     }
 
     public Client getClient() {
@@ -165,12 +216,12 @@ public class ScrapingTransformer extends
         this.client = client;
     }
 
-    public String getIndexName() {
-        return indexName;
+    public String getIndexName(final String sessionId) {
+        return indexNameMap.get(sessionId);
     }
 
-    public void setIndexName(final String indexName) {
-        this.indexName = indexName;
+    public void addIndexName(final String sessionId, final String indexName) {
+        indexNameMap.put(sessionId, indexName);
     }
 
     public ObjectMapper getObjectMapper() {
@@ -179,5 +230,10 @@ public class ScrapingTransformer extends
 
     public void setObjectMapper(final ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
+    }
+
+    public void cleanup(final String sessionId) {
+        indexNameMap.remove(sessionId);
+        sessionPatternParamMap.remove(sessionId);
     }
 }

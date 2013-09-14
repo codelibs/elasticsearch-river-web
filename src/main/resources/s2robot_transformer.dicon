@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE components PUBLIC "-//SEASAR//DTD S2Container 2.4//EN"
+	"http://www.seasar.org/dtd/components24.dtd">
+<components>
+	<include path="s2robot_transformer_basic.dicon" />
+
+	<component name="scrapingFeatureMap" class="java.util.LinkedHashMap">
+		<initMethod name="put">
+			<arg>"http://xml.org/sax/features/namespaces"</arg>
+			<arg>"false"</arg>
+		</initMethod>
+		<initMethod name="put">
+			<arg>"http://cyberneko.org/html/features/augmentations"</arg>
+			<arg>"true"</arg>
+		</initMethod>
+	</component>
+
+	<component name="scrapingTransformer"
+		class="org.codelibs.elasticsearch.web.transformer.ScrapingTransformer"
+		instance="singleton">
+		<property name="name">"scrapingTransformer"</property>
+		<property name="featureMap">scrapingFeatureMap</property>
+		<property name="propertyMap">defaultPropertyMap</property>
+		<property name="childUrlRuleMap">allChildUrlRuleMap</property>
+	</component>
+</components>

@@ -78,7 +78,7 @@ public class EsUrlFilterService extends AbstractRobotService implements
         // TODO cache
         final List<UrlFilter> urlFilterList = getList(UrlFilter.class,
                 sessionId, QueryBuilders.termQuery(FILTER_TYPE, INCLUDE), null,
-                null);
+                null, null);
         final List<Pattern> urlPatternList = new ArrayList<Pattern>();
         for (final UrlFilter urlFilter : urlFilterList) {
             urlPatternList.add(Pattern.compile(urlFilter.getUrl()));
@@ -91,7 +91,7 @@ public class EsUrlFilterService extends AbstractRobotService implements
         // TODO cache
         final List<UrlFilter> urlFilterList = getList(UrlFilter.class,
                 sessionId, QueryBuilders.termQuery(FILTER_TYPE, EXCLUDE), null,
-                null);
+                null, null);
         final List<Pattern> urlPatternList = new ArrayList<Pattern>();
         for (final UrlFilter urlFilter : urlFilterList) {
             urlPatternList.add(Pattern.compile(urlFilter.getUrl()));

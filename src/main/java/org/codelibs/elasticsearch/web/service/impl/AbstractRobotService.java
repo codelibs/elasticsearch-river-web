@@ -15,6 +15,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.sort.SortBuilder;
 import org.seasar.framework.beans.util.Beans;
 import org.seasar.robot.RobotSystemException;
 
@@ -97,7 +98,7 @@ public abstract class AbstractRobotService {
 
     protected <T> List<T> getList(final Class<T> clazz, final String sessionId,
             final QueryBuilder queryBuilder, final Integer from,
-            final Integer size) {
+            final Integer size, final SortBuilder sortBuilder) {
         final List<T> targetList = new ArrayList<T>();
         final SearchRequestBuilder builder = client.prepareSearch(index)
                 .setTypes(sessionId);
@@ -105,6 +106,9 @@ public abstract class AbstractRobotService {
             builder.setQuery(queryBuilder);
         } else {
             builder.setQuery(allDataQuery);
+        }
+        if (sortBuilder != null) {
+            builder.addSort(sortBuilder);
         }
         if (from != null) {
             builder.setFrom(from);

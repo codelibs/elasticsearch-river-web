@@ -16,6 +16,9 @@ public class IdUtil {
 
     private static final Charset UTF_8 = Charset.forName("UTF-8");
 
+    private IdUtil() {
+    }
+
     public static String getId(final Object obj) {
         final BeanDesc beanDesc = BeanDescFactory.getBeanDesc(obj.getClass());
         final PropertyDesc urlProp = beanDesc.getPropertyDesc("url");

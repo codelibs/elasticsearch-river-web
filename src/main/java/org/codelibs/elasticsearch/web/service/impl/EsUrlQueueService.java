@@ -1,11 +1,14 @@
 package org.codelibs.elasticsearch.web.service.impl;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Resource;
 
 import org.codelibs.elasticsearch.web.util.IdUtil;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
 import org.seasar.robot.Constants;
 import org.seasar.robot.entity.AccessResult;
 import org.seasar.robot.entity.UrlQueue;
@@ -51,19 +54,26 @@ public class EsUrlQueueService extends AbstractRobotService implements
 
     @Override
     public void offerAll(final String sessionId,
-            final List<UrlQueue> newUrlQueueList) {
-        if (!newUrlQueueList.isEmpty()) {
-            for (final UrlQueue urlQueue : newUrlQueueList) {
+            final List<UrlQueue> urlQueueList) {
+        final List<UrlQueue> targetList = new ArrayList<UrlQueue>(
+                urlQueueList.size());
+        for (final UrlQueue urlQueue : urlQueueList) {
+            final String id = IdUtil.getId(urlQueue.getUrl());
+            if (!exists(sessionId, id) && !dataService.exists(sessionId, id)) {
                 urlQueue.setSessionId(sessionId);
+                targetList.add(urlQueue);
             }
-            insertAll(newUrlQueueList);
+        }
+        if (!targetList.isEmpty()) {
+            insertAll(targetList);
         }
     }
 
     @Override
     public UrlQueue poll(final String sessionId) {
         final List<UrlQueueImpl> urlQueueList = getList(UrlQueueImpl.class,
-                sessionId, null, 0, pollingFetchSize);
+                sessionId, null, 0, pollingFetchSize,
+                SortBuilders.fieldSort("createTime").order(SortOrder.ASC));
         if (urlQueueList.isEmpty()) {
             return null;
         }

@@ -4,13 +4,21 @@ import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.TriggerBuilder.newTrigger;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.codelibs.elasticsearch.web.interval.WebRiverIntervalController;
 import org.codelibs.elasticsearch.web.service.ScheduleService;
+import org.codelibs.elasticsearch.web.service.impl.EsDataService;
+import org.codelibs.elasticsearch.web.service.impl.EsUrlFilterService;
+import org.codelibs.elasticsearch.web.service.impl.EsUrlQueueService;
 import org.codelibs.elasticsearch.web.transformer.ScrapingTransformer;
+import org.codelibs.elasticsearch.web.util.ParameterUtil;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
@@ -27,13 +35,13 @@ import org.quartz.JobExecutionException;
 import org.quartz.Trigger;
 import org.seasar.framework.container.SingletonS2Container;
 import org.seasar.robot.S2Robot;
-import org.seasar.robot.processor.impl.DefaultResponseProcessor;
-import org.seasar.robot.rule.RuleManager;
-import org.seasar.robot.rule.impl.RegexRule;
+import org.seasar.robot.S2RobotContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class WebRiver extends AbstractRiverComponent implements River {
+    private static final String RIVER_NAME = "riverName";
+
     private static final ESLogger logger = Loggers.getLogger(WebRiver.class);
 
     private static final String SETTINGS = "settings";
@@ -74,6 +82,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
         logger.info("Scheduling CrawlJob...");
 
         final JobDataMap jobDataMap = new JobDataMap();
+        jobDataMap.put(RIVER_NAME, riverName);
         jobDataMap.put(SETTINGS, settings);
         jobDataMap.put(ES_CLIENT, client);
         jobDataMap.put(RUNNING_JOB, runningJob);
@@ -125,6 +134,13 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 return;
             }
 
+            final RiverName riverName = (RiverName) data.get(RIVER_NAME);
+            final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss",
+                    Locale.ENGLISH);
+            final String sessionId = riverName.getName() + "_"
+                    + sdf.format(new Date());
+
+            ScrapingTransformer transformer = null;
             try {
                 final Client client = (Client) data.get(ES_CLIENT);
                 final RiverSettings settings = (RiverSettings) data
@@ -148,6 +164,8 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 final ObjectMapper objectMapper = SingletonS2Container
                         .getComponent(ObjectMapper.class);
                 s2Robot = SingletonS2Container.getComponent(S2Robot.class);
+                s2Robot.setSessionId(sessionId);
+
                 // url
                 @SuppressWarnings("unchecked")
                 final List<String> urlList = (List<String>) crawlSettings
@@ -177,20 +195,35 @@ public class WebRiver extends AbstractRiverComponent implements River {
                         s2Robot.addExcludeFilter(regex);
                     }
                 }
+
+                final S2RobotContext robotContext = s2Robot.getRobotContext();
+
                 // max depth
-                final int maxDepth = getInitParameter(crawlSettings,
+                final int maxDepth = ParameterUtil.getValue(crawlSettings,
                         "maxDepth", -1);
-                s2Robot.getRobotContext().setMaxDepth(maxDepth);
+
+                robotContext.setMaxDepth(maxDepth);
                 // max access count
-                final int maxAccessCount = getInitParameter(crawlSettings,
-                        "maxAccessCount", 100);
-                s2Robot.getRobotContext().setMaxAccessCount(maxAccessCount);
+                final int maxAccessCount = ParameterUtil.getValue(
+                        crawlSettings, "maxAccessCount", 100);
+                robotContext.setMaxAccessCount(maxAccessCount);
+                // num of thread 
+                final int numOfThread = ParameterUtil.getValue(crawlSettings,
+                        "numOfThread", 5);
+                robotContext.setNumOfThread(numOfThread);
+                // interval
+                final long interval = ParameterUtil.getValue(crawlSettings,
+                        "interval", 1000);
+                final WebRiverIntervalController intervalController = (WebRiverIntervalController) s2Robot
+                        .getIntervalController();
+                intervalController.setDelayMillisForWaitingNewUrl(interval);
 
                 // crawl config
-                final ScrapingTransformer transformer = new ScrapingTransformer();
+                transformer = SingletonS2Container
+                        .getComponent(ScrapingTransformer.class);
                 transformer.setClient(client);
-                transformer.setIndexName(getInitParameter(crawlSettings,
-                        "index", "web"));
+                transformer.addIndexName(sessionId,
+                        ParameterUtil.getValue(crawlSettings, "index", "web"));
                 transformer.setObjectMapper(objectMapper);
                 for (final Map<String, Object> targetMap : targetList) {
                     final String urlPattern = (String) targetMap
@@ -199,28 +232,33 @@ public class WebRiver extends AbstractRiverComponent implements River {
                     final Map<String, Map<String, String>> propMap = (Map<String, Map<String, String>>) targetMap
                             .get("properties");
                     if (urlPattern != null && propMap != null) {
-                        transformer.addScrapingRule(
+                        transformer.addScrapingRule(sessionId,
                                 Pattern.compile(urlPattern), propMap);
                     }
                 }
-                final DefaultResponseProcessor responseProcessor = new DefaultResponseProcessor();
-                responseProcessor.setTransformer(transformer);
-                final RegexRule scrapingRule = new RegexRule();
-                scrapingRule.setRuleId("scraping");
-                scrapingRule.setDefaultRule(true);
-                scrapingRule.setResponseProcessor(responseProcessor);
-                final RuleManager ruleManager = SingletonS2Container
-                        .getComponent(RuleManager.class);
-                ruleManager.addRule(scrapingRule);
 
                 // run s2robot
-                final String sessionId = s2Robot.execute();
+                s2Robot.execute();
 
                 s2Robot.stop();
-                // clean up
-                s2Robot.cleanup(sessionId);
+
             } finally {
                 runningJob.set(null);
+                if (transformer != null) {
+                    transformer.cleanup(sessionId);
+                }
+                // clean up
+                // s2Robot.cleanup(sessionId);
+                try {
+                    SingletonS2Container.getComponent(EsUrlQueueService.class)
+                            .delete(sessionId);
+                } catch (final Exception e) {
+                    logger.warn("Failed to delete ", e);
+                }
+                SingletonS2Container.getComponent(EsDataService.class).delete(
+                        sessionId);
+                SingletonS2Container.getComponent(EsUrlFilterService.class)
+                        .delete(sessionId);
             }
         }
 
@@ -230,15 +268,6 @@ public class WebRiver extends AbstractRiverComponent implements River {
             }
         }
 
-        @SuppressWarnings("unchecked")
-        private <T> T getInitParameter(final Map<String, Object> crawlSettings,
-                final String key, final T defaultValue) {
-            final Object value = crawlSettings.get(key);
-            if (value != null) {
-                return (T) value;
-            }
-            return defaultValue;
-        }
     }
 
 }
