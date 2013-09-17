@@ -15,6 +15,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.xpath.objects.XObject;
 import org.codelibs.elasticsearch.web.util.IdUtil;
 import org.codelibs.elasticsearch.web.util.ParameterUtil;
@@ -77,28 +78,31 @@ public class ScrapingTransformer extends
 
         final Map<String, Object> dataMap = new HashMap<String, Object>();
         Beans.copy(responseData, dataMap).includes(copiedResonseDataFields)
-                .execute();
+                .excludesNull().excludesWhitespace().execute();
         for (final Map.Entry<String, Map<String, String>> entry : scrapingRuleMap
                 .entrySet()) {
             final Map<String, String> params = entry.getValue();
             final String path = params.get("path");
             final Boolean writeAsXml = ParameterUtil.getValue(params,
                     "writeAsXml", Boolean.FALSE);
+            final Boolean isArray = ParameterUtil.getValue(params, "isArray",
+                    Boolean.FALSE);
             try {
                 final XObject xObj = getXPathAPI().eval(document, path);
                 final int type = xObj.getType();
                 switch (type) {
                 case XObject.CLASS_BOOLEAN:
                     final boolean b = xObj.bool();
-                    dataMap.put(entry.getKey(), Boolean.toString(b));
+                    addPropertyData(dataMap, entry.getKey(),
+                            Boolean.toString(b));
                     break;
                 case XObject.CLASS_NUMBER:
                     final double d = xObj.num();
-                    dataMap.put(entry.getKey(), Double.toString(d));
+                    addPropertyData(dataMap, entry.getKey(), Double.toString(d));
                     break;
                 case XObject.CLASS_STRING:
                     final String str = xObj.str();
-                    dataMap.put(entry.getKey(), str.trim());
+                    addPropertyData(dataMap, entry.getKey(), str.trim());
                     break;
                 case XObject.CLASS_NODESET:
                     final NodeList nodeList = xObj.nodelist();
@@ -113,11 +117,17 @@ public class ScrapingTransformer extends
                         }
                         strList.add(content);
                     }
-                    dataMap.put(entry.getKey(), strList);
+                    if (isArray.booleanValue()) {
+                        addPropertyData(dataMap, entry.getKey(), strList);
+                    } else {
+                        addPropertyData(dataMap, entry.getKey(),
+                                StringUtils.join(strList, null));
+                    }
                     break;
                 case XObject.CLASS_RTREEFRAG:
                     final int rtf = xObj.rtf();
-                    dataMap.put(entry.getKey(), Integer.toString(rtf));
+                    addPropertyData(dataMap, entry.getKey(),
+                            Integer.toString(rtf));
                     break;
                 case XObject.CLASS_NULL:
                 case XObject.CLASS_UNKNOWN:
@@ -127,7 +137,7 @@ public class ScrapingTransformer extends
                     if (obj == null) {
                         obj = "";
                     }
-                    dataMap.put(entry.getKey(), obj.toString());
+                    addPropertyData(dataMap, entry.getKey(), obj.toString());
                     break;
                 }
             } catch (final TransformerException e) {
@@ -136,6 +146,28 @@ public class ScrapingTransformer extends
             }
         }
 
+        storeIndex(responseData, dataMap);
+    }
+
+    private void addPropertyData(final Map<String, Object> dataMap,
+            final String key, final Object value) {
+        Map<String, Object> currentDataMap = dataMap;
+        final String[] keys = key.split("\\.");
+        for (int i = 0; i < keys.length - 1; i++) {
+            final String currentKey = keys[i];
+            Map<String, Object> map = (Map<String, Object>) currentDataMap
+                    .get(currentKey);
+            if (map == null) {
+                map = new HashMap<String, Object>();
+                currentDataMap.put(currentKey, map);
+            }
+            currentDataMap = map;
+        }
+        currentDataMap.put(keys[keys.length - 1], value);
+    }
+
+    protected void storeIndex(final ResponseData responseData,
+            final Map<String, Object> dataMap) {
         final String id = IdUtil.getId(responseData.getUrl());
         final String sessionId = responseData.getSessionId();
         final String indexName = getIndexName(sessionId);

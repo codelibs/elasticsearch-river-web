@@ -57,7 +57,8 @@ A crawling configuration is created by registering a river as below:
                     \"writeAsXml\" : true
                   },
                   \"projects\" : {
-                    \"path\" : \"//UL[@class='nav nav-list']/LI/A\"
+                    \"path\" : \"//UL[@class='nav nav-list']/LI/A\",
+                    \"isArray\" : true
                   }
                 }
               },
@@ -71,7 +72,8 @@ A crawling configuration is created by registering a river as below:
                     \"path\" : \"//BODY\"
                   },
                   \"menus\" : {
-                    \"path\" : \"//UL[@class='nav nav-list']/LI/A\"
+                    \"path\" : \"//UL[@class='nav nav-list']/LI/A\",
+                    \"isArray\" : true
                   }
                 }
               }

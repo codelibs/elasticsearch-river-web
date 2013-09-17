@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html  lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Full Text Search Server: Fess - 
+    Open Source Full Text Search Server - Fess</title>
+    <meta name="robots" content="index,follow"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="keywords" content="Full Text Search,OSS,Free Software,Solr,namazu,nutch" /><meta name="description" content="Fess is OSS Full Text Search Server." />    <!-- Le styles -->
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/site.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+
+      @media (max-width: 980px) {
+        /* Enable use of floated navbar text */
+        .navbar-text.pull-right {
+          float: none;
+          padding-left: 5px;
+          padding-right: 5px;
+        }
+      }
+    </style>
+    <link href="./css/bootstrap-responsive.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="../assets/js/html5shiv.js"></script>
+    <![endif]-->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-34667351-2']);
+  _gaq.push(['_trackPageview']);
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-fixed-top navbar-inverse">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="http://fess.codelibs.org/">Fess</a>
+
+          <div class="nav-collapse">
+            <ul class="nav">
+  <li><a href="index.html">Overview</a></li>
+  <li><a href="setup.html">Basic</a></li>
+  <li><a href="apidocs/index.html">Documentation</a></li>
+  <li><a href="project-info.html">Project Documentation</a></li>
+              </ul>
+            <p class="navbar-text pull-right"><a class="csupport" href="http://fess.codelibs.org/ja/">&#26085;&#26412;&#35486;</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="row-fluid">
+        <div class="span3">
+        <p><a href="/ja/">Japanese</a></p>
+      
+          <div>
+        <span id="publishDate">Last Published: 2013-09-16</span>
+      </div>
+          <div class="well sidebar-nav">
+            <ul class="nav nav-list">
+            <li class="nav-header">Overview</li>
+                                  <li class="active"><a href="#">Home</a></li>
+                                <li>              <a href="license.html" title="License">License</a>
+  </li>
+                                <li>              <a href="downloads.html" title="Downloads">Downloads</a>
+  </li>
+                                <li>              <a href="screenshot.html" title="Screenshot">Screenshot</a>
+  </li>
+                            <li class="nav-header">Basic</li>
+                                  <li>              <a href="setup.html" title="Installation">Installation</a>
+  </li>
+                                <li>              <a href="getting-started.html" title="Getting Started">Getting Started</a>
+  </li>
+                                <li>              <a href="quick-start.html" title="Quick Startup">Quick Startup</a>
+  </li>
+                            <li class="nav-header">Documentation</li>
+                                  <li>              <a href="apidocs/index.html" title="JavaDoc">JavaDoc</a>
+  </li>
+                            <li class="nav-header">Project Documentation</li>
+                                                                                                                                                                                                                                                                                                                      <li>              <a href="project-info.html" title="Project Information">Project Information</a>
+  </li>
+                <li>
+      <ul class="nav nav-list">
+                              <li class="active"><a href="#">About</a></li>
+                                    <li>              <a href="team-list.html" title="Project Team">Project Team</a>
+  </li>
+                                    <li>              <a href="dependency-info.html" title="Dependency Information">Dependency Information</a>
+  </li>
+                                    <li>              <a href="plugins.html" title="Project Plugins">Project Plugins</a>
+  </li>
+                                    <li>              <a href="integration.html" title="Continuous Integration">Continuous Integration</a>
+  </li>
+                                    <li>              <a href="issue-tracking.html" title="Issue Tracking">Issue Tracking</a>
+  </li>
+                                    <li>              <a href="source-repository.html" title="Source Repository">Source Repository</a>
+  </li>
+                                    <li>              <a href="license.html" title="Project License">Project License</a>
+  </li>
+                                    <li>              <a href="plugin-management.html" title="Plugin Management">Plugin Management</a>
+  </li>
+                                    <li>              <a href="distribution-management.html" title="Distribution Management">Distribution Management</a>
+  </li>
+                                    <li>              <a href="project-summary.html" title="Project Summary">Project Summary</a>
+  </li>
+                                    <li>              <a href="mail-lists.html" title="Mailing Lists">Mailing Lists</a>
+  </li>
+                                    <li>              <a href="dependencies.html" title="Dependencies">Dependencies</a>
+  </li>
+                    </ul>
+      </li>
+                              </ul>
+          </div>
+<div id="adsleft" class="visible-desktop">
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-0248074489415800";
+google_ad_slot = "9609502582";
+google_ad_width = 250;
+google_ad_height = 250;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+</div>
+<div id="sponsoredby">
+<div>Sponsored by</div>
+<div><a href="http://www.n2sm.net/n2search.html" target="_blank"><img src="/images/n2sm_banner.gif" alt="N2SM, Inc."/></a></div>
+</div>
+        </div>
+        <div class="span9">
+<div id="adstop" class="visible-desktop">
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-0248074489415800";
+google_ad_slot = "8132769380";
+google_ad_width = 728;
+google_ad_height = 90;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+</div>
+<div>
+<a href="http://www.n2sm.net/recruit/product.html" target="_blank">[PR] &#x63a1;&#x7528;&#x60c5;&#x5831;&#xff1a;Fess&#x3092;&#x4e00;&#x7dd2;&#x306b;&#x958b;&#x767a;&#x3057;&#x307e;&#x305b;&#x3093;&#x304b;&#xff1f;&#x4e00;&#x7dd2;&#x306b;&#x65b0;&#x3057;&#x3044;&#x3082;&#x306e;&#x306b;&#x30c1;&#x30e3;&#x30ec;&#x30f3;&#x30b8;&#x3057;&#x305f;&#x3044;&#x65b9;&#x3092;&#x52df;&#x96c6;&#x3057;&#x3066;&#x3044;&#x307e;&#x3059;&#x3002;</a>
+</div>
+<h1>
+    Open Source Full Text Search Server - Fess</h1>
+
+  
+    <div class="section"><h2>What is Fess?<a name="What_is_Fess"></a></h2>
+      <p>Fess is Java based full text search server provided as OSS product. You can install and run Fess quickly on any platforms, which have Java runtime environment. Fess is provided under Apache license.</p>
+      <img src="./images/ja/fess_search_result_mini.png" alt="Fess Screen Shot" />
+      <p>Fess is built on <a class="externalLink" href="http://www.seasar.org/">Seasar2</a> framework, and contains <a class="externalLink" href="http://lucene.apache.org/solr/">Apache Solr</a>. A crawler used by Fess is <a class="externalLink" href="http://s2robot.sandbox.seasar.org/">S2Robot</a>, which can crawl documents on Web/Local File System and support many file formats, such as MS Office, pdf and zip.</p>
+    </div>
+    <div class="section"><h2>Features<a name="Features"></a></h2>
+      <ul>
+        <li>Easy Installation/Configuration</li>
+        <li>Apache License (OSS)</li>
+        <li>OS-independent (Runs on Java)</li>
+        <li>Crawl documents on Web/File System/DB/Windows Shared Folder</li>
+        <li>Support documents of MS Office, PDF,...</li>
+        <li>Use Apache Solr as a search engine</li>
+        <li>Support Japanese mobile devices</li>
+        <li>Provide a browser based administative page</li>
+        <li>Support a web page for BASIC/DIGEST/NTLM authentication</li>
+        <li>Support a role authentication</li>
+        <li>Support XML/JSON/JSONP format</li>
+        <li>Provide a search log and statistics</li>
+      </ul>
+    </div>
+    <div class="section"><h2>Demo Site<a name="Demo_Site"></a></h2>
+      <div>
+        <div style="width:220px;float:left;">
+          <a class="externalLink" href="http://search.n2sm.co.jp/fess/" target="_blank"><img src="/images/ja/demo-1.png" alt="" /></a>
+          <div>Standard</div>
+        </div>
+        <div style="width:220px;float:left;">
+          <a class="externalLink" href="http://demo.n2search.net/aspdemo/" target="_blank"><img src="/images/ja/demo-2.png" alt="" /></a>
+          <div>Enterprice Search</div>
+        </div>
+        <div style="width:220px;float:left;">
+          <a class="externalLink" href="http://demo.n2search.net/ecdemo/" target="_blank"><img src="/images/ja/demo-3.png" alt="" /></a>
+          <div>EC Site</div>
+        </div>
+        <div style="clear:both;"></div>
+      </div>
+    </div>
+    <div class="section"><h2>News<a name="News"></a></h2>
+      <dl>
+        <dt>2013-09-07</dt>
+        <dd>
+          <a class="externalLink" href="http://sourceforge.jp/projects/fess/news/24407">Fess 8.2.0 Released</a>
+        </dd>
+        <dt>2013-05-13</dt>
+        <dd>
+          <a class="externalLink" href="http://sourceforge.jp/projects/fess/news/24242">Fess 8.1.0 Released</a>
+        </dd>
+        <dt>2013-02-23</dt>
+        <dd>
+          <a class="externalLink" href="http://sourceforge.jp/projects/fess/news/24130">Fess 8.0.0 Released</a>
+        </dd>
+      </dl>
+      <p><a href="news.html">More news...</a></p>
+    </div>
+  
+
+<div id="adsbottom" class="visible-desktop">
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-0248074489415800";
+google_ad_slot = "6656036184";
+google_ad_width = 728;
+google_ad_height = 90;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+</div>
+        </div>
+      </div>
+
+      <hr>
+
+      <footer>
+        <p class="pull-left">
+        Copyright &#169;                    2009-2013
+                        <a href="http://www.codelibs.org/">CodeLibs</a>.
+            All Rights Reserved.<br/>
+        Sponsored by <a href="http://www.n2sm.net/" >N2SM, Inc.</a>
+        </p>
+        <p class="pull-right">
+<a href="http://sourceforge.jp/projects/fess/"><img height="39" border="0" width="125" alt="SourceForge.JP" src="http://sourceforge.jp/sflogo.php?group_id=4342&amp;type=2"></a>
+        </p>
+      </footer>
+
+    </div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="./js/bootstrap.min.js"></script>
+  </body>
+</html>
