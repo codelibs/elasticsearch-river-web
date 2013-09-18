@@ -1,8 +1,6 @@
 package org.codelibs.elasticsearch.web.service;
 
-import org.codelibs.elasticsearch.web.service.impl.EsDataService;
-import org.codelibs.elasticsearch.web.service.impl.EsUrlFilterService;
-import org.codelibs.elasticsearch.web.service.impl.EsUrlQueueService;
+import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
@@ -29,15 +27,9 @@ public class S2ContainerService extends
     protected void doStart() throws ElasticSearchException {
         logger.info("Starting S2Container...");
 
-        final EsDataService dataService = SingletonS2Container
-                .getComponent(EsDataService.class);
-        dataService.setClient(client);
-        final EsUrlQueueService urlQueueService = SingletonS2Container
-                .getComponent(EsUrlQueueService.class);
-        urlQueueService.setClient(client);
-        final EsUrlFilterService urlFilterService = SingletonS2Container
-                .getComponent(EsUrlFilterService.class);
-        urlFilterService.setClient(client);
+        final RiverConfig riverConfig = SingletonS2Container
+                .getComponent(RiverConfig.class);
+        riverConfig.setClient(client);
     }
 
     @Override

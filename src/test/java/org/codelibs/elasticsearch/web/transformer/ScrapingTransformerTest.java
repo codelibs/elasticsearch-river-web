@@ -1,11 +1,16 @@
 package org.codelibs.elasticsearch.web.transformer;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.junit.Test;
 import org.seasar.framework.util.ResourceUtil;
 import org.seasar.robot.entity.ResponseData;
@@ -14,35 +19,47 @@ import org.seasar.robot.entity.ResultData;
 public class ScrapingTransformerTest {
     @Test
     public void fess_codelibs_org() {
+        RiverConfig riverConfig = new RiverConfig();
         ScrapingTransformer transformer = new ScrapingTransformer() {
+            @SuppressWarnings("unchecked")
             @Override
             protected void storeIndex(ResponseData responseData,
                     Map<String, Object> dataMap) {
-                System.out.println("dataMap: " + dataMap);
+                assertThat(
+                        ((List<String>) ((Map<String, Object>) dataMap.get("nav"))
+                                .get("sideMenus")).size(), is(14));
+                assertThat(
+                        ((Map<String, Object>) dataMap.get("section1")).get(
+                                "title").toString(), is("What is Fess?"));
+                assertThat(
+                        ((List<String>) ((Map<String, Object>) dataMap.get("section1"))
+                                .get("body")).size(), is(2));
+                assertThat(
+                        ((Map<String, Object>) dataMap.get("section2")).get(
+                                "title").toString(), is("Features"));
+                assertThat(
+                        ((List<String>) ((Map<String, Object>) dataMap.get("section2"))
+                                .get("body")).size(), is(12));
             }
         };
+        transformer.riverConfig = riverConfig;
 
         String sessionId = "test";
         String url = "http://fess.codelibs.org/";
 
-        Map<String, Map<String, String>> scrapingRuleMap = new HashMap<String, Map<String, String>>();
-        addScrapingRuleMap(
-                scrapingRuleMap,
-                "top.lead.title",
-                "//DIV[contains(@class, 'top-stories-section')]//DIV[contains(@class, 'section-content')]/DIV[contains(@class, 'blended-wrapper')][1]//DIV[contains(@class, 'esc-lead-article-title-wrapper')]");
-        addScrapingRuleMap(
-                scrapingRuleMap,
-                "top.lead.source",
-                "//DIV[contains(@class, 'top-stories-section')]//DIV[contains(@class, 'section-content')]/DIV[contains(@class, 'blended-wrapper')][1]//DIV[contains(@class, 'esc-lead-article-source-wrapper')]//SPAN[contains(@class, 'al-attribution-source')]");
-        addScrapingRuleMap(
-                scrapingRuleMap,
-                "top.news1.title",
-                "//DIV[contains(@class, 'top-stories-section')]//DIV[contains(@class, 'section-content')]/DIV[contains(@class, 'blended-wrapper')][2]//DIV[contains(@class, 'esc-lead-article-title-wrapper')]");
-        addScrapingRuleMap(
-                scrapingRuleMap,
-                "top.news1.source",
-                "//DIV[contains(@class, 'top-stories-section')]//DIV[contains(@class, 'section-content')]/DIV[contains(@class, 'blended-wrapper')][2]//DIV[contains(@class, 'esc-lead-article-source-wrapper')]//SPAN[contains(@class, 'al-attribution-source')]");
-        transformer.addScrapingRule(sessionId, Pattern.compile(url),
+        Map<String, Map<String, Object>> scrapingRuleMap = new HashMap<String, Map<String, Object>>();
+        addScrapingRuleMap(scrapingRuleMap, "nav.sideMenus",
+                "//DIV[contains(@class, 'sidebar-nav')]/UL/LI", Boolean.TRUE,
+                Boolean.TRUE);
+        addScrapingRuleMap(scrapingRuleMap, "section1.title",
+                "//DIV[@class='section'][1]/H2", null, null);
+        addScrapingRuleMap(scrapingRuleMap, "section1.body",
+                "//DIV[@class='section'][1]/P", Boolean.TRUE, Boolean.TRUE);
+        addScrapingRuleMap(scrapingRuleMap, "section2.title",
+                "//DIV[@class='section'][2]/H2", null, null);
+        addScrapingRuleMap(scrapingRuleMap, "section2.body",
+                "//DIV[@class='section'][2]//LI", Boolean.TRUE, Boolean.TRUE);
+        riverConfig.addScrapingRule(sessionId, Pattern.compile(url),
                 scrapingRuleMap);
         InputStream is = null;
         try {
@@ -62,10 +79,16 @@ public class ScrapingTransformerTest {
     }
 
     private void addScrapingRuleMap(
-            Map<String, Map<String, String>> scrapingRuleMap, String property,
-            String path) {
-        Map<String, String> valueMap = new HashMap<String, String>();
+            Map<String, Map<String, Object>> scrapingRuleMap, String property,
+            String path, Boolean isArray, Boolean trimSpaces) {
+        Map<String, Object> valueMap = new HashMap<String, Object>();
         valueMap.put("path", path);
+        if (isArray != null) {
+            valueMap.put("isArray", isArray);
+        }
+        if (trimSpaces != null) {
+            valueMap.put("trimSpaces", trimSpaces);
+        }
         scrapingRuleMap.put(property, valueMap);
     }
 }

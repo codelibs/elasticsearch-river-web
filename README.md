@@ -69,7 +69,8 @@ A crawling configuration is created by registering a river as below:
                     \"path\" : \"//TITLE\"
                   },
                   \"body\" : {
-                    \"path\" : \"//BODY\"
+                    \"path\" : \"//BODY\",
+                    \"trimSpaces\" : true
                   },
                   \"menus\" : {
                     \"path\" : \"//UL[@class='nav nav-list']/LI/A\",

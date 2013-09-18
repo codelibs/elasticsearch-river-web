@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -17,11 +15,15 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.xpath.objects.XObject;
+import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.codelibs.elasticsearch.web.util.IdUtil;
 import org.codelibs.elasticsearch.web.util.ParameterUtil;
 import org.cyberneko.html.parsers.DOMParser;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.seasar.framework.beans.util.Beans;
+import org.seasar.framework.container.SingletonS2Container;
+import org.seasar.framework.container.annotation.tiger.InitMethod;
 import org.seasar.robot.RobotCrawlAccessException;
 import org.seasar.robot.entity.AccessResultData;
 import org.seasar.robot.entity.ResponseData;
@@ -34,30 +36,28 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 public class ScrapingTransformer extends
         org.seasar.robot.transformer.impl.HtmlTransformer {
 
     private static final Logger logger = LoggerFactory
             .getLogger(XpathTransformer.class);
 
-    protected Map<String, Map<Pattern, Map<String, Map<String, String>>>> sessionPatternParamMap = new HashMap<String, Map<Pattern, Map<String, Map<String, String>>>>();
-
-    protected Client client;
-
-    protected Map<String, String> indexNameMap = new ConcurrentHashMap<String, String>();
-
-    protected ObjectMapper objectMapper;
-
-    private String[] copiedResonseDataFields = new String[] { "url",
+    public String[] copiedResonseDataFields = new String[] { "url",
             "parentUrl", "httpStatusCode", "method", "charSet",
             "contentLength", "mimeType", "executionTime", "lastModified" };
+
+    protected RiverConfig riverConfig;
+
+    @InitMethod
+    public void init() {
+        riverConfig = SingletonS2Container.getComponent(RiverConfig.class);
+    }
 
     @Override
     protected void storeData(final ResponseData responseData,
             final ResultData resultData) {
-        final Map<String, Map<String, String>> scrapingRuleMap = getPatternParamMap(responseData);
+        final Map<String, Map<String, Object>> scrapingRuleMap = riverConfig
+                .getPropertyMapping(responseData);
         if (scrapingRuleMap == null) {
             return;
         }
@@ -79,14 +79,16 @@ public class ScrapingTransformer extends
         final Map<String, Object> dataMap = new HashMap<String, Object>();
         Beans.copy(responseData, dataMap).includes(copiedResonseDataFields)
                 .excludesNull().excludesWhitespace().execute();
-        for (final Map.Entry<String, Map<String, String>> entry : scrapingRuleMap
+        for (final Map.Entry<String, Map<String, Object>> entry : scrapingRuleMap
                 .entrySet()) {
-            final Map<String, String> params = entry.getValue();
-            final String path = params.get("path");
+            final Map<String, Object> params = entry.getValue();
+            final String path = (String) params.get("path");
             final Boolean writeAsXml = ParameterUtil.getValue(params,
                     "writeAsXml", Boolean.FALSE);
-            final Boolean isArray = ParameterUtil.getValue(params, "isArray",
-                    Boolean.FALSE);
+            final boolean isArray = ParameterUtil.getValue(params, "isArray",
+                    Boolean.FALSE).booleanValue();
+            final boolean isTrimSpaces = ParameterUtil.getValue(params,
+                    "trimSpaces", Boolean.FALSE).booleanValue();
             try {
                 final XObject xObj = getXPathAPI().eval(document, path);
                 final int type = xObj.getType();
@@ -102,7 +104,8 @@ public class ScrapingTransformer extends
                     break;
                 case XObject.CLASS_STRING:
                     final String str = xObj.str();
-                    addPropertyData(dataMap, entry.getKey(), str.trim());
+                    addPropertyData(dataMap, entry.getKey(),
+                            trimSpaces(str, isTrimSpaces));
                     break;
                 case XObject.CLASS_NODESET:
                     final NodeList nodeList = xObj.nodelist();
@@ -115,13 +118,13 @@ public class ScrapingTransformer extends
                         } else {
                             content = node.getTextContent();
                         }
-                        strList.add(content);
+                        strList.add(trimSpaces(content, isTrimSpaces));
                     }
-                    if (isArray.booleanValue()) {
+                    if (isArray) {
                         addPropertyData(dataMap, entry.getKey(), strList);
                     } else {
                         addPropertyData(dataMap, entry.getKey(),
-                                StringUtils.join(strList, null));
+                                StringUtils.join(strList, " "));
                     }
                     break;
                 case XObject.CLASS_RTREEFRAG:
@@ -137,7 +140,8 @@ public class ScrapingTransformer extends
                     if (obj == null) {
                         obj = "";
                     }
-                    addPropertyData(dataMap, entry.getKey(), obj.toString());
+                    addPropertyData(dataMap, entry.getKey(),
+                            trimSpaces(obj.toString(), isTrimSpaces));
                     break;
                 }
             } catch (final TransformerException e) {
@@ -149,12 +153,23 @@ public class ScrapingTransformer extends
         storeIndex(responseData, dataMap);
     }
 
-    private void addPropertyData(final Map<String, Object> dataMap,
+    protected String trimSpaces(final String value, final boolean trimSpaces) {
+        if (value == null) {
+            return null;
+        }
+        if (trimSpaces) {
+            return value.replaceAll("\\s+", " ").trim();
+        }
+        return value;
+    }
+
+    protected void addPropertyData(final Map<String, Object> dataMap,
             final String key, final Object value) {
         Map<String, Object> currentDataMap = dataMap;
         final String[] keys = key.split("\\.");
         for (int i = 0; i < keys.length - 1; i++) {
             final String currentKey = keys[i];
+            @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) currentDataMap
                     .get(currentKey);
             if (map == null) {
@@ -170,9 +185,21 @@ public class ScrapingTransformer extends
             final Map<String, Object> dataMap) {
         final String id = IdUtil.getId(responseData.getUrl());
         final String sessionId = responseData.getSessionId();
-        final String indexName = getIndexName(sessionId);
+        final String indexName = riverConfig.getIndexName(sessionId);
+        final boolean overwrite = riverConfig.isOverwrite(sessionId);
+        final Client client = riverConfig.getClient();
+        if (overwrite) {
+            client.prepareDeleteByQuery(indexName)
+                    .setQuery(
+                            QueryBuilders.termQuery("url",
+                                    responseData.getUrl())).execute()
+                    .actionGet();
+            client.admin().indices().prepareRefresh(indexName).execute()
+                    .actionGet();
+        }
         try {
-            final String content = objectMapper.writeValueAsString(dataMap);
+            final String content = riverConfig.getObjectMapper()
+                    .writeValueAsString(dataMap);
             client.prepareIndex(indexName, sessionId, id).setRefresh(true)
                     .setSource(content).execute().actionGet();
         } catch (final Exception e) {
@@ -187,37 +214,6 @@ public class ScrapingTransformer extends
      */
     @Override
     public Object getData(final AccessResultData accessResultData) {
-        return null;
-    }
-
-    public void addScrapingRule(final String sessionId,
-            final Pattern urlPattern,
-            final Map<String, Map<String, String>> scrapingRuleMap) {
-        final Map<Pattern, Map<String, Map<String, String>>> patternParamMap = getPatternParamMap(sessionId);
-        patternParamMap.put(urlPattern, scrapingRuleMap);
-    }
-
-    private Map<Pattern, Map<String, Map<String, String>>> getPatternParamMap(
-            final String sessionId) {
-        Map<Pattern, Map<String, Map<String, String>>> patternParamMap = sessionPatternParamMap
-                .get(sessionId);
-        if (patternParamMap == null) {
-            patternParamMap = new HashMap<Pattern, Map<String, Map<String, String>>>();
-            sessionPatternParamMap.put(sessionId, patternParamMap);
-        }
-        return patternParamMap;
-    }
-
-    private Map<String, Map<String, String>> getPatternParamMap(
-            final ResponseData responseData) {
-        final Map<Pattern, Map<String, Map<String, String>>> patternParamMap = getPatternParamMap(responseData
-                .getSessionId());
-        for (final Map.Entry<Pattern, Map<String, Map<String, String>>> entry : patternParamMap
-                .entrySet()) {
-            if (entry.getKey().matcher(responseData.getUrl()).matches()) {
-                return entry.getValue();
-            }
-        }
         return null;
     }
 
@@ -240,32 +236,4 @@ public class ScrapingTransformer extends
         return "";
     }
 
-    public Client getClient() {
-        return client;
-    }
-
-    public void setClient(final Client client) {
-        this.client = client;
-    }
-
-    public String getIndexName(final String sessionId) {
-        return indexNameMap.get(sessionId);
-    }
-
-    public void addIndexName(final String sessionId, final String indexName) {
-        indexNameMap.put(sessionId, indexName);
-    }
-
-    public ObjectMapper getObjectMapper() {
-        return objectMapper;
-    }
-
-    public void setObjectMapper(final ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
-
-    public void cleanup(final String sessionId) {
-        indexNameMap.remove(sessionId);
-        sessionPatternParamMap.remove(sessionId);
-    }
 }

@@ -37,8 +37,8 @@ public class EsDataService extends AbstractRobotService implements DataService {
 
     @Override
     public int getCount(final String sessionId) {
-        return (int) client.prepareCount(index).setTypes(sessionId).execute()
-                .actionGet().getCount();
+        return (int) riverConfig.getClient().prepareCount(index)
+                .setTypes(sessionId).execute().actionGet().getCount();
     }
 
     @Override
@@ -54,7 +54,8 @@ public class EsDataService extends AbstractRobotService implements DataService {
     @Override
     public List<AccessResult> getAccessResultList(final String url,
             final boolean hasData) {
-        final SearchResponse response = client.prepareSearch(index)
+        final SearchResponse response = riverConfig.getClient()
+                .prepareSearch(index)
                 .setQuery(QueryBuilders.termQuery("url", url)).execute()
                 .actionGet();
         final SearchHits hits = response.getHits();
@@ -74,7 +75,7 @@ public class EsDataService extends AbstractRobotService implements DataService {
     @Override
     public void iterate(final String sessionId,
             final AccessResultCallback callback) {
-        SearchResponse response = client.prepareSearch(index)
+        SearchResponse response = riverConfig.getClient().prepareSearch(index)
                 .setTypes(sessionId).setSearchType(SearchType.SCAN)
                 .setScroll(new TimeValue(scrollTimeout))
                 .setQuery(QueryBuilders.queryString("*:*")).setSize(scrollSize)
@@ -93,7 +94,8 @@ public class EsDataService extends AbstractRobotService implements DataService {
             if (searchHits.hits().length == 0) {
                 break;
             }
-            response = client.prepareSearchScroll(response.getScrollId())
+            response = riverConfig.getClient()
+                    .prepareSearchScroll(response.getScrollId())
                     .setScroll(new TimeValue(scrollTimeout)).execute()
                     .actionGet();
         }

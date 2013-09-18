@@ -6,18 +6,19 @@ import static org.quartz.TriggerBuilder.newTrigger;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.codelibs.elasticsearch.web.interval.WebRiverIntervalController;
 import org.codelibs.elasticsearch.web.service.ScheduleService;
 import org.codelibs.elasticsearch.web.service.impl.EsDataService;
 import org.codelibs.elasticsearch.web.service.impl.EsUrlFilterService;
 import org.codelibs.elasticsearch.web.service.impl.EsUrlQueueService;
-import org.codelibs.elasticsearch.web.transformer.ScrapingTransformer;
 import org.codelibs.elasticsearch.web.util.ParameterUtil;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
@@ -36,8 +37,6 @@ import org.quartz.Trigger;
 import org.seasar.framework.container.SingletonS2Container;
 import org.seasar.robot.S2Robot;
 import org.seasar.robot.S2RobotContext;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class WebRiver extends AbstractRiverComponent implements River {
     private static final String RIVER_NAME = "riverName";
@@ -140,9 +139,8 @@ public class WebRiver extends AbstractRiverComponent implements River {
             final String sessionId = riverName.getName() + "_"
                     + sdf.format(new Date());
 
-            ScrapingTransformer transformer = null;
+            RiverConfig riverConfig = null;
             try {
-                final Client client = (Client) data.get(ES_CLIENT);
                 final RiverSettings settings = (RiverSettings) data
                         .get(SETTINGS);
                 @SuppressWarnings("unchecked")
@@ -161,8 +159,6 @@ public class WebRiver extends AbstractRiverComponent implements River {
                     return;
                 }
 
-                final ObjectMapper objectMapper = SingletonS2Container
-                        .getComponent(ObjectMapper.class);
                 s2Robot = SingletonS2Container.getComponent(S2Robot.class);
                 s2Robot.setSessionId(sessionId);
 
@@ -207,7 +203,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 final int maxAccessCount = ParameterUtil.getValue(
                         crawlSettings, "maxAccessCount", 100);
                 robotContext.setMaxAccessCount(maxAccessCount);
-                // num of thread 
+                // num of thread
                 final int numOfThread = ParameterUtil.getValue(crawlSettings,
                         "numOfThread", 5);
                 robotContext.setNumOfThread(numOfThread);
@@ -218,21 +214,27 @@ public class WebRiver extends AbstractRiverComponent implements River {
                         .getIntervalController();
                 intervalController.setDelayMillisForWaitingNewUrl(interval);
 
-                // crawl config
-                transformer = SingletonS2Container
-                        .getComponent(ScrapingTransformer.class);
-                transformer.setClient(client);
-                transformer.addIndexName(sessionId,
+                // river params
+                final Map<String, Object> riverParamMap = new HashMap<String, Object>();
+                riverParamMap.put("index",
                         ParameterUtil.getValue(crawlSettings, "index", "web"));
-                transformer.setObjectMapper(objectMapper);
+                riverParamMap.put("overwrite", ParameterUtil.getValue(
+                        crawlSettings, "overwrite", Boolean.FALSE));
+                riverParamMap.put("incremental", ParameterUtil.getValue(
+                        crawlSettings, "incremental", Boolean.FALSE));
+
+                // crawl config
+                riverConfig = SingletonS2Container
+                        .getComponent(RiverConfig.class);
+                riverConfig.addRiverParams(sessionId, riverParamMap);
                 for (final Map<String, Object> targetMap : targetList) {
                     final String urlPattern = (String) targetMap
                             .get("urlPattern");
                     @SuppressWarnings("unchecked")
-                    final Map<String, Map<String, String>> propMap = (Map<String, Map<String, String>>) targetMap
+                    final Map<String, Map<String, Object>> propMap = (Map<String, Map<String, Object>>) targetMap
                             .get("properties");
                     if (urlPattern != null && propMap != null) {
-                        transformer.addScrapingRule(sessionId,
+                        riverConfig.addScrapingRule(sessionId,
                                 Pattern.compile(urlPattern), propMap);
                     }
                 }
@@ -244,8 +246,8 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
             } finally {
                 runningJob.set(null);
-                if (transformer != null) {
-                    transformer.cleanup(sessionId);
+                if (riverConfig != null) {
+                    riverConfig.cleanup(sessionId);
                 }
                 // clean up
                 // s2Robot.cleanup(sessionId);

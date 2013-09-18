@@ -2,11 +2,18 @@ package org.codelibs.elasticsearch.web.service.impl;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Resource;
 
 import org.codelibs.elasticsearch.web.util.IdUtil;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.seasar.robot.Constants;
@@ -77,11 +84,36 @@ public class EsUrlQueueService extends AbstractRobotService implements
         if (urlQueueList.isEmpty()) {
             return null;
         }
+        final Client client = riverConfig.getClient();
         for (final UrlQueueImpl urlQueue : urlQueueList) {
             synchronized (client) {
                 final String id = IdUtil.getId(urlQueue);
                 if (exists(sessionId, id)) {
                     super.delete(sessionId, id);
+                    if (riverConfig.isIncremental(sessionId)) {
+                        final SearchResponse response = client
+                                .prepareSearch(
+                                        riverConfig.getIndexName(sessionId))
+                                .setQuery(
+                                        QueryBuilders.termQuery("url",
+                                                urlQueue.getUrl()))
+                                .addSort(
+                                        SortBuilders.fieldSort("lastModified")
+                                                .order(SortOrder.DESC))
+                                .setFrom(0).setSize(1).execute().actionGet();
+                        final SearchHits hits = response.getHits();
+                        if (hits.getTotalHits() > 0) {
+                            final SearchHit hit = hits.getHits()[0];
+                            final Map<String, Object> sourceMap = hit
+                                    .getSource();
+                            final Date date = (Date) sourceMap
+                                    .get("lastModified");
+                            if (date != null) {
+                                urlQueue.setLastModified(new Timestamp(date
+                                        .getTime()));
+                            }
+                        }
+                    }
                     return urlQueue;
                 }
             }

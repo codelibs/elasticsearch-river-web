@@ -27,6 +27,10 @@
 	<component name="urlQueue" class="org.seasar.robot.entity.UrlQueueImpl" instance="prototype">
 	</component>
 
+	<!-- Config -->
+	<component name="riverConfig" class="org.codelibs.elasticsearch.web.config.RiverConfig">
+	</component>
+
 	<!-- Service -->
 	<component name="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper">
 		<initMethod name="setDateFormat">
