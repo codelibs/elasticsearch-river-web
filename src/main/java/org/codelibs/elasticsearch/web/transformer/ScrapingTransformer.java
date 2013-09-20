@@ -1,29 +1,30 @@
 package org.codelibs.elasticsearch.web.transformer;
 
-import java.io.StringWriter;
+import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.xpath.objects.XObject;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.codelibs.elasticsearch.web.util.IdUtil;
 import org.codelibs.elasticsearch.web.util.ParameterUtil;
-import org.cyberneko.html.parsers.DOMParser;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.seasar.framework.beans.BeanDesc;
+import org.seasar.framework.beans.factory.BeanDescFactory;
 import org.seasar.framework.beans.util.Beans;
 import org.seasar.framework.container.SingletonS2Container;
 import org.seasar.framework.container.annotation.tiger.InitMethod;
+import org.seasar.framework.util.MethodUtil;
+import org.seasar.framework.util.StringUtil;
 import org.seasar.robot.RobotCrawlAccessException;
 import org.seasar.robot.entity.AccessResultData;
 import org.seasar.robot.entity.ResponseData;
@@ -31,16 +32,15 @@ import org.seasar.robot.entity.ResultData;
 import org.seasar.robot.transformer.impl.XpathTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 
 public class ScrapingTransformer extends
         org.seasar.robot.transformer.impl.HtmlTransformer {
 
     private static final Logger logger = LoggerFactory
             .getLogger(XpathTransformer.class);
+
+    private static final String[] queryTypes = new String[] { "className",
+            "data", "html", "id", "ownText", "tagName", "text", "val" };
 
     public String[] copiedResonseDataFields = new String[] { "url",
             "parentUrl", "httpStatusCode", "method", "charSet",
@@ -62,19 +62,18 @@ public class ScrapingTransformer extends
             return;
         }
 
-        final DOMParser parser = getDomParser();
+        org.jsoup.nodes.Document document = null;
+        String charsetName = responseData.getCharSet();
+        if (charsetName == null) {
+            charsetName = "UTF-8";
+        }
         try {
-            final InputSource is = new InputSource(
-                    responseData.getResponseBody());
-            if (responseData.getCharSet() != null) {
-                is.setEncoding(responseData.getCharSet());
-            }
-            parser.parse(is);
-        } catch (final Exception e) {
+            document = Jsoup.parse(responseData.getResponseBody(), charsetName,
+                    responseData.getUrl());
+        } catch (final IOException e) {
             throw new RobotCrawlAccessException("Could not parse "
                     + responseData.getUrl(), e);
         }
-        final Document document = parser.getDocument();
 
         final Map<String, Object> dataMap = new HashMap<String, Object>();
         Beans.copy(responseData, dataMap).includes(copiedResonseDataFields)
@@ -82,75 +81,94 @@ public class ScrapingTransformer extends
         for (final Map.Entry<String, Map<String, Object>> entry : scrapingRuleMap
                 .entrySet()) {
             final Map<String, Object> params = entry.getValue();
-            final String path = (String) params.get("path");
-            final Boolean writeAsXml = ParameterUtil.getValue(params,
-                    "writeAsXml", Boolean.FALSE);
-            final boolean isArray = ParameterUtil.getValue(params, "isArray",
-                    Boolean.FALSE).booleanValue();
             final boolean isTrimSpaces = ParameterUtil.getValue(params,
                     "trimSpaces", Boolean.FALSE).booleanValue();
-            try {
-                final XObject xObj = getXPathAPI().eval(document, path);
-                final int type = xObj.getType();
-                switch (type) {
-                case XObject.CLASS_BOOLEAN:
-                    final boolean b = xObj.bool();
-                    addPropertyData(dataMap, entry.getKey(),
-                            Boolean.toString(b));
-                    break;
-                case XObject.CLASS_NUMBER:
-                    final double d = xObj.num();
-                    addPropertyData(dataMap, entry.getKey(), Double.toString(d));
-                    break;
-                case XObject.CLASS_STRING:
-                    final String str = xObj.str();
-                    addPropertyData(dataMap, entry.getKey(),
-                            trimSpaces(str, isTrimSpaces));
-                    break;
-                case XObject.CLASS_NODESET:
-                    final NodeList nodeList = xObj.nodelist();
-                    final List<String> strList = new ArrayList<String>();
-                    for (int i = 0; i < nodeList.getLength(); i++) {
-                        final Node node = nodeList.item(i);
-                        String content;
-                        if (writeAsXml.booleanValue()) {
-                            content = toXmlString(node);
-                        } else {
-                            content = node.getTextContent();
-                        }
-                        strList.add(trimSpaces(content, isTrimSpaces));
+            final boolean isArray = ParameterUtil.getValue(params,
+                    "trimSpaces", Boolean.FALSE).booleanValue();
+
+            final List<String> strList = new ArrayList<String>();
+            final BeanDesc elementDesc = BeanDescFactory
+                    .getBeanDesc(Element.class);
+
+            for (final String queryType : queryTypes) {
+                final String query = ParameterUtil.getValue(params, queryType,
+                        null);
+                if (StringUtil.isNotBlank(query)) {
+                    final Element[] elements = getElements(
+                            new Element[] { document }, query);
+                    for (Element element : elements) {
+                        final Method queryMethod = elementDesc
+                                .getMethod(queryType);
+                        strList.add(trimSpaces((String) MethodUtil.invoke(
+                                queryMethod, element, new Object[0]),
+                                isTrimSpaces));
                     }
-                    if (isArray) {
-                        addPropertyData(dataMap, entry.getKey(), strList);
-                    } else {
-                        addPropertyData(dataMap, entry.getKey(),
-                                StringUtils.join(strList, " "));
-                    }
-                    break;
-                case XObject.CLASS_RTREEFRAG:
-                    final int rtf = xObj.rtf();
-                    addPropertyData(dataMap, entry.getKey(),
-                            Integer.toString(rtf));
-                    break;
-                case XObject.CLASS_NULL:
-                case XObject.CLASS_UNKNOWN:
-                case XObject.CLASS_UNRESOLVEDVARIABLE:
-                default:
-                    Object obj = xObj.object();
-                    if (obj == null) {
-                        obj = "";
-                    }
-                    addPropertyData(dataMap, entry.getKey(),
-                            trimSpaces(obj.toString(), isTrimSpaces));
                     break;
                 }
-            } catch (final TransformerException e) {
-                logger.warn("Could not parse a value of " + entry.getKey()
-                        + ":" + entry.getValue());
             }
+
+            addPropertyData(dataMap, entry.getKey(), isArray ? strList
+                    : StringUtils.join(strList, " "));
         }
 
         storeIndex(responseData, dataMap);
+    }
+
+    protected Element[] getElements(Element[] elements, String query) {
+        Element[] targets = elements;
+        Pattern pattern = Pattern
+                .compile(":eq\\(([0-9]+)\\)|:lt\\(([0-9]+)\\)|:gt\\(([0-9]+)\\)");
+        Matcher matcher = pattern.matcher(query);
+        StringBuffer buf = new StringBuffer();
+        while (matcher.find()) {
+            String value = matcher.group();
+            matcher.appendReplacement(buf, "");
+            if (buf.charAt(buf.length() - 1) != ' ') {
+                try {
+                    int index = Integer.parseInt(matcher.group(1));
+                    List<Element> elementList = new ArrayList<Element>();
+                    String childQuery = buf.toString();
+                    for (Element element : targets) {
+                        Elements childElements = element.select(childQuery);
+                        if (value.startsWith(":eq")) {
+                            if (index < childElements.size()) {
+                                elementList.add(childElements.get(index));
+                            }
+                        } else if (value.startsWith(":lt")) {
+                            for (int i = 0; i < childElements.size()
+                                    && i < index; i++) {
+                                elementList.add(childElements.get(i));
+                            }
+                        } else if (value.startsWith(":gt")) {
+                            for (int i = index + 1; i < childElements.size(); i++) {
+                                elementList.add(childElements.get(i));
+                            }
+                        }
+                    }
+                    targets = elementList.toArray(new Element[elementList
+                            .size()]);
+                    buf.setLength(0);
+                } catch (NumberFormatException e) {
+                    logger.warn("Invalid number: " + query, e);
+                    buf.append(value);
+                }
+            } else {
+                buf.append(value);
+            }
+        }
+        matcher.appendTail(buf);
+        String lastQuery = buf.toString();
+        if (StringUtil.isNotBlank(lastQuery)) {
+            List<Element> elementList = new ArrayList<Element>();
+            for (Element element : targets) {
+                Elements childElements = element.select(lastQuery);
+                for (int i = 0; i < childElements.size(); i++) {
+                    elementList.add(childElements.get(i));
+                }
+            }
+            targets = elementList.toArray(new Element[elementList.size()]);
+        }
+        return targets;
     }
 
     protected String trimSpaces(final String value, final boolean trimSpaces) {
@@ -188,6 +206,12 @@ public class ScrapingTransformer extends
         final String indexName = riverConfig.getIndexName(sessionId);
         final boolean overwrite = riverConfig.isOverwrite(sessionId);
         final Client client = riverConfig.getClient();
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Index: " + indexName + ", sessionId: " + sessionId
+                    + ", Data: " + dataMap);
+        }
+
         if (overwrite) {
             client.prepareDeleteByQuery(indexName)
                     .setQuery(
@@ -215,25 +239,6 @@ public class ScrapingTransformer extends
     @Override
     public Object getData(final AccessResultData accessResultData) {
         return null;
-    }
-
-    private String toXmlString(final Node node) {
-        try {
-            final TransformerFactory transformerFactory = TransformerFactory
-                    .newInstance();
-            final Transformer transformer = transformerFactory.newTransformer();
-            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,
-                    "yes");
-
-            final StringWriter sw = new StringWriter();
-            final StreamResult result = new StreamResult(sw);
-            final DOMSource source = new DOMSource(node);
-            transformer.transform(source, result);
-            return sw.toString();
-        } catch (final Exception e) {
-            logger.warn("Could not convert a node to XML.", e);
-        }
-        return "";
     }
 
 }

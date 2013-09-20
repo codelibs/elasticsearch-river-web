@@ -9,10 +9,6 @@
 			<arg>"http://xml.org/sax/features/namespaces"</arg>
 			<arg>"false"</arg>
 		</initMethod>
-		<initMethod name="put">
-			<arg>"http://cyberneko.org/html/features/augmentations"</arg>
-			<arg>"true"</arg>
-		</initMethod>
 	</component>
 
 	<component name="scrapingTransformer"

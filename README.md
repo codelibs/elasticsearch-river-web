@@ -3,7 +3,7 @@ Elasticsearch River Web
 
 ## Overview
 
-Elasticsearch River Web Plugin provides a feature to crawl web sites and store the content by XPath.
+Elasticsearch River Web Plugin provides a feature to crawl web sites and store the content by CSS Query.
 
 ## Installation
 
@@ -47,17 +47,16 @@ A crawling configuration is created by registering a river as below:
                 \"urlPattern\" : \"http://www.codelibs.org/.*\",
                 \"properties\" : {
                   \"title\" : {
-                    \"path\" : \"//TITLE\"
+                    \"text\" : \"title\"
                   },
                   \"body\" : {
-                    \"path\" : \"//BODY\"
+                    \"text\" : \"body\"
                   },
-                  \"bodyAsXml\" : {
-                    \"path\" : \"//BODY\",
-                    \"writeAsXml\" : true
+                  \"bodyAsHtml\" : {
+                    \"html\" : \"body\"
                   },
                   \"projects\" : {
-                    \"path\" : \"//UL[@class='nav nav-list']/LI/A\",
+                    \"text\" : \"ul.nav-list li a\",
                     \"isArray\" : true
                   }
                 }
@@ -66,14 +65,14 @@ A crawling configuration is created by registering a river as below:
                 \"urlPattern\" : \"http://fess.codelibs.org/.*\",
                 \"properties\" : {
                   \"title\" : {
-                    \"path\" : \"//TITLE\"
+                    \"text\" : \"title\"
                   },
                   \"body\" : {
-                    \"path\" : \"//BODY\",
+                    \"text\" : \"body\",
                     \"trimSpaces\" : true
                   },
                   \"menus\" : {
-                    \"path\" : \"//UL[@class='nav nav-list']/LI/A\",
+                    \"text\" : \"ul.nav-list li a\",
                     \"isArray\" : true
                   }
                 }
@@ -87,21 +86,21 @@ A crawling configuration is created by registering a river as below:
 
 The configuration is:
 
-| Property                                | Type    | Description                                     |
-|:----------------------------------------|:-------:|:------------------------------------------------|
-| crawl.index                             | string  | Stored index name.                              |
-| crawl.url                               | array   | Start point of URL for crawling.                |
-| crawl.includeFilter                     | array   | White list of URL for crawling.                 |
-| crawl.excludeFilter                     | array   | Black list of URL for crawling.                 |
-| crawl.maxDepth                          | int     | Depth of crawling documents.                    |
-| crawl.maxAccessCount                    | int     | The number of crawling documents.               |
-| crawl.numOfThread                       | int     | The number of crawler threads.                  |
-| crawl.interval                          | int     | Interval time (ms) to crawl documents.          |
-| crawl.target.urlPattern                 | string  | URL pattern to extract contents by XPath.       |
-| crawl.target.properties.name            | string  | "name" is used as a property name in the index. |
-| crawl.target.properties.name.path       | string  | XPath for the property value.                   |
-| crawl.target.properties.name.writeAsXml | boolean | Write a value as XML if true.                   |
-| schedule.cron                           | string  | cron format to start a crawler.                 |
+| Property                          | Type    | Description                                     |
+|:----------------------------------|:-------:|:------------------------------------------------|
+| crawl.index                       | string  | Stored index name.                              |
+| crawl.url                         | array   | Start point of URL for crawling.                |
+| crawl.includeFilter               | array   | White list of URL for crawling.                 |
+| crawl.excludeFilter               | array   | Black list of URL for crawling.                 |
+| crawl.maxDepth                    | int     | Depth of crawling documents.                    |
+| crawl.maxAccessCount              | int     | The number of crawling documents.               |
+| crawl.numOfThread                 | int     | The number of crawler threads.                  |
+| crawl.interval                    | int     | Interval time (ms) to crawl documents.          |
+| crawl.target.urlPattern           | string  | URL pattern to extract contents by CSS Query.   |
+| crawl.target.properties.name      | string  | "name" is used as a property name in the index. |
+| crawl.target.properties.name.text | string  | CSS Query for the property value.               |
+| crawl.target.properties.name.html | string  | CSS Query for the property value.               |
+| schedule.cron                     | string  | cron format to start a crawler.                 |
 
 
 ### Unregister Crawl Data
@@ -130,10 +129,10 @@ If you want to stop the crawler, type as below: (replace my\_web with your river
                 \"urlPattern\" : \"http://news.yahoo.com/.*html\",
                 \"properties\" : {
                   \"title\" : {
-                    \"path\" : \"//H1[@class='headline']\"
+                    \"text\" : \"h1.headline\"
                   },
                   \"content\" : {
-                    \"path\" : \"//SECTION[@id='mediacontentstory']/DIV/DIV[@class='body clearfix']/P\"
+                    \"text\" : \"section.mediacontentstory div.body p\"
                   }
                 }
               }
