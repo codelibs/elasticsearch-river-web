@@ -3,9 +3,9 @@
 	"http://www.seasar.org/dtd/components24.dtd">
 <components>
 	<include path="s2robot_client.dicon"/>
-	<include path="s2robot_rule.dicon"/>
+	<include path="s2robot_es_rule.dicon"/>
 	<include path="s2robot_filter.dicon"/>
-	<include path="s2robot_interval.dicon"/>
+	<include path="s2robot_es_interval.dicon"/>
 	<include path="s2robot_extractor.dicon"/>
 	<include path="s2robot_mimetype.dicon"/>
 	<include path="s2robot_encoding.dicon"/>
