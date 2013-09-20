@@ -3,5 +3,5 @@
 	"http://www.seasar.org/dtd/components24.dtd">
 <components>
 	<include path="aop.dicon"/>
-    <include path="s2robot.dicon"/>
+    <include path="s2robot_es.dicon"/>
 </components>
