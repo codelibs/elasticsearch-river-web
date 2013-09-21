@@ -86,6 +86,17 @@ public class RiverConfig {
         return null;
     }
 
+    public String getTypeName(final String sessionId) {
+        final Map<String, Object> paramMap = getRiverParameterMap(sessionId);
+        if (paramMap != null) {
+            final String indexName = (String) paramMap.get("type");
+            if (indexName != null) {
+                return indexName;
+            }
+        }
+        return null;
+    }
+
     public boolean isOverwrite(final String sessionId) {
         final Map<String, Object> paramMap = getRiverParameterMap(sessionId);
         if (paramMap != null) {

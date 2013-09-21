@@ -2,7 +2,9 @@ package org.codelibs.elasticsearch.web.transformer;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,8 +12,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
+import org.codelibs.elasticsearch.web.WebRiverConstants;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
-import org.codelibs.elasticsearch.web.util.IdUtil;
 import org.codelibs.elasticsearch.web.util.ParameterUtil;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -76,8 +78,14 @@ public class ScrapingTransformer extends
         }
 
         final Map<String, Object> dataMap = new HashMap<String, Object>();
-        Beans.copy(responseData, dataMap).includes(copiedResonseDataFields)
-                .excludesNull().excludesWhitespace().execute();
+        final SimpleDateFormat sdf = new SimpleDateFormat(
+                WebRiverConstants.DATE_TIME_FORMAT);
+        dataMap.put("timestamp", sdf.format(new Date()));
+        Beans.copy(responseData, dataMap)
+                .includes(copiedResonseDataFields)
+                .dateConverter(WebRiverConstants.DATE_TIME_FORMAT,
+                        "lastModified").excludesNull().excludesWhitespace()
+                .execute();
         for (final Map.Entry<String, Map<String, Object>> entry : scrapingRuleMap
                 .entrySet()) {
             final Map<String, Object> params = entry.getValue();
@@ -96,7 +104,7 @@ public class ScrapingTransformer extends
                 if (StringUtil.isNotBlank(query)) {
                     final Element[] elements = getElements(
                             new Element[] { document }, query);
-                    for (Element element : elements) {
+                    for (final Element element : elements) {
                         final Method queryMethod = elementDesc
                                 .getMethod(queryType);
                         strList.add(trimSpaces((String) MethodUtil.invoke(
@@ -114,22 +122,23 @@ public class ScrapingTransformer extends
         storeIndex(responseData, dataMap);
     }
 
-    protected Element[] getElements(Element[] elements, String query) {
+    protected Element[] getElements(final Element[] elements, final String query) {
         Element[] targets = elements;
-        Pattern pattern = Pattern
+        final Pattern pattern = Pattern
                 .compile(":eq\\(([0-9]+)\\)|:lt\\(([0-9]+)\\)|:gt\\(([0-9]+)\\)");
-        Matcher matcher = pattern.matcher(query);
-        StringBuffer buf = new StringBuffer();
+        final Matcher matcher = pattern.matcher(query);
+        final StringBuffer buf = new StringBuffer();
         while (matcher.find()) {
-            String value = matcher.group();
+            final String value = matcher.group();
             matcher.appendReplacement(buf, "");
             if (buf.charAt(buf.length() - 1) != ' ') {
                 try {
-                    int index = Integer.parseInt(matcher.group(1));
-                    List<Element> elementList = new ArrayList<Element>();
-                    String childQuery = buf.toString();
-                    for (Element element : targets) {
-                        Elements childElements = element.select(childQuery);
+                    final int index = Integer.parseInt(matcher.group(1));
+                    final List<Element> elementList = new ArrayList<Element>();
+                    final String childQuery = buf.toString();
+                    for (final Element element : targets) {
+                        final Elements childElements = element
+                                .select(childQuery);
                         if (value.startsWith(":eq")) {
                             if (index < childElements.size()) {
                                 elementList.add(childElements.get(index));
@@ -148,7 +157,7 @@ public class ScrapingTransformer extends
                     targets = elementList.toArray(new Element[elementList
                             .size()]);
                     buf.setLength(0);
-                } catch (NumberFormatException e) {
+                } catch (final NumberFormatException e) {
                     logger.warn("Invalid number: " + query, e);
                     buf.append(value);
                 }
@@ -157,11 +166,11 @@ public class ScrapingTransformer extends
             }
         }
         matcher.appendTail(buf);
-        String lastQuery = buf.toString();
+        final String lastQuery = buf.toString();
         if (StringUtil.isNotBlank(lastQuery)) {
-            List<Element> elementList = new ArrayList<Element>();
-            for (Element element : targets) {
-                Elements childElements = element.select(lastQuery);
+            final List<Element> elementList = new ArrayList<Element>();
+            for (final Element element : targets) {
+                final Elements childElements = element.select(lastQuery);
                 for (int i = 0; i < childElements.size(); i++) {
                     elementList.add(childElements.get(i));
                 }
@@ -201,9 +210,9 @@ public class ScrapingTransformer extends
 
     protected void storeIndex(final ResponseData responseData,
             final Map<String, Object> dataMap) {
-        final String id = IdUtil.getId(responseData.getUrl());
         final String sessionId = responseData.getSessionId();
         final String indexName = riverConfig.getIndexName(sessionId);
+        final String typeName = riverConfig.getTypeName(sessionId);
         final boolean overwrite = riverConfig.isOverwrite(sessionId);
         final Client client = riverConfig.getClient();
 
@@ -224,7 +233,7 @@ public class ScrapingTransformer extends
         try {
             final String content = riverConfig.getObjectMapper()
                     .writeValueAsString(dataMap);
-            client.prepareIndex(indexName, sessionId, id).setRefresh(true)
+            client.prepareIndex(indexName, typeName).setRefresh(true)
                     .setSource(content).execute().actionGet();
         } catch (final Exception e) {
             logger.warn("Could not write a content into index.", e);

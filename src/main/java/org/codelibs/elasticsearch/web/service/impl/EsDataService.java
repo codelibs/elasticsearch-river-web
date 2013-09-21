@@ -3,6 +3,7 @@ package org.codelibs.elasticsearch.web.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.codelibs.elasticsearch.web.WebRiverConstants;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.common.unit.TimeValue;
@@ -16,6 +17,7 @@ import org.seasar.robot.service.DataService;
 import org.seasar.robot.util.AccessResultCallback;
 
 public class EsDataService extends AbstractRobotService implements DataService {
+
     public int scrollTimeout = 60000;
 
     public int scrollSize = 100;
@@ -56,17 +58,20 @@ public class EsDataService extends AbstractRobotService implements DataService {
             final boolean hasData) {
         final SearchResponse response = riverConfig.getClient()
                 .prepareSearch(index)
-                .setQuery(QueryBuilders.termQuery("url", url)).execute()
+                .setQuery(QueryBuilders.termQuery(URL, url)).execute()
                 .actionGet();
         final SearchHits hits = response.getHits();
         final List<AccessResult> accessResultList = new ArrayList<AccessResult>();
         if (hits.getTotalHits() != 0) {
             for (final SearchHit searchHit : hits.getHits()) {
-                accessResultList.add(Beans
-                        .createAndCopy(AccessResultImpl.class,
-                                searchHit.getSource())
-                        .timestampConverter(BASIC_DATE_TIME, timestampFields)
-                        .excludesWhitespace().execute());
+                accessResultList
+                        .add(Beans
+                                .createAndCopy(AccessResultImpl.class,
+                                        searchHit.getSource())
+                                .timestampConverter(
+                                        WebRiverConstants.DATE_TIME_FORMAT,
+                                        timestampFields).excludesWhitespace()
+                                .execute());
             }
         }
         return accessResultList;
@@ -86,8 +91,8 @@ public class EsDataService extends AbstractRobotService implements DataService {
                 final AccessResult accessResult = Beans
                         .createAndCopy(AccessResultImpl.class,
                                 searchHit.getSource())
-                        .timestampConverter(BASIC_DATE_TIME, timestampFields)
-                        .excludesWhitespace().execute();
+                        .timestampConverter(WebRiverConstants.DATE_TIME_FORMAT,
+                                timestampFields).excludesWhitespace().execute();
                 callback.iterate(accessResult);
             }
 

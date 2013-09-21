@@ -8,7 +8,6 @@ import java.util.Map;
 
 import javax.annotation.Resource;
 
-import org.codelibs.elasticsearch.web.util.IdUtil;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -65,8 +64,8 @@ public class EsUrlQueueService extends AbstractRobotService implements
         final List<UrlQueue> targetList = new ArrayList<UrlQueue>(
                 urlQueueList.size());
         for (final UrlQueue urlQueue : urlQueueList) {
-            final String id = IdUtil.getId(urlQueue.getUrl());
-            if (!exists(sessionId, id) && !dataService.exists(sessionId, id)) {
+            if (!exists(sessionId, urlQueue.getUrl())
+                    && !dataService.exists(sessionId, urlQueue.getUrl())) {
                 urlQueue.setSessionId(sessionId);
                 targetList.add(urlQueue);
             }
@@ -80,25 +79,23 @@ public class EsUrlQueueService extends AbstractRobotService implements
     public UrlQueue poll(final String sessionId) {
         final List<UrlQueueImpl> urlQueueList = getList(UrlQueueImpl.class,
                 sessionId, null, 0, pollingFetchSize,
-                SortBuilders.fieldSort("createTime").order(SortOrder.ASC));
+                SortBuilders.fieldSort(CREATE_TIME).order(SortOrder.ASC));
         if (urlQueueList.isEmpty()) {
             return null;
         }
         final Client client = riverConfig.getClient();
         for (final UrlQueueImpl urlQueue : urlQueueList) {
             synchronized (client) {
-                final String id = IdUtil.getId(urlQueue);
-                if (exists(sessionId, id)) {
-                    super.delete(sessionId, id);
+                final String url = urlQueue.getUrl();
+                if (exists(sessionId, url)) {
+                    super.delete(sessionId, url);
                     if (riverConfig.isIncremental(sessionId)) {
                         final SearchResponse response = client
                                 .prepareSearch(
                                         riverConfig.getIndexName(sessionId))
-                                .setQuery(
-                                        QueryBuilders.termQuery("url",
-                                                urlQueue.getUrl()))
+                                .setQuery(QueryBuilders.termQuery("url", url))
                                 .addSort(
-                                        SortBuilders.fieldSort("lastModified")
+                                        SortBuilders.fieldSort(LAST_MODIFIED)
                                                 .order(SortOrder.DESC))
                                 .setFrom(0).setSize(1).execute().actionGet();
                         final SearchHits hits = response.getHits();
@@ -107,7 +104,7 @@ public class EsUrlQueueService extends AbstractRobotService implements
                             final Map<String, Object> sourceMap = hit
                                     .getSource();
                             final Date date = (Date) sourceMap
-                                    .get("lastModified");
+                                    .get(LAST_MODIFIED);
                             if (date != null) {
                                 urlQueue.setLastModified(new Timestamp(date
                                         .getTime()));
@@ -128,7 +125,7 @@ public class EsUrlQueueService extends AbstractRobotService implements
 
     @Override
     public boolean visited(final UrlQueue urlQueue) {
-        return exists(urlQueue.getSessionId(), IdUtil.getId(urlQueue));
+        return exists(urlQueue.getSessionId(), urlQueue.getUrl());
     }
 
     @Override

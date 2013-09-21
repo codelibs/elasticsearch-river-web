@@ -4,12 +4,10 @@ import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.TriggerBuilder.newTrigger;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -134,10 +132,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
             }
 
             final RiverName riverName = (RiverName) data.get(RIVER_NAME);
-            final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss",
-                    Locale.ENGLISH);
-            final String sessionId = riverName.getName() + "_"
-                    + sdf.format(new Date());
+            final String sessionId = UUID.randomUUID().toString();
 
             RiverConfig riverConfig = null;
             try {
@@ -218,6 +213,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 final Map<String, Object> riverParamMap = new HashMap<String, Object>();
                 riverParamMap.put("index",
                         ParameterUtil.getValue(crawlSettings, "index", "web"));
+                riverParamMap.put("type", riverName.getName());
                 riverParamMap.put("overwrite", ParameterUtil.getValue(
                         crawlSettings, "overwrite", Boolean.FALSE));
                 riverParamMap.put("incremental", ParameterUtil.getValue(
