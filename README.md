@@ -3,7 +3,8 @@ Elasticsearch River Web
 
 ## Overview
 
-Elasticsearch River Web Plugin provides a feature to crawl web sites and store the content by CSS Query.
+Elasticsearch River Web Plugin is a web crawler for Elasticsearch.
+This plugin provides a feature to crawl web sites and extract the content by CSS Query.
 
 ## Installation
 
