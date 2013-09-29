@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.codelibs.elasticsearch.web.WebRiverConstants;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.codelibs.elasticsearch.web.interval.WebRiverIntervalController;
 import org.codelibs.elasticsearch.web.service.ScheduleService;
@@ -33,8 +34,10 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.Trigger;
 import org.seasar.framework.container.SingletonS2Container;
+import org.seasar.framework.util.StringUtil;
 import org.seasar.robot.S2Robot;
 import org.seasar.robot.S2RobotContext;
+import org.seasar.robot.client.http.HcHttpClient;
 
 public class WebRiver extends AbstractRiverComponent implements River {
     private static final String RIVER_NAME = "riverName";
@@ -50,6 +53,9 @@ public class WebRiver extends AbstractRiverComponent implements River {
     private static final String JOB_ID_SUFFIX = "Job";
 
     private static final String ES_CLIENT = "esClient";
+
+    private static final String DEFAULT_USER_AGENT = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Elasticsearch River Web/"
+            + WebRiverConstants.VERSION + ")";
 
     private final Client client;
 
@@ -156,6 +162,20 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
                 s2Robot = SingletonS2Container.getComponent(S2Robot.class);
                 s2Robot.setSessionId(sessionId);
+
+                // HttpClient Parameters
+                final Map<String, Object> paramMap = new HashMap<String, Object>();
+                s2Robot.getClientFactory().setInitParameterMap(paramMap);
+
+                // user agent
+                String userAgent = ParameterUtil.getValue(crawlSettings,
+                        "userAgent", DEFAULT_USER_AGENT);
+                if (StringUtil.isNotBlank(userAgent)) {
+                    paramMap.put(HcHttpClient.USER_AGENT_PROPERTY, userAgent);
+                }
+
+                // TODO authentications
+                // TODO request headers
 
                 // url
                 @SuppressWarnings("unchecked")
