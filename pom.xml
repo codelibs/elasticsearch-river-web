@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<name>elasticsearch-river-web</name>
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.codelibs</groupId>
 	<artifactId>elasticsearch-river-web</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
-	<description>Elasticsearch River Web Plugin</description>
-	<inceptionYear>2012</inceptionYear>
+	<name>Elasticsearch River Web</name>
+	<description>This plugin crawls web sites and extracts the content from Web.</description>
+	<inceptionYear>2011</inceptionYear>
+    <url>https://github.com/codelibs/elasticsearch-solr-api</url>
 	<licenses>
 		<license>
 			<name>The Apache Software License, Version 2.0</name>
@@ -16,30 +17,20 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
-	<scm>
-		<connection>scm:git:git@github.com:codelibs/elasticsearch-river-web.git</connection>
-		<developerConnection>scm:git:git@github.com:codelibs/elasticsearch-river-web.git</developerConnection>
-		<url>https://github.com/codelibs/elasticsearch-river-web</url>
-	</scm>
+    <scm>
+        <connection>scm:git:git@github.com:codelibs/elasticsearch-solr-api.git</connection>
+        <developerConnection>scm:git:git@github.com:codelibs/elasticsearch-solr-api.git</developerConnection>
+        <url>git@github.com:codelibs/elasticsearch-solr-api.git</url>
+    </scm>
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
 	<properties>
 		<elasticsearch.version>0.90.5</elasticsearch.version>
 	</properties>
-	<distributionManagement>
-		<repository>
-			<id>codelibs-repository</id>
-			<url>ftp://maven.codelibs.org/home/codelibs/maven/</url>
-		</repository>
-		<site>
-			<id>codelibs-site</id>
-			<url>ftp://maven.codelibs.org/home/codelibs/project/elasticsearch-river-web/</url>
-		</site>
-	</distributionManagement>
 	<repositories>
-		<repository>
-			<id>codelibs.org</id>
-			<name>CodeLibs Repository</name>
-			<url>http://maven.codelibs.org/</url>
-		</repository>
 		<repository>
 			<id>maven.seasar.org</id>
 			<name>The Seasar Foundation Maven2 Repository</name>
@@ -107,13 +98,6 @@
 				</executions>
 			</plugin>
 		</plugins>
-		<extensions>
-			<extension>
-				<groupId>org.apache.maven.wagon</groupId>
-				<artifactId>wagon-ftp</artifactId>
-				<version>2.4</version>
-			</extension>
-		</extensions>
 	</build>
 	<dependencies>
 		<dependency>
