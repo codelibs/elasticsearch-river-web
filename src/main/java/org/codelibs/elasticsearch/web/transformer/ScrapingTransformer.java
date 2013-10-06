@@ -100,6 +100,11 @@ public class ScrapingTransformer extends
             final BeanDesc elementDesc = BeanDescFactory
                     .getBeanDesc(Element.class);
 
+            final String value = ParameterUtil.getValue(params, "value", null);
+            if (StringUtil.isNotBlank(value)) {
+                strList.add(trimSpaces(value, isTrimSpaces));
+            }
+
             for (final String queryType : queryTypes) {
                 final String query = ParameterUtil.getValue(params, queryType,
                         null);
