@@ -5,7 +5,7 @@ import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -37,6 +37,8 @@ import org.slf4j.LoggerFactory;
 
 public class ScrapingTransformer extends
         org.seasar.robot.transformer.impl.HtmlTransformer {
+
+    private static final String ARRAY_PROPERTY = "[]";
 
     private static final Logger logger = LoggerFactory
             .getLogger(XpathTransformer.class);
@@ -77,7 +79,7 @@ public class ScrapingTransformer extends
                     + responseData.getUrl(), e);
         }
 
-        final Map<String, Object> dataMap = new HashMap<String, Object>();
+        final Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
         final SimpleDateFormat sdf = new SimpleDateFormat(
                 WebRiverConstants.DATE_TIME_FORMAT);
         dataMap.put("timestamp", sdf.format(new Date()));
@@ -91,8 +93,8 @@ public class ScrapingTransformer extends
             final Map<String, Object> params = entry.getValue();
             final boolean isTrimSpaces = ParameterUtil.getValue(params,
                     "trimSpaces", Boolean.FALSE).booleanValue();
-            final boolean isArray = ParameterUtil.getValue(params,
-                    "trimSpaces", Boolean.FALSE).booleanValue();
+            final boolean isArray = ParameterUtil.getValue(params, "isArray",
+                    Boolean.FALSE).booleanValue();
 
             final List<String> strList = new ArrayList<String>();
             final BeanDesc elementDesc = BeanDescFactory
@@ -200,7 +202,7 @@ public class ScrapingTransformer extends
             Map<String, Object> map = (Map<String, Object>) currentDataMap
                     .get(currentKey);
             if (map == null) {
-                map = new HashMap<String, Object>();
+                map = new LinkedHashMap<String, Object>();
                 currentDataMap.put(currentKey, map);
             }
             currentDataMap = map;
@@ -230,6 +232,52 @@ public class ScrapingTransformer extends
             client.admin().indices().prepareRefresh(indexName).execute()
                     .actionGet();
         }
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> arrayDataMap = (Map<String, Object>) dataMap
+                .remove(ARRAY_PROPERTY);
+        if (arrayDataMap != null) {
+            Map<String, Object> flatArrayDataMap = new LinkedHashMap<String, Object>();
+            convertFlatMap("", arrayDataMap, flatArrayDataMap);
+            int maxSize = 0;
+            for (Map.Entry<String, Object> entry : flatArrayDataMap.entrySet()) {
+                Object value = entry.getValue();
+                if (value instanceof List) {
+                    @SuppressWarnings("rawtypes")
+                    int size = ((List) value).size();
+                    if (size > maxSize) {
+                        maxSize = size;
+                    }
+                }
+            }
+            for (int i = 0; i < maxSize; i++) {
+                Map<String, Object> newDataMap = new LinkedHashMap<String, Object>();
+                newDataMap.put("position", i);
+                deepCopy(dataMap, newDataMap);
+                newDataMap.putAll(dataMap);
+                for (Map.Entry<String, Object> entry : flatArrayDataMap
+                        .entrySet()) {
+                    Object value = entry.getValue();
+                    if (value instanceof List) {
+                        @SuppressWarnings("unchecked")
+                        List<Object> list = (List<Object>) value;
+                        if (i < list.size()) {
+                            addPropertyData(newDataMap, entry.getKey(),
+                                    list.get(i));
+                        }
+                    } else if (i == 0) {
+                        addPropertyData(newDataMap, entry.getKey(), value);
+                    }
+                }
+                storeIndex(client, indexName, typeName, newDataMap);
+            }
+        } else {
+            storeIndex(client, indexName, typeName, dataMap);
+        }
+    }
+
+    protected void storeIndex(final Client client, final String indexName,
+            final String typeName, final Map<String, Object> dataMap) {
         try {
             final String content = riverConfig.getObjectMapper()
                     .writeValueAsString(dataMap);
@@ -237,6 +285,29 @@ public class ScrapingTransformer extends
                     .setSource(content).execute().actionGet();
         } catch (final Exception e) {
             logger.warn("Could not write a content into index.", e);
+        }
+    }
+
+    protected void deepCopy(Map<String, Object> oldMap,
+            Map<String, Object> newMap) {
+        Map<String, Object> flatMap = new LinkedHashMap<String, Object>();
+        convertFlatMap("", oldMap, flatMap);
+        for (Map.Entry<String, Object> entry : flatMap.entrySet()) {
+            addPropertyData(newMap, entry.getKey(), entry.getValue());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void convertFlatMap(String prefix, Map<String, Object> oldMap,
+            Map<String, Object> newMap) {
+        for (Map.Entry<String, Object> entry : oldMap.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof Map) {
+                convertFlatMap(prefix + entry.getKey() + ".",
+                        (Map<String, Object>) value, newMap);
+            } else {
+                newMap.put(prefix + entry.getKey(), value);
+            }
         }
     }
 

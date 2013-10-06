@@ -97,11 +97,13 @@ The configuration is:
 | crawl.maxAccessCount              | int     | The number of crawling documents.               |
 | crawl.numOfThread                 | int     | The number of crawler threads.                  |
 | crawl.interval                    | int     | Interval time (ms) to crawl documents.          |
+| crawl.incremental                 | boolean | Incremental crawling.                           |
+| crawl.overwrite                   | boolean | Delete documents of old duplicated url.         |
 | crawl.target.urlPattern           | string  | URL pattern to extract contents by CSS Query.   |
 | crawl.target.properties.name      | string  | "name" is used as a property name in the index. |
 | crawl.target.properties.name.text | string  | CSS Query for the property value.               |
 | crawl.target.properties.name.html | string  | CSS Query for the property value.               |
-| schedule.cron                     | string  | cron format to start a crawler.                 |
+| schedule.cron                     | string  | Cron format to start a crawler.                 |
 
 
 ### Unregister Crawl Data
@@ -144,4 +146,46 @@ If you want to stop the crawler, type as below: (replace my\_web with your river
         }
     }"
 
+
+## Others
+
+### Use Multibyte Characters
+
+An example in Japanese environment is below.
+First, put some configuration file into conf directory of Elasticsearch.
+
+    $ cd $ES_HOME/conf    # ex. /etc/elasticsearch if using rpm package
+    $ sudo wget https://raw.github.com/codelibs/fess-server/master/src/tomcat/solr/core1/conf/mapping_ja.txt
+    $ sudo wget http://svn.apache.org/repos/asf/lucene/dev/trunk/solr/example/solr/collection1/conf/lang/stopwords_ja.txt 
+
+and then create web index with analyzers for Japanese.
+(If you want to use uni-gram, remove cjk_bigram in filter)
+
+    $ curl -XPUT "localhost:9200/web" -d "
+    {
+      \"settings\" : {
+        \"analysis\" : {
+          \"analyzer\" : {
+            \"default\" : {
+              \"type\" : \"custom\",
+              \"char_filter\" : [\"mappingJa\"],
+              \"tokenizer\" : \"standard\",
+              \"filter\" : [\"word_delimiter\", \"lowercase\", \"cjk_width\", \"cjk_bigram\"]
+            }
+          },
+          \"char_filter\" : {
+            \"mappingJa\": {
+              \"type\" : \"mapping\",
+              \"mappings_path\" : \"mapping_ja.txt\"
+            }
+          },
+          \"filter\" : {
+            \"stopJa\" : {
+              \"type\" : \"stop\",
+              \"stopwords_path\" : \"stopwords_ja.txt\"
+            }
+          }
+        }
+      }
+    }"
 
