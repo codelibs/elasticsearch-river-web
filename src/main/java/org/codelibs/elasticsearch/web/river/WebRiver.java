@@ -11,10 +11,10 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.codelibs.elasticsearch.quartz.service.ScheduleService;
 import org.codelibs.elasticsearch.web.WebRiverConstants;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.codelibs.elasticsearch.web.interval.WebRiverIntervalController;
-import org.codelibs.elasticsearch.web.service.ScheduleService;
 import org.codelibs.elasticsearch.web.service.impl.EsDataService;
 import org.codelibs.elasticsearch.web.service.impl.EsUrlFilterService;
 import org.codelibs.elasticsearch.web.service.impl.EsUrlQueueService;
@@ -84,6 +84,12 @@ public class WebRiver extends AbstractRiverComponent implements River {
     public void start() {
         logger.info("Scheduling CrawlJob...");
 
+        if (scheduleService == null) {
+            logger.warn("Elasticsearch River Web plugin depends on Elasticsearch Quartz plugin, "
+                    + "but it's not found. River Web plugin does not start.");
+            return;
+        }
+
         final JobDataMap jobDataMap = new JobDataMap();
         jobDataMap.put(RIVER_NAME, riverName);
         jobDataMap.put(SETTINGS, settings);
@@ -112,6 +118,10 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
     @Override
     public void close() {
+        if (scheduleService == null) {
+            return;
+        }
+
         logger.info("Unscheduling  CrawlJob...");
 
         final CrawlJob crawlJob = runningJob.get();

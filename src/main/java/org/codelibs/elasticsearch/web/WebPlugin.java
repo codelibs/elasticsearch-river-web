@@ -3,10 +3,8 @@ package org.codelibs.elasticsearch.web;
 import java.util.Collection;
 
 import org.codelibs.elasticsearch.web.module.S2ContainerModule;
-import org.codelibs.elasticsearch.web.module.ScheduleModule;
 import org.codelibs.elasticsearch.web.module.WebRiverModule;
 import org.codelibs.elasticsearch.web.service.S2ContainerService;
-import org.codelibs.elasticsearch.web.service.ScheduleService;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.inject.Module;
@@ -34,7 +32,6 @@ public class WebPlugin extends AbstractPlugin {
     public Collection<Class<? extends Module>> modules() {
         final Collection<Class<? extends Module>> modules = Lists
                 .newArrayList();
-        modules.add(ScheduleModule.class);
         modules.add(S2ContainerModule.class);
         return modules;
     }
@@ -45,7 +42,6 @@ public class WebPlugin extends AbstractPlugin {
     public Collection<Class<? extends LifecycleComponent>> services() {
         final Collection<Class<? extends LifecycleComponent>> services = Lists
                 .newArrayList();
-        services.add(ScheduleService.class);
         services.add(S2ContainerService.class);
         return services;
     }
