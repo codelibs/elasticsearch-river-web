@@ -2,6 +2,7 @@ package org.codelibs.elasticsearch.web.river;
 
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
+import static org.quartz.JobKey.jobKey;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 import java.util.HashMap;
@@ -112,7 +113,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
                     .withIdentity(id + TRIGGER_ID_SUFFIX, groupId)
                     .withSchedule(cronSchedule(cron)).startNow().build();
 
-            scheduleService.schedule(crawlJob, trigger);
+            scheduleService.scheduleJob(crawlJob, trigger);
         }
     }
 
@@ -128,7 +129,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
         if (crawlJob != null) {
             crawlJob.stop();
         }
-        scheduleService.unschedule(groupId, id + JOB_ID_SUFFIX);
+        scheduleService.deleteJob(jobKey(groupId, id + JOB_ID_SUFFIX));
     }
 
     public static class CrawlJob implements Job {
