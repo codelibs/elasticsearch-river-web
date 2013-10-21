@@ -1,12 +1,12 @@
-package org.codelibs.elasticsearch.web.service.impl;
+package org.codelibs.elasticsearch.web.robot.service;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.codelibs.elasticsearch.web.WebRiverConstants;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -57,21 +57,18 @@ public class EsDataService extends AbstractRobotService implements DataService {
     public List<AccessResult> getAccessResultList(final String url,
             final boolean hasData) {
         final SearchResponse response = riverConfig.getClient()
-                .prepareSearch(index)
+                .prepareSearch(index).setTypes(type)
                 .setQuery(QueryBuilders.termQuery(URL, url)).execute()
                 .actionGet();
         final SearchHits hits = response.getHits();
         final List<AccessResult> accessResultList = new ArrayList<AccessResult>();
         if (hits.getTotalHits() != 0) {
             for (final SearchHit searchHit : hits.getHits()) {
-                accessResultList
-                        .add(Beans
-                                .createAndCopy(AccessResultImpl.class,
-                                        searchHit.getSource())
-                                .timestampConverter(
-                                        WebRiverConstants.DATE_TIME_FORMAT,
-                                        timestampFields).excludesWhitespace()
-                                .execute());
+                accessResultList.add(Beans
+                        .createAndCopy(AccessResultImpl.class,
+                                searchHit.getSource())
+                        .converter(new EsTimestampConverter(), timestampFields)
+                        .excludesWhitespace().execute());
             }
         }
         return accessResultList;
@@ -81,9 +78,10 @@ public class EsDataService extends AbstractRobotService implements DataService {
     public void iterate(final String sessionId,
             final AccessResultCallback callback) {
         SearchResponse response = riverConfig.getClient().prepareSearch(index)
-                .setTypes(sessionId).setSearchType(SearchType.SCAN)
+                .setTypes(type).setSearchType(SearchType.SCAN)
                 .setScroll(new TimeValue(scrollTimeout))
-                .setQuery(QueryBuilders.queryString("*:*")).setSize(scrollSize)
+                .setFilter(FilterBuilders.termFilter(SESSION_ID, sessionId))
+                .setQuery(QueryBuilders.matchAllQuery()).setSize(scrollSize)
                 .execute().actionGet();
         while (true) {
             final SearchHits searchHits = response.getHits();
@@ -91,8 +89,8 @@ public class EsDataService extends AbstractRobotService implements DataService {
                 final AccessResult accessResult = Beans
                         .createAndCopy(AccessResultImpl.class,
                                 searchHit.getSource())
-                        .timestampConverter(WebRiverConstants.DATE_TIME_FORMAT,
-                                timestampFields).excludesWhitespace().execute();
+                        .converter(new EsTimestampConverter(), timestampFields)
+                        .excludesWhitespace().execute();
                 callback.iterate(accessResult);
             }
 

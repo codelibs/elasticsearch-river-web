@@ -15,10 +15,10 @@ import java.util.regex.Pattern;
 import org.codelibs.elasticsearch.quartz.service.ScheduleService;
 import org.codelibs.elasticsearch.web.WebRiverConstants;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
-import org.codelibs.elasticsearch.web.interval.WebRiverIntervalController;
-import org.codelibs.elasticsearch.web.service.impl.EsDataService;
-import org.codelibs.elasticsearch.web.service.impl.EsUrlFilterService;
-import org.codelibs.elasticsearch.web.service.impl.EsUrlQueueService;
+import org.codelibs.elasticsearch.web.robot.interval.WebRiverIntervalController;
+import org.codelibs.elasticsearch.web.robot.service.EsDataService;
+import org.codelibs.elasticsearch.web.robot.service.EsUrlFilterService;
+import org.codelibs.elasticsearch.web.robot.service.EsUrlQueueService;
 import org.codelibs.elasticsearch.web.util.ParameterUtil;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
@@ -179,7 +179,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 s2Robot.getClientFactory().setInitParameterMap(paramMap);
 
                 // user agent
-                String userAgent = ParameterUtil.getValue(crawlSettings,
+                final String userAgent = ParameterUtil.getValue(crawlSettings,
                         "userAgent", DEFAULT_USER_AGENT);
                 if (StringUtil.isNotBlank(userAgent)) {
                     paramMap.put(HcHttpClient.USER_AGENT_PROPERTY, userAgent);

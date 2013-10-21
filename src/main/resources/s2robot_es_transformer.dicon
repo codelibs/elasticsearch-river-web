@@ -12,7 +12,7 @@
 	</component>
 
 	<component name="scrapingTransformer"
-		class="org.codelibs.elasticsearch.web.transformer.ScrapingTransformer"
+		class="org.codelibs.elasticsearch.web.robot.transformer.ScrapingTransformer"
 		instance="singleton">
 		<property name="name">"scrapingTransformer"</property>
 		<property name="featureMap">scrapingFeatureMap</property>

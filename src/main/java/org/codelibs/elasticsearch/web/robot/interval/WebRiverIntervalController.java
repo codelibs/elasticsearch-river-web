@@ -1,4 +1,4 @@
-package org.codelibs.elasticsearch.web.interval;
+package org.codelibs.elasticsearch.web.robot.interval;
 
 import org.seasar.robot.interval.impl.DefaultIntervalController;
 

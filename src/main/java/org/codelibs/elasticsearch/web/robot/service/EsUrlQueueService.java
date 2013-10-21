@@ -1,4 +1,4 @@
-package org.codelibs.elasticsearch.web.service.impl;
+package org.codelibs.elasticsearch.web.robot.service;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -8,6 +8,7 @@ import java.util.Map;
 
 import javax.annotation.Resource;
 
+import org.codelibs.elasticsearch.web.robot.entity.EsUrlQueue;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -38,7 +39,7 @@ public class EsUrlQueueService extends AbstractRobotService implements
 
     @Override
     public void add(final String sessionId, final String url) {
-        final UrlQueue urlQueue = new UrlQueueImpl();
+        final UrlQueue urlQueue = new EsUrlQueue();
         urlQueue.setSessionId(sessionId);
         urlQueue.setUrl(url);
         urlQueue.setCreateTime(new Timestamp(System.currentTimeMillis()));
@@ -134,7 +135,7 @@ public class EsUrlQueueService extends AbstractRobotService implements
         dataService.iterate(previousSessionId, new AccessResultCallback() {
             @Override
             public void iterate(final AccessResult accessResult) {
-                final UrlQueue urlQueue = new UrlQueueImpl();
+                final UrlQueue urlQueue = new EsUrlQueue();
                 urlQueue.setSessionId(sessionId);
                 urlQueue.setMethod(accessResult.getMethod());
                 urlQueue.setUrl(accessResult.getUrl());

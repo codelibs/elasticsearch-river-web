@@ -2,6 +2,6 @@
 <!DOCTYPE components PUBLIC "-//SEASAR//DTD S2Container 2.4//EN"
 	"http://www.seasar.org/dtd/components24.dtd">
 <components>
-	<component name="intervalController" class="org.codelibs.elasticsearch.web.interval.WebRiverIntervalController" instance="prototype">
+	<component name="intervalController" class="org.codelibs.elasticsearch.web.robot.interval.WebRiverIntervalController" instance="prototype">
 	</component>
 </components>

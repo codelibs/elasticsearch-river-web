@@ -1,4 +1,4 @@
-package org.codelibs.elasticsearch.web.transformer;
+package org.codelibs.elasticsearch.web.robot.transformer;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
+import org.codelibs.elasticsearch.web.robot.transformer.ScrapingTransformer;
 import org.junit.Test;
 import org.seasar.framework.util.ResourceUtil;
 import org.seasar.robot.entity.ResponseData;

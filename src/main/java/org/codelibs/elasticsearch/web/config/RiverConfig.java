@@ -8,12 +8,8 @@ import java.util.regex.Pattern;
 import org.elasticsearch.client.Client;
 import org.seasar.robot.entity.ResponseData;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 public class RiverConfig {
     protected Client client;
-
-    protected ObjectMapper objectMapper;
 
     protected Map<String, Map<Pattern, Map<String, Map<String, Object>>>> sessionPatternParamMap = new ConcurrentHashMap<String, Map<Pattern, Map<String, Map<String, Object>>>>();
 
@@ -25,14 +21,6 @@ public class RiverConfig {
 
     public void setClient(final Client client) {
         this.client = client;
-    }
-
-    public ObjectMapper getObjectMapper() {
-        return objectMapper;
-    }
-
-    public void setObjectMapper(final ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
     }
 
     public void addRiverParams(final String sessionId,

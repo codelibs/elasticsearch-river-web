@@ -1,8 +1,9 @@
-package org.codelibs.elasticsearch.web.transformer;
+package org.codelibs.elasticsearch.web.robot.transformer;
+
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -12,7 +13,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
-import org.codelibs.elasticsearch.web.WebRiverConstants;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.codelibs.elasticsearch.web.util.ParameterUtil;
 import org.elasticsearch.client.Client;
@@ -80,14 +80,9 @@ public class ScrapingTransformer extends
         }
 
         final Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-        final SimpleDateFormat sdf = new SimpleDateFormat(
-                WebRiverConstants.DATE_TIME_FORMAT);
-        dataMap.put("timestamp", sdf.format(new Date()));
-        Beans.copy(responseData, dataMap)
-                .includes(copiedResonseDataFields)
-                .dateConverter(WebRiverConstants.DATE_TIME_FORMAT,
-                        "lastModified").excludesNull().excludesWhitespace()
-                .execute();
+        dataMap.put("@timestamp", new Date());
+        Beans.copy(responseData, dataMap).includes(copiedResonseDataFields)
+                .excludesNull().excludesWhitespace().execute();
         for (final Map.Entry<String, Map<String, Object>> entry : scrapingRuleMap
                 .entrySet()) {
             final Map<String, Object> params = entry.getValue();
@@ -239,33 +234,34 @@ public class ScrapingTransformer extends
         }
 
         @SuppressWarnings("unchecked")
-        Map<String, Object> arrayDataMap = (Map<String, Object>) dataMap
+        final Map<String, Object> arrayDataMap = (Map<String, Object>) dataMap
                 .remove(ARRAY_PROPERTY);
         if (arrayDataMap != null) {
-            Map<String, Object> flatArrayDataMap = new LinkedHashMap<String, Object>();
+            final Map<String, Object> flatArrayDataMap = new LinkedHashMap<String, Object>();
             convertFlatMap("", arrayDataMap, flatArrayDataMap);
             int maxSize = 0;
-            for (Map.Entry<String, Object> entry : flatArrayDataMap.entrySet()) {
-                Object value = entry.getValue();
+            for (final Map.Entry<String, Object> entry : flatArrayDataMap
+                    .entrySet()) {
+                final Object value = entry.getValue();
                 if (value instanceof List) {
                     @SuppressWarnings("rawtypes")
-                    int size = ((List) value).size();
+                    final int size = ((List) value).size();
                     if (size > maxSize) {
                         maxSize = size;
                     }
                 }
             }
             for (int i = 0; i < maxSize; i++) {
-                Map<String, Object> newDataMap = new LinkedHashMap<String, Object>();
+                final Map<String, Object> newDataMap = new LinkedHashMap<String, Object>();
                 newDataMap.put("position", i);
                 deepCopy(dataMap, newDataMap);
                 newDataMap.putAll(dataMap);
-                for (Map.Entry<String, Object> entry : flatArrayDataMap
+                for (final Map.Entry<String, Object> entry : flatArrayDataMap
                         .entrySet()) {
-                    Object value = entry.getValue();
+                    final Object value = entry.getValue();
                     if (value instanceof List) {
                         @SuppressWarnings("unchecked")
-                        List<Object> list = (List<Object>) value;
+                        final List<Object> list = (List<Object>) value;
                         if (i < list.size()) {
                             addPropertyData(newDataMap, entry.getKey(),
                                     list.get(i));
@@ -284,29 +280,28 @@ public class ScrapingTransformer extends
     protected void storeIndex(final Client client, final String indexName,
             final String typeName, final Map<String, Object> dataMap) {
         try {
-            final String content = riverConfig.getObjectMapper()
-                    .writeValueAsString(dataMap);
             client.prepareIndex(indexName, typeName).setRefresh(true)
-                    .setSource(content).execute().actionGet();
+                    .setSource(jsonBuilder().value(dataMap)).execute()
+                    .actionGet();
         } catch (final Exception e) {
             logger.warn("Could not write a content into index.", e);
         }
     }
 
-    protected void deepCopy(Map<String, Object> oldMap,
-            Map<String, Object> newMap) {
-        Map<String, Object> flatMap = new LinkedHashMap<String, Object>();
+    protected void deepCopy(final Map<String, Object> oldMap,
+            final Map<String, Object> newMap) {
+        final Map<String, Object> flatMap = new LinkedHashMap<String, Object>();
         convertFlatMap("", oldMap, flatMap);
-        for (Map.Entry<String, Object> entry : flatMap.entrySet()) {
+        for (final Map.Entry<String, Object> entry : flatMap.entrySet()) {
             addPropertyData(newMap, entry.getKey(), entry.getValue());
         }
     }
 
     @SuppressWarnings("unchecked")
-    protected void convertFlatMap(String prefix, Map<String, Object> oldMap,
-            Map<String, Object> newMap) {
-        for (Map.Entry<String, Object> entry : oldMap.entrySet()) {
-            Object value = entry.getValue();
+    protected void convertFlatMap(final String prefix,
+            final Map<String, Object> oldMap, final Map<String, Object> newMap) {
+        for (final Map.Entry<String, Object> entry : oldMap.entrySet()) {
+            final Object value = entry.getValue();
             if (value instanceof Map) {
                 convertFlatMap(prefix + entry.getKey() + ".",
                         (Map<String, Object>) value, newMap);

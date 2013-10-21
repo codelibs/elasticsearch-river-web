@@ -22,9 +22,9 @@
 	</component>
 	
 	<!-- Entity -->
-	<component name="accessResult" class="org.seasar.robot.entity.AccessResultImpl" instance="prototype">
+	<component name="accessResult" class="org.codelibs.elasticsearch.web.robot.entity.EsAccessResult" instance="prototype">
 	</component>
-	<component name="urlQueue" class="org.seasar.robot.entity.UrlQueueImpl" instance="prototype">
+	<component name="urlQueue" class="org.codelibs.elasticsearch.web.robot.entity.EsUrlQueue" instance="prototype">
 	</component>
 
 	<!-- Config -->
@@ -32,22 +32,17 @@
 	</component>
 
 	<!-- Service -->
-	<component name="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper">
-		<initMethod name="setDateFormat">
-			<arg>new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")</arg>
-		</initMethod>
-		<initMethod name="setSerializationInclusion">
-			<arg>@com.fasterxml.jackson.annotation.JsonInclude$Include@NON_NULL</arg>
-		</initMethod>
+	<component name="urlQueueService" class="org.codelibs.elasticsearch.web.robot.service.EsUrlQueueService">
+		<property name="index">"robot"</property>
+		<property name="type">"queue"</property>
 	</component>
-	<component name="urlQueueService" class="org.codelibs.elasticsearch.web.service.impl.EsUrlQueueService">
-		<property name="index">"robot_queue"</property>
+	<component name="dataService" class="org.codelibs.elasticsearch.web.robot.service.EsDataService">
+		<property name="index">"robot"</property>
+		<property name="type">"data"</property>
 	</component>
-	<component name="dataService" class="org.codelibs.elasticsearch.web.service.impl.EsDataService">
-		<property name="index">"robot_data"</property>
-	</component>
-	<component name="urlFilterService" class="org.codelibs.elasticsearch.web.service.impl.EsUrlFilterService">
-		<property name="index">"robot_filter"</property>
+	<component name="urlFilterService" class="org.codelibs.elasticsearch.web.robot.service.EsUrlFilterService">
+		<property name="index">"robot"</property>
+		<property name="type">"filter"</property>
 	</component>
 
 </components>
