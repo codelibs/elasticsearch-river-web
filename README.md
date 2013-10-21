@@ -23,11 +23,9 @@ You can download River Web Plugin from [here](http://maven.codelibs.org/org/code
 
 River Web Plugin needs several indexes for web crawling.
 Therefore, you need to create them before starting the crawl.
-Type the following commands to create the indexes:
+Type the following commands to create the index:
 
-    $ curl -XPUT 'localhost:9200/robot_queue/'
-    $ curl -XPUT 'localhost:9200/robot_data/'
-    $ curl -XPUT 'localhost:9200/robot_filter/'
+    $ curl -XPUT 'localhost:9200/robot/'
 
 ## Usage
 
