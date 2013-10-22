@@ -147,8 +147,12 @@ public abstract class AbstractRobotService {
     }
 
     protected void deleteBySessionId(final String sessionId) {
-        riverConfig.getClient().prepareDeleteByQuery(index).setTypes(type)
-                .setQuery(QueryBuilders.termQuery(SESSION_ID, sessionId))
+        riverConfig
+                .getClient()
+                .prepareDeleteByQuery(index)
+                .setTypes(type)
+                .setQuery(
+                        QueryBuilders.queryString(SESSION_ID + ":" + sessionId))
                 .execute().actionGet();
         refresh();
     }

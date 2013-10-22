@@ -3,6 +3,7 @@ package org.codelibs.elasticsearch.web.robot.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.codelibs.elasticsearch.web.robot.entity.EsAccessResult;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.common.unit.TimeValue;
@@ -12,7 +13,6 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.seasar.framework.beans.util.Beans;
 import org.seasar.robot.entity.AccessResult;
-import org.seasar.robot.entity.AccessResultImpl;
 import org.seasar.robot.service.DataService;
 import org.seasar.robot.util.AccessResultCallback;
 
@@ -65,7 +65,7 @@ public class EsDataService extends AbstractRobotService implements DataService {
         if (hits.getTotalHits() != 0) {
             for (final SearchHit searchHit : hits.getHits()) {
                 accessResultList.add(Beans
-                        .createAndCopy(AccessResultImpl.class,
+                        .createAndCopy(EsAccessResult.class,
                                 searchHit.getSource())
                         .converter(new EsTimestampConverter(), timestampFields)
                         .excludesWhitespace().execute());
@@ -87,7 +87,7 @@ public class EsDataService extends AbstractRobotService implements DataService {
             final SearchHits searchHits = response.getHits();
             for (final SearchHit searchHit : searchHits) {
                 final AccessResult accessResult = Beans
-                        .createAndCopy(AccessResultImpl.class,
+                        .createAndCopy(EsAccessResult.class,
                                 searchHit.getSource())
                         .converter(new EsTimestampConverter(), timestampFields)
                         .excludesWhitespace().execute();

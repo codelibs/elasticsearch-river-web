@@ -129,7 +129,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
         if (crawlJob != null) {
             crawlJob.stop();
         }
-        scheduleService.deleteJob(jobKey(groupId, id + JOB_ID_SUFFIX));
+        scheduleService.deleteJob(jobKey(id + JOB_ID_SUFFIX, groupId));
     }
 
     public static class CrawlJob implements Job {

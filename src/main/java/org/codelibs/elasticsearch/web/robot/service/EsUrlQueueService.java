@@ -19,7 +19,6 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.seasar.robot.Constants;
 import org.seasar.robot.entity.AccessResult;
 import org.seasar.robot.entity.UrlQueue;
-import org.seasar.robot.entity.UrlQueueImpl;
 import org.seasar.robot.service.UrlQueueService;
 import org.seasar.robot.util.AccessResultCallback;
 
@@ -78,14 +77,14 @@ public class EsUrlQueueService extends AbstractRobotService implements
 
     @Override
     public UrlQueue poll(final String sessionId) {
-        final List<UrlQueueImpl> urlQueueList = getList(UrlQueueImpl.class,
+        final List<EsUrlQueue> urlQueueList = getList(EsUrlQueue.class,
                 sessionId, null, 0, pollingFetchSize,
                 SortBuilders.fieldSort(CREATE_TIME).order(SortOrder.ASC));
         if (urlQueueList.isEmpty()) {
             return null;
         }
         final Client client = riverConfig.getClient();
-        for (final UrlQueueImpl urlQueue : urlQueueList) {
+        for (final EsUrlQueue urlQueue : urlQueueList) {
             synchronized (client) {
                 final String url = urlQueue.getUrl();
                 if (exists(sessionId, url)) {
