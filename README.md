@@ -13,7 +13,7 @@ River Web plugin depends on Quartz plugin.
 
 ### Download River Web Plugin
 
-You can download River Web Plugin from [here](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/).
+You can download River Web Plugin from [here](https://oss.sonatype.org/content/repositories/snapshots/org/codelibs/elasticsearch-river-web/).
 
 ### Install River Web Plugin
 
