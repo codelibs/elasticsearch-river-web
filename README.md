@@ -45,7 +45,10 @@ A crawling configuration is created by registering a river as below:
             \"interval\" : 1000,
             \"target\" : [
               {
-                \"urlPattern\" : \"http://www.codelibs.org/.*\",
+                \"pattern\" : {
+                  \"url\" : \"http://www.codelibs.org/.*\",
+                  \"mimeType\" : \"text/html\"
+                },
                 \"properties\" : {
                   \"title\" : {
                     \"text\" : \"title\"
@@ -63,7 +66,10 @@ A crawling configuration is created by registering a river as below:
                 }
               },
               {
-                \"urlPattern\" : \"http://fess.codelibs.org/.*\",
+                \"pattern\" : {
+                  \"url\" : \"http://fess.codelibs.org/.*\",
+                  \"mimeType\" : \"text/html\"
+                },
                 \"properties\" : {
                   \"title\" : {
                     \"text\" : \"title\"
