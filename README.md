@@ -9,7 +9,9 @@ This plugin provides a feature to crawl web sites and extract the content by CSS
 ## Installation
 
 River Web plugin depends on Quartz plugin. 
-[Quartz plugin](https://github.com/codelibs/elasticsearch-quartz) needs to be installed before River Web plugin.
+[Quartz plugin](https://github.com/codelibs/elasticsearch-quartz) needs to be installed before installing River Web plugin.
+
+    $ $ES_HOME/bin/plugin -install org.codelibs/elasticsearch-quartz/1.0.0
 
 ### Download River Web Plugin
 
