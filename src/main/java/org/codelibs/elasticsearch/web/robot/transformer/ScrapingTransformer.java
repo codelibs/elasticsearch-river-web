@@ -5,6 +5,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,7 +32,6 @@ import org.seasar.robot.RobotCrawlAccessException;
 import org.seasar.robot.entity.AccessResultData;
 import org.seasar.robot.entity.ResponseData;
 import org.seasar.robot.entity.ResultData;
-import org.seasar.robot.transformer.impl.XpathTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +39,8 @@ public class ScrapingTransformer extends
         org.seasar.robot.transformer.impl.HtmlTransformer {
 
     private static final String VALUE_QUERY_TYPE = "value";
+
+    private static final String ARGS_QUERY_TYPE = "args";
 
     private static final String IS_ARRAY_PROP_NAME = "isArray";
 
@@ -51,10 +53,11 @@ public class ScrapingTransformer extends
     private static final String ARRAY_PROPERTY_PREFIX = "[]";
 
     private static final Logger logger = LoggerFactory
-            .getLogger(XpathTransformer.class);
+            .getLogger(ScrapingTransformer.class);
 
     private static final String[] queryTypes = new String[] { "className",
-            "data", "html", "id", "ownText", "tagName", "text", "val" };
+            "data", "html", "id", "ownText", "tagName", "text", "val",
+            "nodeName", "outerHtml", "attr", "baseUri", "absUrl" };
 
     public String[] copiedResonseDataFields = new String[] { "url",
             "parentUrl", "httpStatusCode", "method", "charSet",
@@ -107,8 +110,6 @@ public class ScrapingTransformer extends
                     IS_ARRAY_PROP_NAME, Boolean.FALSE).booleanValue();
 
             final List<String> strList = new ArrayList<String>();
-            final BeanDesc elementDesc = BeanDescFactory
-                    .getBeanDesc(Element.class);
 
             final String value = ParameterUtil.getValue(params,
                     VALUE_QUERY_TYPE, null);
@@ -134,11 +135,26 @@ public class ScrapingTransformer extends
                             if (element == null) {
                                 strList.add(null);
                             } else {
-                                final Method queryMethod = elementDesc
-                                        .getMethod(queryType);
-                                strList.add(trimSpaces((String) MethodUtil
-                                        .invoke(queryMethod, element,
-                                                new Object[0]), isTrimSpaces));
+                                final List<Object> argList = ParameterUtil
+                                        .getValue(params, ARGS_QUERY_TYPE,
+                                                Collections.emptyList());
+                                try {
+                                    final BeanDesc elementDesc = BeanDescFactory
+                                            .getBeanDesc(element.getClass());
+                                    final Method queryMethod = elementDesc
+                                            .getMethod(queryType);
+                                    strList.add(trimSpaces(
+                                            (String) MethodUtil.invoke(
+                                                    queryMethod,
+                                                    element,
+                                                    argList.toArray(new Object[argList
+                                                            .size()])),
+                                            isTrimSpaces));
+                                } catch (final Exception e) {
+                                    logger.warn("Could not invoke " + queryType
+                                            + " on " + element, e);
+                                    strList.add(null);
+                                }
                             }
                         }
                         break;
