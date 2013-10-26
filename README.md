@@ -39,7 +39,7 @@ A crawling configuration is created by registering a river as below:
             \"index\" : \"web\",
             \"url\" : [\"http://www.codelibs.org/\", \"http://fess.codelibs.org/\"],
             \"includeFilter\" : [\"http://www.codelibs.org/.*\", \"http://fess.codelibs.org/.*\"],
-            \"maxDepth\" : 1,
+            \"maxDepth\" : 3,
             \"maxAccessCount\" : 100,
             \"numOfThread\" : 5,
             \"interval\" : 1000,
