@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
 
 import org.codelibs.elasticsearch.quartz.service.ScheduleService;
 import org.codelibs.elasticsearch.web.WebRiverConstants;
@@ -255,14 +254,22 @@ public class WebRiver extends AbstractRiverComponent implements River {
                         .getComponent(RiverConfig.class);
                 riverConfig.addRiverParams(sessionId, riverParamMap);
                 for (final Map<String, Object> targetMap : targetList) {
-                    final String urlPattern = (String) targetMap
-                            .get("urlPattern");
+                    @SuppressWarnings("unchecked")
+                    final Map<String, Object> patternMap = (Map<String, Object>) targetMap
+                            .get("pattern");
                     @SuppressWarnings("unchecked")
                     final Map<String, Map<String, Object>> propMap = (Map<String, Map<String, Object>>) targetMap
                             .get("properties");
-                    if (urlPattern != null && propMap != null) {
-                        riverConfig.addScrapingRule(sessionId,
-                                Pattern.compile(urlPattern), propMap);
+                    if (patternMap != null && propMap != null) {
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("patternMap: " + patternMap);
+                            logger.debug("propMap: " + propMap);
+                        }
+                        riverConfig.addScrapingRule(sessionId, patternMap,
+                                propMap);
+                    } else {
+                        logger.warn("Invalid pattern or target: patternMap: "
+                                + patternMap + ", propMap: " + propMap);
                     }
                 }
 

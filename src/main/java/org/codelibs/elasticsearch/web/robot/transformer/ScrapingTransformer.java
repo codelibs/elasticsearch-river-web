@@ -38,7 +38,17 @@ import org.slf4j.LoggerFactory;
 public class ScrapingTransformer extends
         org.seasar.robot.transformer.impl.HtmlTransformer {
 
-    private static final String ARRAY_PROPERTY = "[]";
+    private static final String VALUE_QUERY_TYPE = "value";
+
+    private static final String IS_ARRAY_PROP_NAME = "isArray";
+
+    private static final String TRIM_SPACES_PROP_NAME = "trimSpaces";
+
+    private static final String TIMESTAMP_FIELD = "@timestamp";
+
+    private static final String POSITION_FIELD = "position";
+
+    private static final String ARRAY_PROPERTY_PREFIX = "[]";
 
     private static final Logger logger = LoggerFactory
             .getLogger(XpathTransformer.class);
@@ -63,6 +73,7 @@ public class ScrapingTransformer extends
         final Map<String, Map<String, Object>> scrapingRuleMap = riverConfig
                 .getPropertyMapping(responseData);
         if (scrapingRuleMap == null) {
+            logger.info("No scraping rule.");
             return;
         }
 
@@ -80,48 +91,86 @@ public class ScrapingTransformer extends
         }
 
         final Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-        dataMap.put("@timestamp", new Date());
         Beans.copy(responseData, dataMap).includes(copiedResonseDataFields)
                 .excludesNull().excludesWhitespace().execute();
+        if (logger.isDebugEnabled()) {
+            logger.debug("ruleMap: " + scrapingRuleMap);
+            logger.debug("dataMap: " + dataMap);
+        }
         for (final Map.Entry<String, Map<String, Object>> entry : scrapingRuleMap
                 .entrySet()) {
+            final String propName = entry.getKey();
             final Map<String, Object> params = entry.getValue();
             final boolean isTrimSpaces = ParameterUtil.getValue(params,
-                    "trimSpaces", Boolean.FALSE).booleanValue();
-            final boolean isArray = ParameterUtil.getValue(params, "isArray",
-                    Boolean.FALSE).booleanValue();
+                    TRIM_SPACES_PROP_NAME, Boolean.FALSE).booleanValue();
+            final boolean isArray = ParameterUtil.getValue(params,
+                    IS_ARRAY_PROP_NAME, Boolean.FALSE).booleanValue();
 
             final List<String> strList = new ArrayList<String>();
             final BeanDesc elementDesc = BeanDescFactory
                     .getBeanDesc(Element.class);
 
-            final String value = ParameterUtil.getValue(params, "value", null);
+            final String value = ParameterUtil.getValue(params,
+                    VALUE_QUERY_TYPE, null);
             if (StringUtil.isNotBlank(value)) {
                 strList.add(trimSpaces(value, isTrimSpaces));
-            }
-
-            for (final String queryType : queryTypes) {
-                final String query = ParameterUtil.getValue(params, queryType,
-                        null);
-                if (StringUtil.isNotBlank(query)) {
-                    final Element[] elements = getElements(
-                            new Element[] { document }, query);
-                    for (final Element element : elements) {
-                        final Method queryMethod = elementDesc
-                                .getMethod(queryType);
-                        strList.add(trimSpaces((String) MethodUtil.invoke(
-                                queryMethod, element, new Object[0]),
-                                isTrimSpaces));
+            } else {
+                for (final String queryType : queryTypes) {
+                    final Object queryObj = ParameterUtil.getValue(params,
+                            queryType, null);
+                    Element[] elements = null;
+                    if (queryObj instanceof String) {
+                        elements = getElements(new Element[] { document },
+                                queryObj.toString());
+                    } else if (queryObj instanceof List) {
+                        @SuppressWarnings("unchecked")
+                        final List<String> queryList = (List<String>) queryObj;
+                        elements = getElements(new Element[] { document },
+                                queryList,
+                                propName.startsWith(ARRAY_PROPERTY_PREFIX));
                     }
-                    break;
+                    if (elements != null) {
+                        for (final Element element : elements) {
+                            if (element == null) {
+                                strList.add(null);
+                            } else {
+                                final Method queryMethod = elementDesc
+                                        .getMethod(queryType);
+                                strList.add(trimSpaces((String) MethodUtil
+                                        .invoke(queryMethod, element,
+                                                new Object[0]), isTrimSpaces));
+                            }
+                        }
+                        break;
+                    }
                 }
             }
-
-            addPropertyData(dataMap, entry.getKey(), isArray ? strList
-                    : StringUtils.join(strList, " "));
+            addPropertyData(dataMap, propName,
+                    isArray ? strList : StringUtils.join(strList, " "));
         }
 
         storeIndex(responseData, dataMap);
+    }
+
+    protected Element[] getElements(final Element[] elements,
+            final List<String> queries, final boolean isArrayProperty) {
+        Element[] targets = elements;
+        for (final String query : queries) {
+            final List<Element> elementList = new ArrayList<Element>();
+            for (final Element element : targets) {
+                final Element[] childElements = getElements(
+                        new Element[] { element }, query);
+                if (childElements.length == 0 && isArrayProperty) {
+                    elementList.add(null);
+                } else {
+                    for (final Element childElement : childElements) {
+                        elementList.add(childElement);
+                    }
+                }
+            }
+            targets = elementList.toArray(new Element[elementList.size()]);
+        }
+        return targets;
     }
 
     protected Element[] getElements(final Element[] elements, final String query) {
@@ -235,7 +284,7 @@ public class ScrapingTransformer extends
 
         @SuppressWarnings("unchecked")
         final Map<String, Object> arrayDataMap = (Map<String, Object>) dataMap
-                .remove(ARRAY_PROPERTY);
+                .remove(ARRAY_PROPERTY_PREFIX);
         if (arrayDataMap != null) {
             final Map<String, Object> flatArrayDataMap = new LinkedHashMap<String, Object>();
             convertFlatMap("", arrayDataMap, flatArrayDataMap);
@@ -253,9 +302,8 @@ public class ScrapingTransformer extends
             }
             for (int i = 0; i < maxSize; i++) {
                 final Map<String, Object> newDataMap = new LinkedHashMap<String, Object>();
-                newDataMap.put("position", i);
+                newDataMap.put(POSITION_FIELD, i);
                 deepCopy(dataMap, newDataMap);
-                newDataMap.putAll(dataMap);
                 for (final Map.Entry<String, Object> entry : flatArrayDataMap
                         .entrySet()) {
                     final Object value = entry.getValue();
@@ -279,6 +327,12 @@ public class ScrapingTransformer extends
 
     protected void storeIndex(final Client client, final String indexName,
             final String typeName, final Map<String, Object> dataMap) {
+        dataMap.put(TIMESTAMP_FIELD, new Date());
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(indexName + "/" + typeName + " : dataMap" + dataMap);
+        }
+
         try {
             client.prepareIndex(indexName, typeName).setRefresh(true)
                     .setSource(jsonBuilder().value(dataMap)).execute()

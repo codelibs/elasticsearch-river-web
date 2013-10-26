@@ -7,11 +7,9 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
-import org.codelibs.elasticsearch.web.robot.transformer.ScrapingTransformer;
 import org.junit.Test;
 import org.seasar.framework.util.ResourceUtil;
 import org.seasar.robot.entity.ResponseData;
@@ -60,8 +58,9 @@ public class ScrapingTransformerTest {
                 "div.section:eq(1) h2", null, null);
         addScrapingRuleMap(scrapingRuleMap, "text", "section2.body",
                 "div.section:eq(1) ul li", Boolean.TRUE, Boolean.TRUE);
-        riverConfig.addScrapingRule(sessionId, Pattern.compile(url),
-                scrapingRuleMap);
+        Map<String, Object> patternMap = new HashMap<String, Object>();
+        patternMap.put("url", url);
+        riverConfig.addScrapingRule(sessionId, patternMap, scrapingRuleMap);
         InputStream is = null;
         try {
             is = ResourceUtil
