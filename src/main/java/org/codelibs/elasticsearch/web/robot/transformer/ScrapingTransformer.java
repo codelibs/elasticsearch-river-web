@@ -187,13 +187,17 @@ public class ScrapingTransformer extends
         for (final String query : queries) {
             final List<Element> elementList = new ArrayList<Element>();
             for (final Element element : targets) {
-                final Element[] childElements = getElements(
-                        new Element[] { element }, query);
-                if (childElements.length == 0 && isArrayProperty) {
+                if (element == null) {
                     elementList.add(null);
                 } else {
-                    for (final Element childElement : childElements) {
-                        elementList.add(childElement);
+                    final Element[] childElements = getElements(
+                            new Element[] { element }, query);
+                    if (childElements.length == 0 && isArrayProperty) {
+                        elementList.add(null);
+                    } else {
+                        for (final Element childElement : childElements) {
+                            elementList.add(childElement);
+                        }
                     }
                 }
             }
@@ -250,9 +254,13 @@ public class ScrapingTransformer extends
         if (StringUtil.isNotBlank(lastQuery)) {
             final List<Element> elementList = new ArrayList<Element>();
             for (final Element element : targets) {
-                final Elements childElements = element.select(lastQuery);
-                for (int i = 0; i < childElements.size(); i++) {
-                    elementList.add(childElements.get(i));
+                if (element == null) {
+                    elementList.add(null);
+                } else {
+                    final Elements childElements = element.select(lastQuery);
+                    for (int i = 0; i < childElements.size(); i++) {
+                        elementList.add(childElements.get(i));
+                    }
                 }
             }
             targets = elementList.toArray(new Element[elementList.size()]);
