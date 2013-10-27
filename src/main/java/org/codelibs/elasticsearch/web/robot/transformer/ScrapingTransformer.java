@@ -139,10 +139,8 @@ public class ScrapingTransformer extends
                                         .getValue(params, ARGS_QUERY_TYPE,
                                                 Collections.emptyList());
                                 try {
-                                    final BeanDesc elementDesc = BeanDescFactory
-                                            .getBeanDesc(element.getClass());
-                                    final Method queryMethod = elementDesc
-                                            .getMethod(queryType);
+                                    final Method queryMethod = getQueryMethod(
+                                            element, queryType, argList);
                                     strList.add(trimSpaces(
                                             (String) MethodUtil.invoke(
                                                     queryMethod,
@@ -166,6 +164,21 @@ public class ScrapingTransformer extends
         }
 
         storeIndex(responseData, dataMap);
+    }
+
+    private Method getQueryMethod(final Element element,
+            final String queryType, final List<Object> argList) {
+        final BeanDesc elementDesc = BeanDescFactory.getBeanDesc(element
+                .getClass());
+        if (argList == null || argList.size() == 0) {
+            return elementDesc.getMethod(queryType);
+        } else {
+            final Class<?>[] paramTypes = new Class[argList.size()];
+            for (int i = 0; i < paramTypes.length; i++) {
+                paramTypes[i] = String.class;
+            }
+            return elementDesc.getMethod(queryType, paramTypes);
+        }
     }
 
     protected Element[] getElements(final Element[] elements,
