@@ -13,13 +13,9 @@ River Web plugin depends on Quartz plugin.
 
     $ $ES_HOME/bin/plugin -install org.codelibs/elasticsearch-quartz/1.0.0
 
-### Download River Web Plugin
-
-You can download River Web Plugin from [here](https://oss.sonatype.org/content/repositories/snapshots/org/codelibs/elasticsearch-river-web/).
-
 ### Install River Web Plugin
 
-    $ $ES_HOME/bin/plugin -url file:$DOWNLOAD_DIR/elasticsearch-river-web-*.zip -install river-web
+    $ $ES_HOME/bin/plugin -install org.codelibs/elasticsearch-river-web/1.0.0
 
 ### Create Index For Crawling
 
