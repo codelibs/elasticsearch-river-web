@@ -6,6 +6,14 @@ Elasticsearch River Web
 Elasticsearch River Web Plugin is a web crawler for Elasticsearch.
 This plugin provides a feature to crawl web sites and extract the content by CSS Query.
 
+## Version
+
+| River Web | elasticsearch |
+|:---------:|:-------------:|
+| master    | 0.90.5        |
+| 1.0.0     | 0.90.5        |
+
+
 ## Installation
 
 ### Install Quartz Plugin
