@@ -5,12 +5,19 @@ import static org.quartz.JobBuilder.newJob;
 import static org.quartz.JobKey.jobKey;
 import static org.quartz.TriggerBuilder.newTrigger;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.http.auth.AuthScheme;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.auth.DigestScheme;
+import org.apache.http.impl.auth.NTLMScheme;
 import org.codelibs.elasticsearch.quartz.service.ScheduleService;
 import org.codelibs.elasticsearch.web.WebRiverConstants;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
@@ -37,7 +44,11 @@ import org.seasar.framework.container.SingletonS2Container;
 import org.seasar.framework.util.StringUtil;
 import org.seasar.robot.S2Robot;
 import org.seasar.robot.S2RobotContext;
+import org.seasar.robot.client.http.Authentication;
 import org.seasar.robot.client.http.HcHttpClient;
+import org.seasar.robot.client.http.RequestHeader;
+import org.seasar.robot.client.http.impl.AuthenticationImpl;
+import org.seasar.robot.client.http.ntlm.JcifsEngine;
 
 public class WebRiver extends AbstractRiverComponent implements River {
     private static final String RIVER_NAME = "riverName";
@@ -184,8 +195,84 @@ public class WebRiver extends AbstractRiverComponent implements River {
                     paramMap.put(HcHttpClient.USER_AGENT_PROPERTY, userAgent);
                 }
 
-                // TODO authentications
-                // TODO request headers
+                // authentications
+                // "authentications":[{"scope":{"scheme":"","host":"","port":0,"realm":""},
+                //   "credentials":{"username":"","password":""}},{...}]
+                List<Map<String, Object>> authList = ParameterUtil.getValue(
+                        crawlSettings, "authentications", null);
+                if (authList != null && !authList.isEmpty()) {
+                    final List<Authentication> basicAuthList = new ArrayList<Authentication>();
+                    for (Map<String, Object> authObj : authList) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> scopeMap = (Map<String, Object>) authObj
+                                .get("scope");
+                        String scheme = ParameterUtil.getValue(scopeMap,
+                                "scheme", "").toLowerCase();
+                        if (StringUtil.isBlank(scheme)) {
+                            logger.warn("Invalid authentication: " + authObj);
+                            continue;
+                        }
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> credentialMap = (Map<String, Object>) authObj
+                                .get("credentials");
+                        String username = ParameterUtil.getValue(credentialMap,
+                                "username", null);
+                        if (StringUtil.isBlank(username)) {
+                            logger.warn("Invalid authentication: " + authObj);
+                            continue;
+                        }
+                        String host = ParameterUtil.getValue(authObj, "host",
+                                AuthScope.ANY_HOST);
+                        int port = ParameterUtil.getValue(authObj, "port",
+                                AuthScope.ANY_PORT);
+                        String realm = ParameterUtil.getValue(authObj, "realm",
+                                AuthScope.ANY_REALM);
+                        String password = ParameterUtil.getValue(credentialMap,
+                                "password", null);
+
+                        AuthScheme authScheme = null;
+                        if ("basic".equalsIgnoreCase(scheme)) {
+                            authScheme = new BasicScheme();
+                        } else if ("digest".equals(scheme)) {
+                            authScheme = new DigestScheme();
+                        } else if ("ntlm".equals(scheme)) {
+                            authScheme = new NTLMScheme(new JcifsEngine());
+                        }
+
+                        AuthenticationImpl auth = new AuthenticationImpl(
+                                new AuthScope(host, port, realm, scheme),
+                                new UsernamePasswordCredentials(username,
+                                        password), authScheme);
+                        basicAuthList.add(auth);
+                    }
+                    paramMap.put(HcHttpClient.BASIC_AUTHENTICATIONS_PROPERTY,
+                            basicAuthList
+                                    .toArray(new Authentication[basicAuthList
+                                            .size()]));
+                }
+
+                // request header
+                // "headers":[{"name":"","value":""},{}]
+                List<Map<String, Object>> headerList = ParameterUtil.getValue(
+                        crawlSettings, "headers", null);
+                if (headerList != null && !headerList.isEmpty()) {
+                    final List<RequestHeader> requestHeaderList = new ArrayList<RequestHeader>();
+                    for (Map<String, Object> headerObj : headerList) {
+                        String name = ParameterUtil.getValue(headerObj, "name",
+                                null);
+                        String value = ParameterUtil.getValue(headerObj,
+                                "value", null);
+                        if (name != null && value != null) {
+                            requestHeaderList
+                                    .add(new RequestHeader(name, value));
+                        }
+                    }
+                    paramMap.put(
+                            HcHttpClient.REQUERT_HEADERS_PROPERTY,
+                            requestHeaderList
+                                    .toArray(new RequestHeader[requestHeaderList
+                                            .size()]));
+                }
 
                 // url
                 @SuppressWarnings("unchecked")
@@ -243,7 +330,10 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 final Map<String, Object> riverParamMap = new HashMap<String, Object>();
                 riverParamMap.put("index",
                         ParameterUtil.getValue(crawlSettings, "index", "web"));
-                riverParamMap.put("type", riverName.getName());
+                riverParamMap.put(
+                        "type",
+                        ParameterUtil.getValue(crawlSettings, "type",
+                                riverName.getName()));
                 riverParamMap.put("overwrite", ParameterUtil.getValue(
                         crawlSettings, "overwrite", Boolean.FALSE));
                 riverParamMap.put("incremental", ParameterUtil.getValue(
