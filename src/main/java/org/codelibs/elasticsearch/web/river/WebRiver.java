@@ -8,12 +8,15 @@ import static org.quartz.TriggerBuilder.newTrigger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.NTCredentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.auth.DigestScheme;
@@ -51,9 +54,9 @@ import org.seasar.robot.client.http.impl.AuthenticationImpl;
 import org.seasar.robot.client.http.ntlm.JcifsEngine;
 
 public class WebRiver extends AbstractRiverComponent implements River {
-    private static final String RIVER_NAME = "riverName";
-
     private static final ESLogger logger = Loggers.getLogger(WebRiver.class);
+
+    private static final String RIVER_NAME = "riverName";
 
     private static final String SETTINGS = "settings";
 
@@ -67,6 +70,14 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
     private static final String DEFAULT_USER_AGENT = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Elasticsearch River Web/"
             + WebRiverConstants.VERSION + ")";
+
+    private static final String NTLM_SCHEME = "NTLM";
+
+    private static final String DIGEST_SCHEME = "DIGEST";
+
+    private static final String BASIC_SCHEME = "BASIC";
+
+    private static final String EMPTY_STRING = "";
 
     private final Client client;
 
@@ -143,6 +154,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
     }
 
     public static class CrawlJob implements Job {
+
         private S2Robot s2Robot;
 
         @Override
@@ -207,7 +219,8 @@ public class WebRiver extends AbstractRiverComponent implements River {
                         Map<String, Object> scopeMap = (Map<String, Object>) authObj
                                 .get("scope");
                         String scheme = ParameterUtil.getValue(scopeMap,
-                                "scheme", "").toLowerCase();
+                                "scheme", EMPTY_STRING).toUpperCase(
+                                Locale.ENGLISH);
                         if (StringUtil.isBlank(scheme)) {
                             logger.warn("Invalid authentication: " + authObj);
                             continue;
@@ -231,18 +244,31 @@ public class WebRiver extends AbstractRiverComponent implements River {
                                 "password", null);
 
                         AuthScheme authScheme = null;
-                        if ("basic".equalsIgnoreCase(scheme)) {
+                        Credentials credentials = null;
+                        if (BASIC_SCHEME.equalsIgnoreCase(scheme)) {
                             authScheme = new BasicScheme();
-                        } else if ("digest".equals(scheme)) {
+                            credentials = new UsernamePasswordCredentials(
+                                    username, password);
+                        } else if (DIGEST_SCHEME.equals(scheme)) {
                             authScheme = new DigestScheme();
-                        } else if ("ntlm".equals(scheme)) {
+                            credentials = new UsernamePasswordCredentials(
+                                    username, password);
+                        } else if (NTLM_SCHEME.equals(scheme)) {
                             authScheme = new NTLMScheme(new JcifsEngine());
+                            scheme = AuthScope.ANY_SCHEME;
+                            String workstation = ParameterUtil.getValue(
+                                    credentialMap, "workstation", null);
+                            String domain = ParameterUtil.getValue(
+                                    credentialMap, "domain", null);
+                            credentials = new NTCredentials(username, password,
+                                    workstation == null ? EMPTY_STRING
+                                            : workstation,
+                                    domain == null ? EMPTY_STRING : domain);
                         }
 
                         AuthenticationImpl auth = new AuthenticationImpl(
                                 new AuthScope(host, port, realm, scheme),
-                                new UsernamePasswordCredentials(username,
-                                        password), authScheme);
+                                credentials, authScheme);
                         basicAuthList.add(auth);
                     }
                     paramMap.put(HcHttpClient.BASIC_AUTHENTICATIONS_PROPERTY,
