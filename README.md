@@ -10,7 +10,8 @@ This plugin provides a feature to crawl web sites and extract the content by CSS
 
 | River Web | elasticsearch |
 |:---------:|:-------------:|
-| master    | 0.90.5        |
+| master    | 0.90.x        |
+| 1.0.1     | 0.90.7        |
 | 1.0.0     | 0.90.5        |
 
 
@@ -25,13 +26,13 @@ River Web plugin depends on Quartz plugin.
 
 ### Install River Web Plugin
 
-    $ $ES_HOME/bin/plugin -install org.codelibs/elasticsearch-river-web/1.0.0
+    $ $ES_HOME/bin/plugin -install org.codelibs/elasticsearch-river-web/1.0.1
 
 ### Create Index For Crawling
 
-River Web Plugin needs several indexes for web crawling.
-Therefore, you need to create them before starting the crawl.
-Type the following commands to create the index:
+River Web Plugin needs 'robot' index for web crawling.
+Therefore, you need to create it before starting the crawl.
+Type the following commands to create 'robot' index:
 
     $ curl -XPUT 'localhost:9200/robot/'
 
@@ -39,7 +40,8 @@ Type the following commands to create the index:
 
 ### Register Crawl Data
 
-A crawling configuration is created by registering a river as below:
+A crawling configuration is created by registering a river as below.
+This example crawls sites of http://www.codelibs.org/ and http://fess.codelibs.org/ at 6:00am.
 
     $ curl -XPUT 'localhost:9200/_river/my_web/_meta' -d "{
         \"type\" : \"web\",
@@ -95,7 +97,7 @@ A crawling configuration is created by registering a river as below:
             ]
         },
         \"schedule\" : {
-            \"cron\" : \"0 * * * * ?\"
+            \"cron\" : \"0 0 6 * * ?\"
         }
     }"
 
@@ -104,6 +106,7 @@ The configuration is:
 | Property                          | Type    | Description                                     |
 |:----------------------------------|:-------:|:------------------------------------------------|
 | crawl.index                       | string  | Stored index name.                              |
+| crawl.type                        | string  | Stored type name.                               |
 | crawl.url                         | array   | Start point of URL for crawling.                |
 | crawl.includeFilter               | array   | White list of URL for crawling.                 |
 | crawl.excludeFilter               | array   | Black list of URL for crawling.                 |
@@ -113,11 +116,12 @@ The configuration is:
 | crawl.interval                    | int     | Interval time (ms) to crawl documents.          |
 | crawl.incremental                 | boolean | Incremental crawling.                           |
 | crawl.overwrite                   | boolean | Delete documents of old duplicated url.         |
+| crawl.authentications             | object  | Specify BASIC/DIGEST/NTLM authentication info.  |
 | crawl.target.urlPattern           | string  | URL pattern to extract contents by CSS Query.   |
 | crawl.target.properties.name      | string  | "name" is used as a property name in the index. |
 | crawl.target.properties.name.text | string  | CSS Query for the property value.               |
 | crawl.target.properties.name.html | string  | CSS Query for the property value.               |
-| schedule.cron                     | string  | Cron format to start a crawler.                 |
+| schedule.cron                     | string  | [Cron format](http://quartz-scheduler.org/api/2.2.0/org/quartz/CronExpression.html) to start a crawler.                 |
 
 
 ### Unregister Crawl Data
@@ -128,40 +132,122 @@ If you want to stop the crawler, type as below: (replace my\_web with your river
 
 ## Examples
 
+### Full Text Search for Your site (ex. http://fess.codelibs.org/)
+
+    $ curl -XPUT 'localhost:9200/_river/fess/_meta' -d '{
+        "type" : "web",
+        "crawl" : {
+            "index" : "web",
+            "url" : ["http://fess.codelibs.org/"],
+            "includeFilter" : ["http://fess.codelibs.org/.*"],
+            "maxDepth" : 3,
+            "maxAccessCount" : 1000,
+            "numOfThread" : 5,
+            "interval" : 1000,
+            "target" : [{
+                "pattern" : {
+                    "url" : "http://fess.codelibs.org/.*",
+                    "mimeType" : "text/html"
+                },
+                "properties" : {
+                    "title" : {
+                        "text" : "title"
+                    },
+                    "body" : {
+                        "text" : "body",
+                        "trimSpaces" : true
+                    }
+                }
+            }]
+        },
+        "schedule" : {
+            "cron" : "0 0 0 * * ?"
+        }
+    }'
+
+
 ### Aggregate a title/content from news.yahoo.com
 
-    $ curl -XDELETE 'localhost:9200/_river/yahoo_com/'
-    $ curl -XPUT 'localhost:9200/_river/yahoo_com/_meta' -d "{
-        \"type\" : \"web\",
-        \"crawl\" : {
-            \"index\" : \"web\",
-            \"url\" : [\"http://news.yahoo.com/\"],
-            \"includeFilter\" : [\"http://news.yahoo.com/.*\"],
-            \"maxDepth\" : 1,
-            \"maxAccessCount\" : 100,
-            \"numOfThread\" : 3,
-            \"interval\" : 3000,
-            \"target\" : [
+    $ curl -XPUT 'localhost:9200/_river/yahoo_com/_meta' -d '{
+        "type" : "web",
+        "crawl" : {
+            "index" : "web",
+            "url" : ["http://news.yahoo.com/"],
+            "includeFilter" : ["http://news.yahoo.com/.*"],
+            "maxDepth" : 1,
+            "maxAccessCount" : 100,
+            "numOfThread" : 3,
+            "interval" : 3000,
+            "target" : [
               {
-                \"urlPattern\" : \"http://news.yahoo.com/.*html\",
-                \"properties\" : {
-                  \"title\" : {
-                    \"text\" : \"h1.headline\"
+                "urlPattern" : "http://news.yahoo.com/.*html",
+                "properties" : {
+                  "title" : {
+                    "text" : "h1.headline"
                   },
-                  \"content\" : {
-                    \"text\" : \"section.mediacontentstory div.body p\"
+                  "content" : {
+                    "text" : "section.mediacontentstory div.body p"
                   }
                 }
               }
             ]
         },
-        \"schedule\" : {
-            \"cron\" : \"0 0 * * * ?\"
+        "schedule" : {
+            "cron" : "0 0 * * * ?"
         }
-    }"
+    }'
 
 
 ## Others
+
+### BASIC/DIGEST/NTLM authentication
+
+River Web supports BASIC/DIGEST/NTLM authentication.
+Set crawl.authentications object.
+
+    ...
+    "numOfThread" : 5,
+    "interval" : 1000,
+    "authentications":[
+      {
+        "scope": {
+          "scheme":"BASIC"
+        },
+        "credentials": {
+          "username":"testuser",
+          "password":"secret"
+        }
+      }],
+    "target" : [
+    ...
+
+The configuration is:
+
+| Property                                      | Type    | Description                                     |
+|:----------------------------------------------|:-------:|:------------------------------------------------|
+| crawl.authentications.scope.scheme            | string  | BASIC, DIGEST or NTLM                           |
+| crawl.authentications.scope.host              | string  | (Optional)Target hostname.                      |
+| crawl.authentications.scope.port              | int     | (Optional)Port number.                          |
+| crawl.authentications.scope.realm             | string  | (Optional)Realm name.                           |
+| crawl.authentications.credentials.username    | string  | Username.                                       |
+| crawl.authentications.credentials.password    | string  | Password.                                       |
+| crawl.authentications.credentials.workstation | string  | (Optional)Workstation for NTLM.                 |
+| crawl.authentications.credentials.domain      | string  | (Optional)Domain for NTLM.                      |
+
+For example, if you want to use an user in ActiveDirectory, the configuration is below:
+
+    "authentications":[
+      {
+        "scope": {
+          "scheme":"NTLM"
+        },
+        "credentials": {
+          "domain":"your.ad.domain",
+          "username":"taro",
+          "password":"himitsu"
+        }
+      }],
+
 
 ### Use Multibyte Characters
 
