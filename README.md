@@ -38,68 +38,129 @@ Type the following commands to create 'robot' index:
 
 ## Usage
 
+### Create Index To Store Crawl Data
+
+An index is needed to store crawl data before starting a river.
+For example, to store data to "webindex", create it as below:
+
+    $ curl -XPUT 'localhost:9200/webindex'
+
+and then create a mapping setting if using "overwrite" option:
+
+    $ curl -XPUT "localhost:9200/compassion_test/my_web/_mapping" -d '
+    {
+      "my_web" : {
+        "dynamic_templates" : [
+          {
+            "url" : {
+              "match" : "url",
+              "mapping" : {
+                "type" : "string",
+                "store" : "yes",
+                "index" : "not_analyzed"
+              }
+            }
+          },
+          {
+            "method" : {
+              "match" : "method",
+              "mapping" : {
+                "type" : "string",
+                "store" : "yes",
+                "index" : "not_analyzed"
+              }
+            }
+          },
+          {
+            "charSet" : {
+              "match" : "charSet",
+              "mapping" : {
+                "type" : "string",
+                "store" : "yes",
+                "index" : "not_analyzed"
+              }
+            }
+          },
+          {
+            "mimeType" : {
+              "match" : "mimeType",
+              "mapping" : {
+                "type" : "string",
+                "store" : "yes",
+                "index" : "not_analyzed"
+              }
+            }
+          }
+        ]
+      }
+    }'
+
+"my\_web" is a type given by your river name or "crawl.type".
+
 ### Register Crawl Data
 
 A crawling configuration is created by registering a river as below.
 This example crawls sites of http://www.codelibs.org/ and http://fess.codelibs.org/ at 6:00am.
 
-    $ curl -XPUT 'localhost:9200/_river/my_web/_meta' -d "{
-        \"type\" : \"web\",
-        \"crawl\" : {
-            \"index\" : \"web\",
-            \"url\" : [\"http://www.codelibs.org/\", \"http://fess.codelibs.org/\"],
-            \"includeFilter\" : [\"http://www.codelibs.org/.*\", \"http://fess.codelibs.org/.*\"],
-            \"maxDepth\" : 3,
-            \"maxAccessCount\" : 100,
-            \"numOfThread\" : 5,
-            \"interval\" : 1000,
-            \"target\" : [
+    $ curl -XPUT 'localhost:9200/_river/my_web/_meta' -d '{
+        "type" : "web",
+        "crawl" : {
+            "index" : "webindex",
+            "url" : ["http://www.codelibs.org/", "http://fess.codelibs.org/"],
+            "includeFilter" : ["http://www.codelibs.org/.*", "http://fess.codelibs.org/.*"],
+            "maxDepth" : 3,
+            "maxAccessCount" : 100,
+            "numOfThread" : 5,
+            "interval" : 1000,
+            "target" : [
               {
-                \"pattern\" : {
-                  \"url\" : \"http://www.codelibs.org/.*\",
-                  \"mimeType\" : \"text/html\"
+                "pattern" : {
+                  "url" : "http://www.codelibs.org/.*",
+                  "mimeType" : "text/html"
                 },
-                \"properties\" : {
-                  \"title\" : {
-                    \"text\" : \"title\"
+                "properties" : {
+                  "title" : {
+                    "text" : "title"
                   },
-                  \"body\" : {
-                    \"text\" : \"body\"
+                  "body" : {
+                    "text" : "body"
                   },
-                  \"bodyAsHtml\" : {
-                    \"html\" : \"body\"
+                  "bodyAsHtml" : {
+                    "html" : "body"
                   },
-                  \"projects\" : {
-                    \"text\" : \"ul.nav-list li a\",
-                    \"isArray\" : true
+                  "projects" : {
+                    "text" : "ul.nav-list li a",
+                    "isArray" : true
                   }
                 }
               },
               {
-                \"pattern\" : {
-                  \"url\" : \"http://fess.codelibs.org/.*\",
-                  \"mimeType\" : \"text/html\"
+                "pattern" : {
+                  "url" : "http://fess.codelibs.org/.*",
+                  "mimeType" : "text/html"
                 },
-                \"properties\" : {
-                  \"title\" : {
-                    \"text\" : \"title\"
+                "properties" : {
+                  "title" : {
+                    "text" : "title"
                   },
-                  \"body\" : {
-                    \"text\" : \"body\",
-                    \"trimSpaces\" : true
+                  "body" : {
+                    "text" : "body",
+                    "trimSpaces" : true
                   },
-                  \"menus\" : {
-                    \"text\" : \"ul.nav-list li a\",
-                    \"isArray\" : true
+                  "menus" : {
+                    "text" : "ul.nav-list li a",
+                    "isArray" : true
                   }
                 }
               }
             ]
         },
-        \"schedule\" : {
-            \"cron\" : \"0 0 6 * * ?\"
+        "schedule" : {
+            "cron" : "0 0 6 * * ?"
         }
-    }"
+    }'
+
+"my\_web" is a configuration name for River, and you can replace it with one you want.
 
 The configuration is:
 
@@ -137,7 +198,7 @@ If you want to stop the crawler, type as below: (replace my\_web with your river
     $ curl -XPUT 'localhost:9200/_river/fess/_meta' -d '{
         "type" : "web",
         "crawl" : {
-            "index" : "web",
+            "index" : "webindex",
             "url" : ["http://fess.codelibs.org/"],
             "includeFilter" : ["http://fess.codelibs.org/.*"],
             "maxDepth" : 3,
@@ -171,7 +232,7 @@ If you want to stop the crawler, type as below: (replace my\_web with your river
     $ curl -XPUT 'localhost:9200/_river/yahoo_com/_meta' -d '{
         "type" : "web",
         "crawl" : {
-            "index" : "web",
+            "index" : "webindex",
             "url" : ["http://news.yahoo.com/"],
             "includeFilter" : ["http://news.yahoo.com/.*"],
             "maxDepth" : 1,
@@ -258,10 +319,10 @@ First, put some configuration file into conf directory of Elasticsearch.
     $ sudo wget https://raw.github.com/codelibs/fess-server/master/src/tomcat/solr/core1/conf/mapping_ja.txt
     $ sudo wget http://svn.apache.org/repos/asf/lucene/dev/trunk/solr/example/solr/collection1/conf/lang/stopwords_ja.txt 
 
-and then create web index with analyzers for Japanese.
-(If you want to use uni-gram, remove cjk_bigram in filter)
+and then create "webindex" index with analyzers for Japanese.
+(If you want to use uni-gram, remove cjk\_bigram in filter)
 
-    $ curl -XPUT "localhost:9200/web" -d "
+    $ curl -XPUT "localhost:9200/webindex" -d "
     {
       \"settings\" : {
         \"analysis\" : {
