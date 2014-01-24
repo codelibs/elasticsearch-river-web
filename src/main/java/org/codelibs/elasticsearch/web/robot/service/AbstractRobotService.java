@@ -169,7 +169,7 @@ public abstract class AbstractRobotService {
         final SearchRequestBuilder builder = riverConfig.getClient()
                 .prepareSearch(index).setTypes(type);
         if (StringUtil.isNotBlank(sessionId)) {
-            builder.setFilter(FilterBuilders.queryFilter(QueryBuilders
+            builder.setPostFilter(FilterBuilders.queryFilter(QueryBuilders
                     .queryString(SESSION_ID + ":" + sessionId)));
         }
         if (queryBuilder != null) {

@@ -80,7 +80,7 @@ public class EsDataService extends AbstractRobotService implements DataService {
         SearchResponse response = riverConfig.getClient().prepareSearch(index)
                 .setTypes(type).setSearchType(SearchType.SCAN)
                 .setScroll(new TimeValue(scrollTimeout))
-                .setFilter(FilterBuilders.termFilter(SESSION_ID, sessionId))
+                .setPostFilter(FilterBuilders.termFilter(SESSION_ID, sessionId))
                 .setQuery(QueryBuilders.matchAllQuery()).setSize(scrollSize)
                 .execute().actionGet();
         while (true) {
