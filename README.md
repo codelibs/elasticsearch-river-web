@@ -10,7 +10,8 @@ This plugin provides a feature to crawl web sites and extract the content by CSS
 
 | River Web | elasticsearch |
 |:---------:|:-------------:|
-| master    | 0.90.x        |
+| master    | 1.0.0.X       |
+| 1.0.2     | 1.0.0.RC1     |
 | 1.0.1     | 0.90.7        |
 | 1.0.0     | 0.90.5        |
 
@@ -22,11 +23,11 @@ This plugin provides a feature to crawl web sites and extract the content by CSS
 River Web plugin depends on Quartz plugin. 
 [Quartz plugin](https://github.com/codelibs/elasticsearch-quartz) needs to be installed before installing River Web plugin.
 
-    $ $ES_HOME/bin/plugin -install org.codelibs/elasticsearch-quartz/1.0.0
+    $ $ES_HOME/bin/plugin -install org.codelibs/elasticsearch-quartz/1.0.1
 
 ### Install River Web Plugin
 
-    $ $ES_HOME/bin/plugin -install org.codelibs/elasticsearch-river-web/1.0.1
+    $ $ES_HOME/bin/plugin -install org.codelibs/elasticsearch-river-web/1.0.2
 
 ### Create Index For Crawling
 
@@ -322,31 +323,31 @@ First, put some configuration file into conf directory of Elasticsearch.
 and then create "webindex" index with analyzers for Japanese.
 (If you want to use uni-gram, remove cjk\_bigram in filter)
 
-    $ curl -XPUT "localhost:9200/webindex" -d "
+    $ curl -XPUT "localhost:9200/webindex" -d '
     {
-      \"settings\" : {
-        \"analysis\" : {
-          \"analyzer\" : {
-            \"default\" : {
-              \"type\" : \"custom\",
-              \"char_filter\" : [\"mappingJa\"],
-              \"tokenizer\" : \"standard\",
-              \"filter\" : [\"word_delimiter\", \"lowercase\", \"cjk_width\", \"cjk_bigram\"]
+      "settings" : {
+        "analysis" : {
+          "analyzer" : {
+            "default" : {
+              "type" : "custom",
+              "char_filter" : ["mappingJa"],
+              "tokenizer" : "standard",
+              "filter" : ["word_delimiter", "lowercase", "cjk_width", "cjk_bigram"]
             }
           },
-          \"char_filter\" : {
-            \"mappingJa\": {
-              \"type\" : \"mapping\",
-              \"mappings_path\" : \"mapping_ja.txt\"
+          "char_filter" : {
+            "mappingJa": {
+              "type" : "mapping",
+              "mappings_path" : "mapping_ja.txt"
             }
           },
-          \"filter\" : {
-            \"stopJa\" : {
-              \"type\" : \"stop\",
-              \"stopwords_path\" : \"stopwords_ja.txt\"
+          "filter" : {
+            "stopJa" : {
+              "type" : "stop",
+              "stopwords_path" : "stopwords_ja.txt"
             }
           }
         }
       }
-    }"
+    }'
 
