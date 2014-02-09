@@ -48,7 +48,7 @@ For example, to store data to "webindex", create it as below:
 
 and then create a mapping setting if using "overwrite" option:
 
-    $ curl -XPUT "localhost:9200/compassion_test/my_web/_mapping" -d '
+    $ curl -XPUT "localhost:9200/webindex/my_web/_mapping" -d '
     {
       "my_web" : {
         "dynamic_templates" : [
