@@ -265,7 +265,7 @@ public class ScrapingTransformer extends
             final String queryType, final List<Object> argList) {
         final BeanDesc elementDesc = BeanDescFactory.getBeanDesc(element
                 .getClass());
-        if (argList == null || argList.size() == 0) {
+        if (argList == null || argList.isEmpty()) {
             return elementDesc.getMethod(queryType);
         } else {
             final Class<?>[] paramTypes = new Class[argList.size()];

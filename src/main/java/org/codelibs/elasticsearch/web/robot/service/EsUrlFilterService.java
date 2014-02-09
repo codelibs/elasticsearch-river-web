@@ -72,11 +72,6 @@ public class EsUrlFilterService extends AbstractRobotService implements
     }
 
     @Override
-    public void deleteAll() {
-        deleteAll();
-    }
-
-    @Override
     public List<Pattern> getIncludeUrlPatternList(final String sessionId) {
         // TODO cache
         final List<EsUrlFilter> urlFilterList = getList(EsUrlFilter.class,

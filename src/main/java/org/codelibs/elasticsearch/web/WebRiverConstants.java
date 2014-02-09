@@ -1,6 +1,6 @@
 package org.codelibs.elasticsearch.web;
 
-public class WebRiverConstants {
+public final class WebRiverConstants {
 
     private WebRiverConstants() {
     }

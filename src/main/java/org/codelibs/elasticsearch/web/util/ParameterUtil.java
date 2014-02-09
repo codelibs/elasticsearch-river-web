@@ -2,7 +2,7 @@ package org.codelibs.elasticsearch.web.util;
 
 import java.util.Map;
 
-public class ParameterUtil {
+public final class ParameterUtil {
     private ParameterUtil() {
     }
 
