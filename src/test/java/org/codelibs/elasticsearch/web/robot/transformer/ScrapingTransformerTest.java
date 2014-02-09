@@ -60,7 +60,7 @@ public class ScrapingTransformerTest {
                 "div.section:eq(1) ul li", Boolean.TRUE, Boolean.TRUE);
         Map<String, Object> patternMap = new HashMap<String, Object>();
         patternMap.put("url", url);
-        riverConfig.addScrapingRule(sessionId, patternMap, scrapingRuleMap);
+        riverConfig.addScrapingRule(sessionId,null, patternMap, scrapingRuleMap);
         InputStream is = null;
         try {
             is = ResourceUtil

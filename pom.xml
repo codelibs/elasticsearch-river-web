@@ -27,7 +27,7 @@
 		<version>7</version>
 	</parent>
 	<properties>
-		<elasticsearch.version>1.0.0.RC1</elasticsearch.version>
+		<elasticsearch.version>1.0.0.RC2</elasticsearch.version>
 	</properties>
 	<repositories>
 		<repository>
@@ -114,12 +114,12 @@
 		<dependency>
 			<groupId>org.seasar.robot</groupId>
 			<artifactId>s2-robot</artifactId>
-			<version>0.6.0</version>
+			<version>0.6.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>
-			<version>1.7.2</version>
+			<version>1.7.3</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>

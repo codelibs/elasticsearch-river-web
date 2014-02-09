@@ -2,21 +2,29 @@ package org.codelibs.elasticsearch.web.robot.transformer;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
+import org.codelibs.elasticsearch.web.config.ScrapingRule;
 import org.codelibs.elasticsearch.web.util.ParameterUtil;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.mvel2.MVEL;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
@@ -26,19 +34,29 @@ import org.seasar.framework.beans.factory.BeanDescFactory;
 import org.seasar.framework.beans.util.Beans;
 import org.seasar.framework.container.SingletonS2Container;
 import org.seasar.framework.container.annotation.tiger.InitMethod;
+import org.seasar.framework.util.Base64Util;
+import org.seasar.framework.util.FileUtil;
 import org.seasar.framework.util.MethodUtil;
 import org.seasar.framework.util.StringUtil;
 import org.seasar.robot.RobotCrawlAccessException;
+import org.seasar.robot.RobotSystemException;
 import org.seasar.robot.entity.AccessResultData;
 import org.seasar.robot.entity.ResponseData;
 import org.seasar.robot.entity.ResultData;
+import org.seasar.robot.util.StreamUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ScrapingTransformer extends
         org.seasar.robot.transformer.impl.HtmlTransformer {
 
+    private static final long DEFAULT_MAX_ATTACHMENT_SIZE = 1000 * 1000; // 1M
+
     private static final String VALUE_QUERY_TYPE = "value";
+
+    private static final String TYPE_QUERY_TYPE = "type";
+
+    private static final String SCRIPT_QUERY_TYPE = "script";
 
     private static final String ARGS_QUERY_TYPE = "args";
 
@@ -73,24 +91,52 @@ public class ScrapingTransformer extends
     @Override
     protected void storeData(final ResponseData responseData,
             final ResultData resultData) {
-        final Map<String, Map<String, Object>> scrapingRuleMap = riverConfig
-                .getPropertyMapping(responseData);
-        if (scrapingRuleMap == null) {
+        final ScrapingRule scrapingRule = riverConfig
+                .getScrapingRule(responseData);
+        if (scrapingRule == null) {
             logger.info("No scraping rule.");
             return;
         }
+
+        File file = null;
+        try {
+            file = File.createTempFile("river-web-", ".tmp");
+            StreamUtil.drain(responseData.getResponseBody(), file);
+            processData(scrapingRule, file, responseData, resultData);
+        } catch (final IOException e) {
+            throw new RobotSystemException("Failed to create a temp file.", e);
+        } finally {
+            if (file != null && !file.delete()) {
+                logger.warn("Failed to delete " + file.getAbsolutePath());
+            }
+        }
+    }
+
+    protected void processData(final ScrapingRule scrapingRule,
+            final File file, final ResponseData responseData,
+            final ResultData resultData) {
+        final Map<String, Map<String, Object>> scrapingRuleMap = scrapingRule
+                .getRuleMap();
 
         org.jsoup.nodes.Document document = null;
         String charsetName = responseData.getCharSet();
         if (charsetName == null) {
             charsetName = "UTF-8";
         }
-        try {
-            document = Jsoup.parse(responseData.getResponseBody(), charsetName,
-                    responseData.getUrl());
-        } catch (final IOException e) {
-            throw new RobotCrawlAccessException("Could not parse "
-                    + responseData.getUrl(), e);
+
+        final Boolean isHtmlParsed = scrapingRule.getSetting("html",
+                Boolean.TRUE);
+        if (isHtmlParsed.booleanValue()) {
+            InputStream is = null;
+            try {
+                is = new BufferedInputStream(new FileInputStream(file));
+                document = Jsoup.parse(is, charsetName, responseData.getUrl());
+            } catch (final IOException e) {
+                throw new RobotCrawlAccessException("Could not parse "
+                        + responseData.getUrl(), e);
+            } finally {
+                IOUtils.closeQuietly(is);
+            }
         }
 
         final Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
@@ -106,67 +152,116 @@ public class ScrapingTransformer extends
             final Map<String, Object> params = entry.getValue();
             final boolean isTrimSpaces = ParameterUtil.getValue(params,
                     TRIM_SPACES_PROP_NAME, Boolean.FALSE).booleanValue();
-            final boolean isArray = ParameterUtil.getValue(params,
+            boolean isArray = ParameterUtil.getValue(params,
                     IS_ARRAY_PROP_NAME, Boolean.FALSE).booleanValue();
 
             final List<String> strList = new ArrayList<String>();
 
             final String value = ParameterUtil.getValue(params,
                     VALUE_QUERY_TYPE, null);
+            final String type = ParameterUtil.getValue(params, TYPE_QUERY_TYPE,
+                    null);
             if (StringUtil.isNotBlank(value)) {
                 strList.add(trimSpaces(value, isTrimSpaces));
+            } else if ("data".equals(type)||"attachment".equals(type)) {
+                final long maxFileSize = ParameterUtil.getValue(params,
+                        "maxFileSize", DEFAULT_MAX_ATTACHMENT_SIZE);
+                final long fileSize = file.length();
+                if (fileSize <= maxFileSize) {
+                    strList.add(Base64Util.encode(FileUtil.getBytes(file)));
+                    isArray = false;
+                } else {
+                    logger.info("The max file size(" + fileSize + "/"
+                            + maxFileSize + " is exceeded: "
+                            + responseData.getUrl());
+                }
+            } else if (document != null) {
+                processCssQuery(document, propName, params, isTrimSpaces,
+                        strList);
+            }
+
+            Object propertyValue;
+            final String script = ParameterUtil.getValue(params,
+                    SCRIPT_QUERY_TYPE, null);
+            if (StringUtil.isBlank(script)) {
+                propertyValue = isArray ? strList : StringUtils.join(strList,
+                        " ");
             } else {
-                for (final String queryType : queryTypes) {
-                    final Object queryObj = ParameterUtil.getValue(params,
-                            queryType, null);
-                    Element[] elements = null;
-                    if (queryObj instanceof String) {
-                        elements = getElements(new Element[] { document },
-                                queryObj.toString());
-                    } else if (queryObj instanceof List) {
-                        @SuppressWarnings("unchecked")
-                        final List<String> queryList = (List<String>) queryObj;
-                        elements = getElements(new Element[] { document },
-                                queryList,
-                                propName.startsWith(ARRAY_PROPERTY_PREFIX));
+                final Map<String, Object> context = new HashMap<String, Object>();
+                context.put("data", responseData);
+                context.put("result", resultData);
+                context.put("property", propName);
+                context.put("parameters", params);
+                context.put("array", isArray);
+                context.put("list", strList);
+                if (isArray) {
+                    final List<Object> list = new ArrayList<Object>();
+                    for (int i = 0; i < strList.size(); i++) {
+                        final Map<String, Object> localContext = new HashMap<String, Object>(
+                                context);
+                        localContext.put("index", i);
+                        localContext.put("value",
+                                StringUtils.join(strList, " "));
+                        list.add(MVEL.eval(script, localContext));
                     }
-                    if (elements != null) {
-                        for (final Element element : elements) {
-                            if (element == null) {
-                                strList.add(null);
-                            } else {
-                                final List<Object> argList = ParameterUtil
-                                        .getValue(params, ARGS_QUERY_TYPE,
-                                                Collections.emptyList());
-                                try {
-                                    final Method queryMethod = getQueryMethod(
-                                            element, queryType, argList);
-                                    strList.add(trimSpaces(
-                                            (String) MethodUtil.invoke(
-                                                    queryMethod,
-                                                    element,
-                                                    argList.toArray(new Object[argList
-                                                            .size()])),
-                                            isTrimSpaces));
-                                } catch (final Exception e) {
-                                    logger.warn("Could not invoke " + queryType
-                                            + " on " + element, e);
-                                    strList.add(null);
-                                }
-                            }
-                        }
-                        break;
-                    }
+                    propertyValue = list;
+                } else {
+                    context.put("value", StringUtils.join(strList, " "));
+                    propertyValue = MVEL.eval(script, context);
                 }
             }
-            addPropertyData(dataMap, propName,
-                    isArray ? strList : StringUtils.join(strList, " "));
+            addPropertyData(dataMap, propName, propertyValue);
         }
 
         storeIndex(responseData, dataMap);
     }
 
-    private Method getQueryMethod(final Element element,
+    protected void processCssQuery(final org.jsoup.nodes.Document document,
+            final String propName, final Map<String, Object> params,
+            final boolean isTrimSpaces, final List<String> strList) {
+        for (final String queryType : queryTypes) {
+            final Object queryObj = ParameterUtil.getValue(params, queryType,
+                    null);
+            Element[] elements = null;
+            if (queryObj instanceof String) {
+                elements = getElements(new Element[] { document },
+                        queryObj.toString());
+            } else if (queryObj instanceof List) {
+                @SuppressWarnings("unchecked")
+                final List<String> queryList = (List<String>) queryObj;
+                elements = getElements(new Element[] { document }, queryList,
+                        propName.startsWith(ARRAY_PROPERTY_PREFIX));
+            }
+            if (elements != null) {
+                for (final Element element : elements) {
+                    if (element == null) {
+                        strList.add(null);
+                    } else {
+                        final List<Object> argList = ParameterUtil.getValue(
+                                params, ARGS_QUERY_TYPE,
+                                Collections.emptyList());
+                        try {
+                            final Method queryMethod = getQueryMethod(element,
+                                    queryType, argList);
+                            strList.add(trimSpaces(
+                                    (String) MethodUtil.invoke(queryMethod,
+                                            element, argList
+                                                    .toArray(new Object[argList
+                                                            .size()])),
+                                    isTrimSpaces));
+                        } catch (final Exception e) {
+                            logger.warn("Could not invoke " + queryType
+                                    + " on " + element, e);
+                            strList.add(null);
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    protected Method getQueryMethod(final Element element,
             final String queryType, final List<Object> argList) {
         final BeanDesc elementDesc = BeanDescFactory.getBeanDesc(element
                 .getClass());

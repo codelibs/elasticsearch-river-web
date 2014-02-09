@@ -77,8 +77,11 @@ public class EsDataService extends AbstractRobotService implements DataService {
     @Override
     public void iterate(final String sessionId,
             final AccessResultCallback callback) {
-        SearchResponse response = riverConfig.getClient().prepareSearch(index)
-                .setTypes(type).setSearchType(SearchType.SCAN)
+        SearchResponse response = riverConfig
+                .getClient()
+                .prepareSearch(index)
+                .setTypes(type)
+                .setSearchType(SearchType.SCAN)
                 .setScroll(new TimeValue(scrollTimeout))
                 .setPostFilter(FilterBuilders.termFilter(SESSION_ID, sessionId))
                 .setQuery(QueryBuilders.matchAllQuery()).setSize(scrollSize)

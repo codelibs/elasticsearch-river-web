@@ -210,13 +210,13 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 // authentications
                 // "authentications":[{"scope":{"scheme":"","host":"","port":0,"realm":""},
                 //   "credentials":{"username":"","password":""}},{...}]
-                List<Map<String, Object>> authList = ParameterUtil.getValue(
-                        crawlSettings, "authentications", null);
+                final List<Map<String, Object>> authList = ParameterUtil
+                        .getValue(crawlSettings, "authentications", null);
                 if (authList != null && !authList.isEmpty()) {
                     final List<Authentication> basicAuthList = new ArrayList<Authentication>();
-                    for (Map<String, Object> authObj : authList) {
+                    for (final Map<String, Object> authObj : authList) {
                         @SuppressWarnings("unchecked")
-                        Map<String, Object> scopeMap = (Map<String, Object>) authObj
+                        final Map<String, Object> scopeMap = (Map<String, Object>) authObj
                                 .get("scope");
                         String scheme = ParameterUtil.getValue(scopeMap,
                                 "scheme", EMPTY_STRING).toUpperCase(
@@ -226,22 +226,22 @@ public class WebRiver extends AbstractRiverComponent implements River {
                             continue;
                         }
                         @SuppressWarnings("unchecked")
-                        Map<String, Object> credentialMap = (Map<String, Object>) authObj
+                        final Map<String, Object> credentialMap = (Map<String, Object>) authObj
                                 .get("credentials");
-                        String username = ParameterUtil.getValue(credentialMap,
-                                "username", null);
+                        final String username = ParameterUtil.getValue(
+                                credentialMap, "username", null);
                         if (StringUtil.isBlank(username)) {
                             logger.warn("Invalid authentication: " + authObj);
                             continue;
                         }
-                        String host = ParameterUtil.getValue(authObj, "host",
-                                AuthScope.ANY_HOST);
-                        int port = ParameterUtil.getValue(authObj, "port",
-                                AuthScope.ANY_PORT);
-                        String realm = ParameterUtil.getValue(authObj, "realm",
-                                AuthScope.ANY_REALM);
-                        String password = ParameterUtil.getValue(credentialMap,
-                                "password", null);
+                        final String host = ParameterUtil.getValue(authObj,
+                                "host", AuthScope.ANY_HOST);
+                        final int port = ParameterUtil.getValue(authObj,
+                                "port", AuthScope.ANY_PORT);
+                        final String realm = ParameterUtil.getValue(authObj,
+                                "realm", AuthScope.ANY_REALM);
+                        final String password = ParameterUtil.getValue(
+                                credentialMap, "password", null);
 
                         AuthScheme authScheme = null;
                         Credentials credentials = null;
@@ -256,9 +256,9 @@ public class WebRiver extends AbstractRiverComponent implements River {
                         } else if (NTLM_SCHEME.equals(scheme)) {
                             authScheme = new NTLMScheme(new JcifsEngine());
                             scheme = AuthScope.ANY_SCHEME;
-                            String workstation = ParameterUtil.getValue(
+                            final String workstation = ParameterUtil.getValue(
                                     credentialMap, "workstation", null);
-                            String domain = ParameterUtil.getValue(
+                            final String domain = ParameterUtil.getValue(
                                     credentialMap, "domain", null);
                             credentials = new NTCredentials(username, password,
                                     workstation == null ? EMPTY_STRING
@@ -266,7 +266,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
                                     domain == null ? EMPTY_STRING : domain);
                         }
 
-                        AuthenticationImpl auth = new AuthenticationImpl(
+                        final AuthenticationImpl auth = new AuthenticationImpl(
                                 new AuthScope(host, port, realm, scheme),
                                 credentials, authScheme);
                         basicAuthList.add(auth);
@@ -279,14 +279,14 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
                 // request header
                 // "headers":[{"name":"","value":""},{}]
-                List<Map<String, Object>> headerList = ParameterUtil.getValue(
-                        crawlSettings, "headers", null);
+                final List<Map<String, Object>> headerList = ParameterUtil
+                        .getValue(crawlSettings, "headers", null);
                 if (headerList != null && !headerList.isEmpty()) {
                     final List<RequestHeader> requestHeaderList = new ArrayList<RequestHeader>();
-                    for (Map<String, Object> headerObj : headerList) {
-                        String name = ParameterUtil.getValue(headerObj, "name",
-                                null);
-                        String value = ParameterUtil.getValue(headerObj,
+                    for (final Map<String, Object> headerObj : headerList) {
+                        final String name = ParameterUtil.getValue(headerObj,
+                                "name", null);
+                        final String value = ParameterUtil.getValue(headerObj,
                                 "value", null);
                         if (name != null && value != null) {
                             requestHeaderList
@@ -381,8 +381,11 @@ public class WebRiver extends AbstractRiverComponent implements River {
                             logger.debug("patternMap: " + patternMap);
                             logger.debug("propMap: " + propMap);
                         }
-                        riverConfig.addScrapingRule(sessionId, patternMap,
-                                propMap);
+                        @SuppressWarnings("unchecked")
+                        final Map<String, Object> settingMap = (Map<String, Object>) targetMap
+                                .get("settings");
+                        riverConfig.addScrapingRule(sessionId, settingMap,
+                                patternMap, propMap);
                     } else {
                         logger.warn("Invalid pattern or target: patternMap: "
                                 + patternMap + ", propMap: " + propMap);
