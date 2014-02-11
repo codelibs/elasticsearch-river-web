@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.codelibs</groupId>
 	<artifactId>elasticsearch-river-web</artifactId>
-	<version>1.0.3-SNAPSHOT</version>
+	<version>1.1.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>Elasticsearch River Web</name>
 	<description>This plugin crawls web sites and extracts the content from Web.</description>
@@ -114,7 +114,7 @@
 		<dependency>
 			<groupId>org.seasar.robot</groupId>
 			<artifactId>s2-robot</artifactId>
-			<version>0.6.1</version>
+			<version>0.6.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jsoup</groupId>

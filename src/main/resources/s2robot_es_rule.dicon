@@ -13,7 +13,7 @@
 		</initMethod>
 	</component>
 
-	<component name="sitemapsRule" class="org.seasar.robot.rule.impl.RegexRule">
+	<component name="sitemapsRule" class="org.seasar.robot.rule.impl.SitemapsRule">
 		<property name="ruleId">"sitemapsRule"</property>
 		<property name="responseProcessor">
 			<component
@@ -22,7 +22,7 @@
 		</property>
 		<initMethod name="addRule">
 			<arg>"url"</arg>
-			<arg>".*sitemap[^/]*.xml$|.*sitemap[^/]*.gz$|.*sitemap[^/]*.txt$"
+			<arg>".*sitemap.*"
 			</arg>
 		</initMethod>
 	</component>

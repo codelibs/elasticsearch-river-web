@@ -207,6 +207,11 @@ public class WebRiver extends AbstractRiverComponent implements River {
                     paramMap.put(HcHttpClient.USER_AGENT_PROPERTY, userAgent);
                 }
 
+                // robots.txt parser
+                final Boolean robotsTxtEnabled = ParameterUtil.getValue(crawlSettings,
+                        "robotsTxt", Boolean.TRUE);
+                paramMap.put(HcHttpClient.ROBOTS_TXT_ENABLED_PROPERTY, robotsTxtEnabled);
+
                 // authentications
                 // "authentications":[{"scope":{"scheme":"","host":"","port":0,"realm":""},
                 //   "credentials":{"username":"","password":""}},{...}]
