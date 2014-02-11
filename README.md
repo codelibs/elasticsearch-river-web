@@ -342,7 +342,7 @@ For example, create a mapping with attachment type:
           }
     ...
 
-and then start your river. In properties object, when a value of "type" is "attachment", the crawled url is stored as base64-encoded data.
+and then start your river. In "properties" object, when a value of "type" is "attachment", the crawled url is stored as base64-encoded data.
 
     curl -XPUT 'localhost:9200/_river/test/_meta?pretty' -d '{
       "type" : "web",
@@ -408,3 +408,17 @@ and then create "webindex" index with analyzers for Japanese.
       }
     }'
 
+### Rewrite a property value by MVEL
+
+River Web allows you to rewrite crawled data by [MVEL](http://mvel.codehaus.org/).
+In "properties" object, put "script" value to a property you want to rewrite.
+
+    ...
+            "properties" : {
+    ...
+              "flag" : {
+                "text" : "body",
+                "script" : "value.contains(\"Elasticsearch\") ? \"yes\" : \"no\""
+              },
+
+The above is, if a string value of body element in HTML contains "Elasticsearch", set "yes" to "flag" property.
