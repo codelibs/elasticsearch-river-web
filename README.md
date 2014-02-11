@@ -11,6 +11,7 @@ This plugin provides a feature to crawl web sites and extract the content by CSS
 | River Web | elasticsearch |
 |:---------:|:-------------:|
 | master    | 1.0.0.X       |
+| 1.1.0     | 1.0.0.RC2     |
 | 1.0.2     | 1.0.0.RC1     |
 | 1.0.1     | 0.90.7        |
 | 1.0.0     | 0.90.5        |
@@ -23,11 +24,11 @@ This plugin provides a feature to crawl web sites and extract the content by CSS
 River Web plugin depends on Quartz plugin. 
 [Quartz plugin](https://github.com/codelibs/elasticsearch-quartz) needs to be installed before installing River Web plugin.
 
-    $ $ES_HOME/bin/plugin -install org.codelibs/elasticsearch-quartz/1.0.1
+    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-quartz/1.0.1
 
 ### Install River Web Plugin
 
-    $ $ES_HOME/bin/plugin -install org.codelibs/elasticsearch-river-web/1.0.2
+    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-river-web/1.1.0
 
 ### Create Index For Crawling
 
@@ -166,24 +167,27 @@ This example crawls sites of http://www.codelibs.org/ and http://fess.codelibs.o
 The configuration is:
 
 | Property                          | Type    | Description                                     |
-|:----------------------------------|:-------:|:------------------------------------------------|
-| crawl.index                       | string  | Stored index name.                              |
-| crawl.type                        | string  | Stored type name.                               |
-| crawl.url                         | array   | Start point of URL for crawling.                |
-| crawl.includeFilter               | array   | White list of URL for crawling.                 |
-| crawl.excludeFilter               | array   | Black list of URL for crawling.                 |
-| crawl.maxDepth                    | int     | Depth of crawling documents.                    |
-| crawl.maxAccessCount              | int     | The number of crawling documents.               |
-| crawl.numOfThread                 | int     | The number of crawler threads.                  |
-| crawl.interval                    | int     | Interval time (ms) to crawl documents.          |
-| crawl.incremental                 | boolean | Incremental crawling.                           |
-| crawl.overwrite                   | boolean | Delete documents of old duplicated url.         |
-| crawl.authentications             | object  | Specify BASIC/DIGEST/NTLM authentication info.  |
-| crawl.target.urlPattern           | string  | URL pattern to extract contents by CSS Query.   |
-| crawl.target.properties.name      | string  | "name" is used as a property name in the index. |
-| crawl.target.properties.name.text | string  | CSS Query for the property value.               |
-| crawl.target.properties.name.html | string  | CSS Query for the property value.               |
-| schedule.cron                     | string  | [Cron format](http://quartz-scheduler.org/api/2.2.0/org/quartz/CronExpression.html) to start a crawler.                 |
+|:------------------------------------|:-------:|:------------------------------------------------|
+| crawl.index                         | string  | Stored index name.                              |
+| crawl.type                          | string  | Stored type name.                               |
+| crawl.url                           | array   | Start point of URL for crawling.                |
+| crawl.includeFilter                 | array   | White list of URL for crawling.                 |
+| crawl.excludeFilter                 | array   | Black list of URL for crawling.                 |
+| crawl.maxDepth                      | int     | Depth of crawling documents.                    |
+| crawl.maxAccessCount                | int     | The number of crawling documents.               |
+| crawl.numOfThread                   | int     | The number of crawler threads.                  |
+| crawl.interval                      | int     | Interval time (ms) to crawl documents.          |
+| crawl.incremental                   | boolean | Incremental crawling.                           |
+| crawl.overwrite                     | boolean | Delete documents of old duplicated url.         |
+| crawl.userAgent                     | string  | User-agent name when crawling.                  |
+| crawl.robotsTxt                     | boolean | If you want to ignore robots.txt, false.        |
+| crawl.authentications               | object  | Specify BASIC/DIGEST/NTLM authentication info.  |
+| crawl.target.urlPattern             | string  | URL pattern to extract contents by CSS Query.   |
+| crawl.target.properties.name        | string  | "name" is used as a property name in the index. |
+| crawl.target.properties.name.text   | string  | CSS Query for the property value.               |
+| crawl.target.properties.name.html   | string  | CSS Query for the property value.               |
+| crawl.target.properties.name.script | string  | Rewrite the property value by MVEL.             |
+| schedule.cron                       | string  | [Cron format](http://quartz-scheduler.org/api/2.2.0/org/quartz/CronExpression.html) to start a crawler.                 |
 
 
 ### Unregister Crawl Data
@@ -310,6 +314,59 @@ For example, if you want to use an user in ActiveDirectory, the configuration is
         }
       }],
 
+
+### Use attachment type
+
+River Web supports [attachment type](https://github.com/elasticsearch/elasticsearch-mapper-attachments).
+For example, create a mapping with attachment type:
+
+    curl -XPUT "localhost:9200/web/test/_mapping?pretty" -d '{
+      "test" : {
+        "dynamic_templates" : [
+        {
+    ...
+          "my_attachment" : {
+            "match" : "my_attachment",
+            "mapping" : {
+              "type" : "attachment",
+              "fields" : {
+                "file" : { "index" : "no" },
+                "title" : { "store" : "yes" },
+                "date" : { "store" : "yes" },
+                "author" : { "store" : "yes" },
+                "keywords" : { "store" : "yes" },
+                "content_type" : { "store" : "yes" },
+                "content_length" : { "store" : "yes" }
+              }
+            }
+          }
+    ...
+
+and then start your river. In properties object, when a value of "type" is "attachment", the crawled url is stored as base64-encoded data.
+
+    curl -XPUT 'localhost:9200/_river/test/_meta?pretty' -d '{
+      "type" : "web",
+      "crawl" : {
+          "index" : "web",
+          "url" : "http://...",
+    ...
+          "target" : [
+    ...
+            {
+              "settings" : {
+                "html" : false
+              },
+              "pattern" : {
+                "url" : "http://.../.*"
+              },
+              "properties" : {
+                "my_attachment" : {
+                  "type" : "attachment"
+                }
+              }
+            }
+          ]
+    ...
 
 ### Use Multibyte Characters
 
