@@ -235,34 +235,50 @@ If you want to stop the crawler, type as below: (replace my\_web with your river
 ### Aggregate a title/content from news.yahoo.com
 
     $ curl -XPUT 'localhost:9200/_river/yahoo_com/_meta' -d '{
-        "type" : "web",
-        "crawl" : {
-            "index" : "webindex",
-            "url" : ["http://news.yahoo.com/"],
-            "includeFilter" : ["http://news.yahoo.com/.*"],
-            "maxDepth" : 1,
-            "maxAccessCount" : 100,
-            "numOfThread" : 3,
-            "interval" : 3000,
-            "target" : [
-              {
-                "urlPattern" : "http://news.yahoo.com/.*html",
-                "properties" : {
-                  "title" : {
-                    "text" : "h1.headline"
-                  },
-                  "content" : {
-                    "text" : "section.mediacontentstory div.body p"
-                  }
-                }
+      "type" : "web",
+      "crawl" : {
+        "index" : "webindex",
+        "url" : ["http://news.yahoo.com/"],
+        "includeFilter" : ["http://news.yahoo.com/.*"],
+        "maxDepth" : 1,
+        "maxAccessCount" : 10,
+        "numOfThread" : 3,
+        "interval" : 3000,
+        "userAgent" : "Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko",
+        "target" : [
+          {
+            "pattern" : {
+              "url" : "http://news.yahoo.com/video/.*html",
+              "mimeType" : "text/html"
+            },
+            "properties" : {
+              "title" : {
+                "text" : "title"
               }
-            ]
-        },
-        "schedule" : {
-            "cron" : "0 0 * * * ?"
-        }
+            }
+          },
+          {
+            "pattern" : {
+              "url" : "http://news.yahoo.com/.*html",
+              "mimeType" : "text/html"
+            },
+            "properties" : {
+              "title" : {
+                "text" : "h1.headline"
+              },
+              "content" : {
+                "text" : "section#mediacontentstory p"
+              }
+            }
+          }
+        ]
+      },
+      "schedule" : {
+        "cron" : "0 0 * * * ?"
+      }
     }'
 
+(if news.yahoo.com is updated, the above example needs to be updated.)
 
 ## Others
 
