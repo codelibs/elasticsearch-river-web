@@ -10,7 +10,7 @@ This plugin provides a feature to crawl web sites and extract the content by CSS
 
 | River Web | elasticsearch |
 |:---------:|:-------------:|
-| master    | 1.0.0.X       |
+| master    | 1.0.X         |
 | 1.1.0     | 1.0.0.RC2     |
 | 1.0.2     | 1.0.0.RC1     |
 | 1.0.1     | 0.90.7        |
