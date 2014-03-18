@@ -38,11 +38,13 @@ import org.seasar.framework.util.Base64Util;
 import org.seasar.framework.util.FileUtil;
 import org.seasar.framework.util.MethodUtil;
 import org.seasar.framework.util.StringUtil;
+import org.seasar.robot.Constants;
 import org.seasar.robot.RobotCrawlAccessException;
 import org.seasar.robot.RobotSystemException;
 import org.seasar.robot.entity.AccessResultData;
 import org.seasar.robot.entity.ResponseData;
 import org.seasar.robot.entity.ResultData;
+import org.seasar.robot.helper.EncodingHelper;
 import org.seasar.robot.util.StreamUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,6 +88,61 @@ public class ScrapingTransformer extends
     @InitMethod
     public void init() {
         riverConfig = SingletonS2Container.getComponent(RiverConfig.class);
+    }
+
+    @Override
+    protected void updateCharset(final ResponseData responseData) {
+        int preloadSize = preloadSizeForCharset;
+        final ScrapingRule scrapingRule = riverConfig
+                .getScrapingRule(responseData);
+        if (scrapingRule != null) {
+            Integer s = scrapingRule.getSetting("preloadSizeForCharset",
+                    Integer.valueOf(0));
+            if (s.intValue() > 0) {
+                preloadSize = s.intValue();
+            }
+        }
+        final String encoding = loadCharset(responseData.getResponseBody(),
+                preloadSize);
+        if (encoding == null) {
+            if (defaultEncoding == null) {
+                responseData.setCharSet(Constants.UTF_8);
+            } else if (responseData.getCharSet() == null) {
+                responseData.setCharSet(defaultEncoding);
+            }
+        } else {
+            responseData.setCharSet(encoding.trim());
+        }
+
+        if (!isSupportedCharset(responseData.getCharSet())) {
+            responseData.setCharSet(Constants.UTF_8);
+        }
+    }
+
+    protected String loadCharset(final InputStream inputStream, int preloadSize) {
+        BufferedInputStream bis = null;
+        String encoding = null;
+        try {
+            bis = new BufferedInputStream(inputStream);
+            final byte[] buffer = new byte[preloadSize];
+            final int size = bis.read(buffer);
+            if (size != -1) {
+                final String content = new String(buffer, 0, size);
+                encoding = parseCharset(content);
+            }
+        } catch (final IOException e) {
+            throw new RobotCrawlAccessException("Could not load a content.", e);
+        }
+
+        try {
+            final EncodingHelper encodingHelper = SingletonS2Container
+                    .getComponent(EncodingHelper.class);
+            encoding = encodingHelper.normalize(encoding);
+        } catch (final Exception e) {
+            // NOP
+        }
+
+        return encoding;
     }
 
     @Override
@@ -163,7 +220,7 @@ public class ScrapingTransformer extends
                     null);
             if (StringUtil.isNotBlank(value)) {
                 strList.add(trimSpaces(value, isTrimSpaces));
-            } else if ("data".equals(type)||"attachment".equals(type)) {
+            } else if ("data".equals(type) || "attachment".equals(type)) {
                 final long maxFileSize = ParameterUtil.getValue(params,
                         "maxFileSize", DEFAULT_MAX_ATTACHMENT_SIZE);
                 final long fileSize = file.length();
