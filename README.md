@@ -438,3 +438,35 @@ In "properties" object, put "script" value to a property you want to rewrite.
               },
 
 The above is, if a string value of body element in HTML contains "Elasticsearch", set "yes" to "flag" property.
+
+## FAQ
+
+### What does "No scraping rule." mean?
+
+In a river setting, "crawl.url" is starting urls to crawl a site, "crawl.includeFilter" filters urls whether are crawled or not, and "crawl.target.pattern.url" is a rule to store extracted web data.
+If a crawling url does not match "crawl.target.pattern.url", you would see the message.
+Therefore, it means the crawled url does not have an extraction rule.
+
+### How to extract an attribute of meta tag
+
+For example, if you want to grab a content of description's meta tag, the configuration is below:
+
+    ...
+    "target" : [
+    ...
+      "properties" : {
+    ...
+        "meta" : {
+          "attr" : "meta[name=description]",
+          "args" : [ "content" ]
+        },
+
+### Incremental crawling dose not work?
+
+"url" field needs to be "not_analyzed" in a mapping of your stored index.
+See [Create Index To Store Crawl Data](https://github.com/codelibs/elasticsearch-river-web#create-index-to-store-crawl-data "Create Index To Store Crawl Data").
+
+
+### Where is crawled data stored?
+
+crawled data are stored to "robot" index during cralwing, data extracted from them are stored to your index specified by a river setting, and then data in "robot" index are removed when the crawler is finished.
