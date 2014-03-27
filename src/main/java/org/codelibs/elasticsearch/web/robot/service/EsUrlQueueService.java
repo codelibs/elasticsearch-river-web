@@ -11,6 +11,8 @@ import javax.annotation.Resource;
 import org.codelibs.elasticsearch.web.robot.entity.EsUrlQueue;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -24,6 +26,7 @@ import org.seasar.robot.util.AccessResultCallback;
 
 public class EsUrlQueueService extends AbstractRobotService implements
         UrlQueueService {
+    private static final ESLogger logger = Loggers.getLogger(EsUrlQueueService.class);
 
     @Resource
     protected EsDataService dataService;
@@ -90,32 +93,40 @@ public class EsUrlQueueService extends AbstractRobotService implements
                 if (exists(sessionId, url)) {
                     super.delete(sessionId, url);
                     if (riverConfig.isIncremental(sessionId)) {
-                        final SearchResponse response = client
-                                .prepareSearch(
-                                        riverConfig.getIndexName(sessionId))
-                                .setQuery(QueryBuilders.termQuery("url", url))
-                                .addSort(
-                                        SortBuilders.fieldSort(LAST_MODIFIED)
-                                                .order(SortOrder.DESC))
-                                .setFrom(0).setSize(1).execute().actionGet();
-                        final SearchHits hits = response.getHits();
-                        if (hits.getTotalHits() > 0) {
-                            final SearchHit hit = hits.getHits()[0];
-                            final Map<String, Object> sourceMap = hit
-                                    .getSource();
-                            final Date date = (Date) sourceMap
-                                    .get(LAST_MODIFIED);
-                            if (date != null) {
-                                urlQueue.setLastModified(new Timestamp(date
-                                        .getTime()));
-                            }
-                        }
+                        updateLastModified(sessionId, client, urlQueue, url);
                     }
                     return urlQueue;
                 }
             }
         }
         return null;
+    }
+
+    private void updateLastModified(final String sessionId,
+            final Client client, final EsUrlQueue urlQueue, final String url) {
+        try {
+            final SearchResponse response = client
+                    .prepareSearch(riverConfig.getIndexName(sessionId))
+                    .setQuery(QueryBuilders.termQuery("url", url))
+                    .addSort(
+                            SortBuilders.fieldSort(LAST_MODIFIED).order(
+                                    SortOrder.DESC)).setFrom(0).setSize(1)
+                    .execute().actionGet();
+            final SearchHits hits = response.getHits();
+            if (hits.getTotalHits() > 0) {
+                final SearchHit hit = hits.getHits()[0];
+                final Map<String, Object> sourceMap = hit.getSource();
+                final Date date = (Date) sourceMap.get(LAST_MODIFIED);
+                if (date != null) {
+                    urlQueue.setLastModified(new Timestamp(date.getTime()));
+                }
+            }
+        } catch (Exception e) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Failed to update a last modified: " + sessionId,
+                        e);
+            }
+        }
     }
 
     @Override
