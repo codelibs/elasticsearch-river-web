@@ -11,6 +11,7 @@ This plugin provides a feature to crawl web sites and extract the content by CSS
 | River Web | elasticsearch |
 |:---------:|:-------------:|
 | master    | 1.0.X         |
+| 1.1.1     | 1.0.2         |
 | 1.1.0     | 1.0.0.RC2     |
 | 1.0.2     | 1.0.0.RC1     |
 | 1.0.1     | 0.90.7        |
@@ -28,15 +29,7 @@ River Web plugin depends on Quartz plugin.
 
 ### Install River Web Plugin
 
-    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-river-web/1.1.0
-
-### Create Index For Crawling
-
-River Web Plugin needs 'robot' index for web crawling.
-Therefore, you need to create it before starting the crawl.
-Type the following commands to create 'robot' index:
-
-    $ curl -XPUT 'localhost:9200/robot/'
+    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-river-web/1.1.1
 
 ## Usage
 
@@ -438,6 +431,16 @@ In "properties" object, put "script" value to a property you want to rewrite.
               },
 
 The above is, if a string value of body element in HTML contains "Elasticsearch", set "yes" to "flag" property.
+
+### Create Index For Crawling (1.0.0 - 1.1.0)
+
+River Web Plugin needs 'robot' index for web crawling.
+Therefore, in version 1.0.0 - 1.1.0, you need to create it before starting the crawl.
+Type the following commands to create 'robot' index:
+
+    $ curl -XPUT 'localhost:9200/robot/'
+
+As of 1.1.1, "robot" index is created automatically.
 
 ## FAQ
 
