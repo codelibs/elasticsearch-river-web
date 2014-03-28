@@ -32,16 +32,19 @@
 	</component>
 
 	<!-- Service -->
+	<component name="robotIndexName" class="java.lang.String">
+		<arg>"robot"</arg>
+	</component>
 	<component name="urlQueueService" class="org.codelibs.elasticsearch.web.robot.service.EsUrlQueueService">
-		<property name="index">"robot"</property>
+		<property name="index">robotIndexName</property>
 		<property name="type">"queue"</property>
 	</component>
 	<component name="dataService" class="org.codelibs.elasticsearch.web.robot.service.EsDataService">
-		<property name="index">"robot"</property>
+		<property name="index">robotIndexName</property>
 		<property name="type">"data"</property>
 	</component>
 	<component name="urlFilterService" class="org.codelibs.elasticsearch.web.robot.service.EsUrlFilterService">
-		<property name="index">"robot"</property>
+		<property name="index">robotIndexName</property>
 		<property name="type">"filter"</property>
 	</component>
 
