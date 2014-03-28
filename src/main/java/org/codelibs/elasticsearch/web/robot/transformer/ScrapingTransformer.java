@@ -238,8 +238,7 @@ public class ScrapingTransformer extends
             }
 
             Object propertyValue;
-            final String script = ParameterUtil.getValue(params,
-                    SCRIPT_QUERY_TYPE, null);
+            final String script = getScriptValue(params);
             if (StringUtil.isBlank(script)) {
                 propertyValue = isArray ? strList : StringUtils.join(strList,
                         " ");
@@ -271,6 +270,19 @@ public class ScrapingTransformer extends
         }
 
         storeIndex(responseData, dataMap);
+    }
+
+    protected String getScriptValue(final Map<String, Object> params) {
+        final Object value = ParameterUtil.getValue(params, SCRIPT_QUERY_TYPE,
+                null);
+        if (value == null) {
+            return null;
+        } else if (value instanceof String) {
+            return value.toString();
+        } else if (value instanceof List) {
+            return StringUtils.join((List<?>) value, "");
+        }
+        return null;
     }
 
     protected void processCssQuery(final org.jsoup.nodes.Document document,
