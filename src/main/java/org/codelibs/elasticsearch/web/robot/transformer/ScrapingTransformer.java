@@ -34,6 +34,7 @@ import org.seasar.framework.beans.factory.BeanDescFactory;
 import org.seasar.framework.beans.util.Beans;
 import org.seasar.framework.container.SingletonS2Container;
 import org.seasar.framework.container.annotation.tiger.InitMethod;
+import org.seasar.framework.container.factory.SingletonS2ContainerFactory;
 import org.seasar.framework.util.Base64Util;
 import org.seasar.framework.util.FileUtil;
 import org.seasar.framework.util.MethodUtil;
@@ -243,27 +244,28 @@ public class ScrapingTransformer extends
                 propertyValue = isArray ? strList : StringUtils.join(strList,
                         " ");
             } else {
-                final Map<String, Object> context = new HashMap<String, Object>();
-                context.put("data", responseData);
-                context.put("result", resultData);
-                context.put("property", propName);
-                context.put("parameters", params);
-                context.put("array", isArray);
-                context.put("list", strList);
+                final Map<String, Object> vars = new HashMap<String, Object>();
+                vars.put("container",
+                        SingletonS2ContainerFactory.getContainer());
+                vars.put("data", responseData);
+                vars.put("result", resultData);
+                vars.put("property", propName);
+                vars.put("parameters", params);
+                vars.put("array", isArray);
+                vars.put("list", strList);
                 if (isArray) {
                     final List<Object> list = new ArrayList<Object>();
                     for (int i = 0; i < strList.size(); i++) {
-                        final Map<String, Object> localContext = new HashMap<String, Object>(
-                                context);
-                        localContext.put("index", i);
-                        localContext.put("value",
-                                StringUtils.join(strList, " "));
-                        list.add(MVEL.eval(script, localContext));
+                        final Map<String, Object> localVars = new HashMap<String, Object>(
+                                vars);
+                        localVars.put("index", i);
+                        localVars.put("value", StringUtils.join(strList, " "));
+                        list.add(MVEL.eval(script, localVars));
                     }
                     propertyValue = list;
                 } else {
-                    context.put("value", StringUtils.join(strList, " "));
-                    propertyValue = MVEL.eval(script, context);
+                    vars.put("value", StringUtils.join(strList, " "));
+                    propertyValue = MVEL.eval(script, vars);
                 }
             }
             addPropertyData(dataMap, propName, propertyValue);
