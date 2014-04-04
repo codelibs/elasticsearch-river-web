@@ -12,11 +12,11 @@ This plugin provides a feature to crawl web sites and extract the content by CSS
 |:---------:|:-------------:|
 | master    | 1.0.X         |
 | 1.1.1     | 1.0.2         |
-| 1.1.0     | 1.0.0.RC2     |
-| 1.0.2     | 1.0.0.RC1     |
 | 1.0.1     | 0.90.7        |
-| 1.0.0     | 0.90.5        |
 
+### Issues/Questions
+
+Please file an [issue](https://github.com/codelibs/elasticsearch-river-web/issues "issue").
 
 ## Installation
 
