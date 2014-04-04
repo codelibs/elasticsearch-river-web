@@ -212,6 +212,24 @@ public class WebRiver extends AbstractRiverComponent implements River {
                         "robotsTxt", Boolean.TRUE);
                 paramMap.put(HcHttpClient.ROBOTS_TXT_ENABLED_PROPERTY, robotsTxtEnabled);
 
+                // proxy
+                Map<String, Object> proxyMap = ParameterUtil.getValue(
+                        crawlSettings, "proxy", null);
+                if (proxyMap != null) {
+                    Object host = proxyMap.get("host");
+                    if (host != null) {
+                        paramMap.put(HcHttpClient.PROXY_HOST_PROPERTY, host);
+                        Object portObj = proxyMap.get("port");
+                        if (portObj instanceof Integer) {
+                            paramMap.put(HcHttpClient.PROXY_PORT_PROPERTY,
+                                    portObj);
+                        } else {
+                            paramMap.put(HcHttpClient.PROXY_PORT_PROPERTY,
+                                    Integer.valueOf(8080));
+                        }
+                    }
+                }
+
                 // authentications
                 // "authentications":[{"scope":{"scheme":"","host":"","port":0,"realm":""},
                 //   "credentials":{"username":"","password":""}},{...}]
