@@ -5,7 +5,9 @@ import static org.quartz.JobBuilder.newJob;
 import static org.quartz.JobKey.jobKey;
 import static org.quartz.TriggerBuilder.newTrigger;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -13,6 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
@@ -29,6 +32,7 @@ import org.codelibs.elasticsearch.web.robot.service.EsDataService;
 import org.codelibs.elasticsearch.web.robot.service.EsUrlFilterService;
 import org.codelibs.elasticsearch.web.robot.service.EsUrlQueueService;
 import org.codelibs.elasticsearch.web.util.ParameterUtil;
+import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
@@ -54,6 +58,7 @@ import org.seasar.robot.client.http.impl.AuthenticationImpl;
 import org.seasar.robot.client.http.ntlm.JcifsEngine;
 
 public class WebRiver extends AbstractRiverComponent implements River {
+
     private static final ESLogger logger = Loggers.getLogger(WebRiver.class);
 
     private static final String RIVER_NAME = "riverName";
@@ -76,6 +81,8 @@ public class WebRiver extends AbstractRiverComponent implements River {
     private static final String DIGEST_SCHEME = "DIGEST";
 
     private static final String BASIC_SCHEME = "BASIC";
+
+    private static final String ONE_TIME = "oneTime";
 
     private static final String EMPTY_STRING = "";
 
@@ -113,13 +120,6 @@ public class WebRiver extends AbstractRiverComponent implements River {
         }
 
         final JobDataMap jobDataMap = new JobDataMap();
-        jobDataMap.put(RIVER_NAME, riverName);
-        jobDataMap.put(SETTINGS, settings);
-        jobDataMap.put(ES_CLIENT, client);
-        jobDataMap.put(RUNNING_JOB, runningJob);
-        final JobDetail crawlJob = newJob(CrawlJob.class)
-                .withIdentity(id + JOB_ID_SUFFIX, groupId)
-                .usingJobData(jobDataMap).build();
 
         String cron = null;
         @SuppressWarnings("unchecked")
@@ -129,13 +129,26 @@ public class WebRiver extends AbstractRiverComponent implements River {
             cron = (String) scheduleSettings.get("cron");
         }
 
-        if (cron != null) {
-            final Trigger trigger = newTrigger()
-                    .withIdentity(id + TRIGGER_ID_SUFFIX, groupId)
-                    .withSchedule(cronSchedule(cron)).startNow().build();
-
-            scheduleService.scheduleJob(crawlJob, trigger);
+        if (cron == null) {
+            Date now = new Date();
+            DateUtils.addSeconds(now, 60);
+            SimpleDateFormat sdf = new SimpleDateFormat("s m H d M ? yyyy");
+            cron = sdf.format(now);
+            jobDataMap.put(ONE_TIME, Boolean.TRUE);
         }
+
+        jobDataMap.put(RIVER_NAME, riverName);
+        jobDataMap.put(SETTINGS, settings);
+        jobDataMap.put(ES_CLIENT, client);
+        jobDataMap.put(RUNNING_JOB, runningJob);
+        final JobDetail crawlJob = newJob(CrawlJob.class)
+                .withIdentity(id + JOB_ID_SUFFIX, groupId)
+                .usingJobData(jobDataMap).build();
+
+        final Trigger trigger = newTrigger()
+                .withIdentity(id + TRIGGER_ID_SUFFIX, groupId)
+                .withSchedule(cronSchedule(cron)).startNow().build();
+        scheduleService.scheduleJob(crawlJob, trigger);
     }
 
     @Override
@@ -437,6 +450,27 @@ public class WebRiver extends AbstractRiverComponent implements River {
                         sessionId);
                 SingletonS2Container.getComponent(EsUrlFilterService.class)
                         .delete(sessionId);
+
+                Object oneTime = data.get(ONE_TIME);
+                if (oneTime != null) {
+                    Object clientObj = data.get(ES_CLIENT);
+                    if (clientObj instanceof Client) {
+                        Client client = (Client) clientObj;
+                        DeleteMappingResponse deleteMappingResponse = client
+                                .admin().indices()
+                                .prepareDeleteMapping("_river")
+                                .setType(riverName.name()).execute()
+                                .actionGet();
+                        if (deleteMappingResponse.isAcknowledged()) {
+                            logger.info("Deleted one time river: "
+                                    + riverName.name());
+                        } else {
+                            logger.warn("Failed to delete " + riverName.name()
+                                    + ". Resposne: "
+                                    + deleteMappingResponse.toString());
+                        }
+                    }
+                }
             }
         }
 
