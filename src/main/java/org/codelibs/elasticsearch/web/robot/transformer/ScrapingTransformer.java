@@ -12,9 +12,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -65,6 +67,8 @@ public class ScrapingTransformer extends
 
     private static final String IS_ARRAY_PROP_NAME = "isArray";
 
+    private static final String IS_CHILD_URL_PROP_NAME = "isChildUrl";
+
     private static final String TRIM_SPACES_PROP_NAME = "trimSpaces";
 
     private static final String TIMESTAMP_FIELD = "@timestamp";
@@ -86,9 +90,20 @@ public class ScrapingTransformer extends
 
     protected RiverConfig riverConfig;
 
+    protected ThreadLocal<Set<String>> childUrlSetLocal = new ThreadLocal<Set<String>>();
+
     @InitMethod
     public void init() {
         riverConfig = SingletonS2Container.getComponent(RiverConfig.class);
+    }
+
+    @Override
+    public ResultData transform(ResponseData responseData) {
+        try {
+            return super.transform(responseData);
+        } finally {
+            childUrlSetLocal.remove();
+        }
     }
 
     @Override
@@ -210,17 +225,27 @@ public class ScrapingTransformer extends
             final Map<String, Object> params = entry.getValue();
             final boolean isTrimSpaces = SettingsUtils.get(params,
                     TRIM_SPACES_PROP_NAME, Boolean.FALSE).booleanValue();
-            boolean isArray = SettingsUtils.get(params,
-                    IS_ARRAY_PROP_NAME, Boolean.FALSE).booleanValue();
+            boolean isArray = SettingsUtils.get(params, IS_ARRAY_PROP_NAME,
+                    Boolean.FALSE).booleanValue();
+            boolean isChildUrl = SettingsUtils.get(params,
+                    IS_CHILD_URL_PROP_NAME, Boolean.FALSE).booleanValue();
 
             final List<String> strList = new ArrayList<String>();
 
-            final String value = SettingsUtils.get(params,
-                    VALUE_QUERY_TYPE, null);
-            final String type = SettingsUtils.get(params, TYPE_QUERY_TYPE,
+            final Object value = SettingsUtils.get(params, VALUE_QUERY_TYPE,
                     null);
-            if (StringUtil.isNotBlank(value)) {
-                strList.add(trimSpaces(value, isTrimSpaces));
+            final String type = SettingsUtils
+                    .get(params, TYPE_QUERY_TYPE, null);
+            if (value != null) {
+                if (value instanceof String) {
+                    strList.add(trimSpaces(value.toString(), isTrimSpaces));
+                } else if (value instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<Object> list = (List<Object>) value;
+                    for (Object obj : list) {
+                        strList.add(trimSpaces(obj.toString(), isTrimSpaces));
+                    }
+                }
             } else if ("data".equals(type) || "attachment".equals(type)) {
                 final long maxFileSize = SettingsUtils.get(params,
                         "maxFileSize", DEFAULT_MAX_ATTACHMENT_SIZE);
@@ -228,6 +253,7 @@ public class ScrapingTransformer extends
                 if (fileSize <= maxFileSize) {
                     strList.add(Base64Util.encode(FileUtil.getBytes(file)));
                     isArray = false;
+                    isChildUrl = false;
                 } else {
                     logger.info("The max file size(" + fileSize + "/"
                             + maxFileSize + " is exceeded: "
@@ -269,14 +295,35 @@ public class ScrapingTransformer extends
                 }
             }
             addPropertyData(dataMap, propName, propertyValue);
+            if (isChildUrl) {
+                Set<String> childUrlSet = childUrlSetLocal.get();
+                if (childUrlSet == null) {
+                    childUrlSet = new HashSet<String>();
+                    childUrlSetLocal.set(childUrlSet);
+                }
+                if (propertyValue instanceof String) {
+                    String str = (String) propertyValue;
+                    if (StringUtils.isNotBlank(str)) {
+                        childUrlSet.add(str);
+                    }
+                } else if (propertyValue instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<Object> list = (List<Object>) propertyValue;
+                    for (Object obj : list) {
+                        String str = obj.toString();
+                        if (StringUtils.isNotBlank(str)) {
+                            childUrlSet.add(str);
+                        }
+                    }
+                }
+            }
         }
 
         storeIndex(responseData, dataMap);
     }
 
     protected String getScriptValue(final Map<String, Object> params) {
-        final Object value = SettingsUtils.get(params, SCRIPT_QUERY_TYPE,
-                null);
+        final Object value = SettingsUtils.get(params, SCRIPT_QUERY_TYPE, null);
         if (value == null) {
             return null;
         } else if (value instanceof String) {
@@ -291,8 +338,7 @@ public class ScrapingTransformer extends
             final String propName, final Map<String, Object> params,
             final boolean isTrimSpaces, final List<String> strList) {
         for (final String queryType : queryTypes) {
-            final Object queryObj = SettingsUtils.get(params, queryType,
-                    null);
+            final Object queryObj = SettingsUtils.get(params, queryType, null);
             Element[] elements = null;
             if (queryObj instanceof String) {
                 elements = getElements(new Element[] { document },
@@ -308,9 +354,8 @@ public class ScrapingTransformer extends
                     if (element == null) {
                         strList.add(null);
                     } else {
-                        final List<Object> argList = SettingsUtils.get(
-                                params, ARGS_QUERY_TYPE,
-                                Collections.emptyList());
+                        final List<Object> argList = SettingsUtils.get(params,
+                                ARGS_QUERY_TYPE, Collections.emptyList());
                         try {
                             final Method queryMethod = getQueryMethod(element,
                                     queryType, argList);
@@ -565,6 +610,20 @@ public class ScrapingTransformer extends
             } else {
                 newMap.put(prefix + entry.getKey(), value);
             }
+        }
+    }
+
+    @Override
+    protected void storeChildUrls(final ResponseData responseData,
+            final ResultData resultData) {
+        Set<String> childLinkSet = childUrlSetLocal.get();
+        if (childLinkSet != null) {
+            resultData.setChildUrlSet(childLinkSet);
+            final String u = responseData.getUrl();
+            resultData.removeUrl(u);
+            resultData.removeUrl(getDuplicateUrl(u));
+        } else {
+            super.storeChildUrls(responseData, resultData);
         }
     }
 
