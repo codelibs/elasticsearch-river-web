@@ -147,6 +147,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
         Map<String, Object> vars = new HashMap<String, Object>();
         vars.put("riverName", riverName);
+        vars.put("client", client);
         executeScript(settings.settings(), vars, "start");
 
         final JobDetail crawlJob = newJob(CrawlJob.class)
@@ -167,6 +168,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
         Map<String, Object> vars = new HashMap<String, Object>();
         vars.put("riverName", riverName);
+        vars.put("client", client);
         executeScript(settings.settings(), vars, "close");
 
         logger.info("Unscheduling  CrawlJob...");
@@ -220,9 +222,11 @@ public class WebRiver extends AbstractRiverComponent implements River {
             final RiverName riverName = (RiverName) data.get(RIVER_NAME);
             final String sessionId = UUID.randomUUID().toString();
 
+            Client client = getClient(data);
             Map<String, Object> vars = new HashMap<String, Object>();
             vars.put("riverName", riverName);
             vars.put("sessionId", sessionId);
+            vars.put("client", client);
 
             RiverConfig riverConfig = null;
             final RiverSettings settings = (RiverSettings) data.get(SETTINGS);
@@ -496,9 +500,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
                 Object oneTime = data.get(ONE_TIME);
                 if (oneTime != null) {
-                    Object clientObj = data.get(ES_CLIENT);
-                    if (clientObj instanceof Client) {
-                        Client client = (Client) clientObj;
+                    if (client != null) {
                         DeleteMappingResponse deleteMappingResponse = client
                                 .admin().indices()
                                 .prepareDeleteMapping("_river")
@@ -515,6 +517,14 @@ public class WebRiver extends AbstractRiverComponent implements River {
                     }
                 }
             }
+        }
+
+        private Client getClient(JobDataMap data) {
+            Object clientObj = data.get(ES_CLIENT);
+            if (clientObj instanceof Client) {
+                return (Client) clientObj;
+            }
+            return null;
         }
 
         public void stop() {

@@ -270,9 +270,11 @@ public class ScrapingTransformer extends
                 propertyValue = isArray ? strList : StringUtils.join(strList,
                         " ");
             } else {
+                final Client client = riverConfig.getClient();
                 final Map<String, Object> vars = new HashMap<String, Object>();
                 vars.put("container",
                         SingletonS2ContainerFactory.getContainer());
+                vars.put("client", client);
                 vars.put("data", responseData);
                 vars.put("result", resultData);
                 vars.put("property", propName);
