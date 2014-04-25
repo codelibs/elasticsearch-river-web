@@ -6,7 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.codelibs.elasticsearch.web.util.ParameterUtil;
+import org.codelibs.elasticsearch.util.SettingsUtils;
 import org.seasar.framework.beans.BeanDesc;
 import org.seasar.framework.beans.factory.BeanDescFactory;
 import org.seasar.framework.util.FieldUtil;
@@ -74,6 +74,6 @@ public class ScrapingRule {
     }
 
     public <T, V> T getSetting(final String key, final T defaultValue) {
-        return ParameterUtil.getValue(settingMap, key, defaultValue);
+        return SettingsUtils.get(settingMap, key, defaultValue);
     }
 }

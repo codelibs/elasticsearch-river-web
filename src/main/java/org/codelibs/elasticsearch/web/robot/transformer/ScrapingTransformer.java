@@ -20,9 +20,9 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.codelibs.elasticsearch.util.SettingsUtils;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.codelibs.elasticsearch.web.config.ScrapingRule;
-import org.codelibs.elasticsearch.web.util.ParameterUtil;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.mvel2.MVEL;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -208,21 +208,21 @@ public class ScrapingTransformer extends
                 .entrySet()) {
             final String propName = entry.getKey();
             final Map<String, Object> params = entry.getValue();
-            final boolean isTrimSpaces = ParameterUtil.getValue(params,
+            final boolean isTrimSpaces = SettingsUtils.get(params,
                     TRIM_SPACES_PROP_NAME, Boolean.FALSE).booleanValue();
-            boolean isArray = ParameterUtil.getValue(params,
+            boolean isArray = SettingsUtils.get(params,
                     IS_ARRAY_PROP_NAME, Boolean.FALSE).booleanValue();
 
             final List<String> strList = new ArrayList<String>();
 
-            final String value = ParameterUtil.getValue(params,
+            final String value = SettingsUtils.get(params,
                     VALUE_QUERY_TYPE, null);
-            final String type = ParameterUtil.getValue(params, TYPE_QUERY_TYPE,
+            final String type = SettingsUtils.get(params, TYPE_QUERY_TYPE,
                     null);
             if (StringUtil.isNotBlank(value)) {
                 strList.add(trimSpaces(value, isTrimSpaces));
             } else if ("data".equals(type) || "attachment".equals(type)) {
-                final long maxFileSize = ParameterUtil.getValue(params,
+                final long maxFileSize = SettingsUtils.get(params,
                         "maxFileSize", DEFAULT_MAX_ATTACHMENT_SIZE);
                 final long fileSize = file.length();
                 if (fileSize <= maxFileSize) {
@@ -275,7 +275,7 @@ public class ScrapingTransformer extends
     }
 
     protected String getScriptValue(final Map<String, Object> params) {
-        final Object value = ParameterUtil.getValue(params, SCRIPT_QUERY_TYPE,
+        final Object value = SettingsUtils.get(params, SCRIPT_QUERY_TYPE,
                 null);
         if (value == null) {
             return null;
@@ -291,7 +291,7 @@ public class ScrapingTransformer extends
             final String propName, final Map<String, Object> params,
             final boolean isTrimSpaces, final List<String> strList) {
         for (final String queryType : queryTypes) {
-            final Object queryObj = ParameterUtil.getValue(params, queryType,
+            final Object queryObj = SettingsUtils.get(params, queryType,
                     null);
             Element[] elements = null;
             if (queryObj instanceof String) {
@@ -308,7 +308,7 @@ public class ScrapingTransformer extends
                     if (element == null) {
                         strList.add(null);
                     } else {
-                        final List<Object> argList = ParameterUtil.getValue(
+                        final List<Object> argList = SettingsUtils.get(
                                 params, ARGS_QUERY_TYPE,
                                 Collections.emptyList());
                         try {

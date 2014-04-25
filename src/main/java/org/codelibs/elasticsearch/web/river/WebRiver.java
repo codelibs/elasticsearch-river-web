@@ -25,18 +25,20 @@ import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.auth.DigestScheme;
 import org.apache.http.impl.auth.NTLMScheme;
 import org.codelibs.elasticsearch.quartz.service.ScheduleService;
+import org.codelibs.elasticsearch.util.SettingsUtils;
+import org.codelibs.elasticsearch.util.StringUtils;
 import org.codelibs.elasticsearch.web.WebRiverConstants;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.codelibs.elasticsearch.web.robot.interval.WebRiverIntervalController;
 import org.codelibs.elasticsearch.web.robot.service.EsDataService;
 import org.codelibs.elasticsearch.web.robot.service.EsUrlFilterService;
 import org.codelibs.elasticsearch.web.robot.service.EsUrlQueueService;
-import org.codelibs.elasticsearch.web.util.ParameterUtil;
 import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.mvel2.MVEL;
 import org.elasticsearch.river.AbstractRiverComponent;
 import org.elasticsearch.river.River;
 import org.elasticsearch.river.RiverName;
@@ -48,6 +50,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.Trigger;
 import org.seasar.framework.container.SingletonS2Container;
+import org.seasar.framework.container.factory.SingletonS2ContainerFactory;
 import org.seasar.framework.util.StringUtil;
 import org.seasar.robot.S2Robot;
 import org.seasar.robot.S2RobotContext;
@@ -141,6 +144,11 @@ public class WebRiver extends AbstractRiverComponent implements River {
         jobDataMap.put(SETTINGS, settings);
         jobDataMap.put(ES_CLIENT, client);
         jobDataMap.put(RUNNING_JOB, runningJob);
+
+        Map<String, Object> vars = new HashMap<String, Object>();
+        vars.put("riverName", riverName);
+        executeScript(settings.settings(), vars, "start");
+
         final JobDetail crawlJob = newJob(CrawlJob.class)
                 .withIdentity(id + JOB_ID_SUFFIX, groupId)
                 .usingJobData(jobDataMap).build();
@@ -157,6 +165,10 @@ public class WebRiver extends AbstractRiverComponent implements River {
             return;
         }
 
+        Map<String, Object> vars = new HashMap<String, Object>();
+        vars.put("riverName", riverName);
+        executeScript(settings.settings(), vars, "close");
+
         logger.info("Unscheduling  CrawlJob...");
 
         final CrawlJob crawlJob = runningJob.get();
@@ -164,6 +176,28 @@ public class WebRiver extends AbstractRiverComponent implements River {
             crawlJob.stop();
         }
         scheduleService.deleteJob(jobKey(id + JOB_ID_SUFFIX, groupId));
+    }
+
+    protected static void executeScript(Map<String, Object> settings,
+            Map<String, Object> vars, String target) {
+        Map<String, Object> crawlSettings = SettingsUtils
+                .get(settings, "crawl");
+        Map<String, Object> scriptSettings = SettingsUtils.get(crawlSettings,
+                "script");
+        String script = SettingsUtils.get(scriptSettings, target);
+        if (StringUtils.isNotBlank(script)) {
+            final Map<String, Object> localVars = new HashMap<String, Object>(
+                    vars);
+            localVars.put("container",
+                    SingletonS2ContainerFactory.getContainer());
+            localVars.put("settings", settings);
+            try {
+                logger.info("[{}] \"{}\" => {}", target, script,
+                        MVEL.eval(script, localVars));
+            } catch (Exception e) {
+                logger.warn("Failed to execute script: {}", e, script);
+            }
+        }
     }
 
     public static class CrawlJob implements Job {
@@ -186,13 +220,20 @@ public class WebRiver extends AbstractRiverComponent implements River {
             final RiverName riverName = (RiverName) data.get(RIVER_NAME);
             final String sessionId = UUID.randomUUID().toString();
 
+            Map<String, Object> vars = new HashMap<String, Object>();
+            vars.put("riverName", riverName);
+            vars.put("sessionId", sessionId);
+
             RiverConfig riverConfig = null;
+            final RiverSettings settings = (RiverSettings) data.get(SETTINGS);
+            Map<String, Object> rootSettings = settings.settings();
             try {
-                final RiverSettings settings = (RiverSettings) data
-                        .get(SETTINGS);
+
+                executeScript(rootSettings, vars, "execute");
+
                 @SuppressWarnings("unchecked")
-                final Map<String, Object> crawlSettings = (Map<String, Object>) settings
-                        .settings().get("crawl");
+                final Map<String, Object> crawlSettings = (Map<String, Object>) rootSettings
+                        .get("crawl");
                 if (crawlSettings == null) {
                     logger.warn("No settings for crawling.");
                     return;
@@ -214,20 +255,21 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 s2Robot.getClientFactory().setInitParameterMap(paramMap);
 
                 // user agent
-                final String userAgent = ParameterUtil.getValue(crawlSettings,
+                final String userAgent = SettingsUtils.get(crawlSettings,
                         "userAgent", DEFAULT_USER_AGENT);
                 if (StringUtil.isNotBlank(userAgent)) {
                     paramMap.put(HcHttpClient.USER_AGENT_PROPERTY, userAgent);
                 }
 
                 // robots.txt parser
-                final Boolean robotsTxtEnabled = ParameterUtil.getValue(crawlSettings,
-                        "robotsTxt", Boolean.TRUE);
-                paramMap.put(HcHttpClient.ROBOTS_TXT_ENABLED_PROPERTY, robotsTxtEnabled);
+                final Boolean robotsTxtEnabled = SettingsUtils.get(
+                        crawlSettings, "robotsTxt", Boolean.TRUE);
+                paramMap.put(HcHttpClient.ROBOTS_TXT_ENABLED_PROPERTY,
+                        robotsTxtEnabled);
 
                 // proxy
-                Map<String, Object> proxyMap = ParameterUtil.getValue(
-                        crawlSettings, "proxy", null);
+                Map<String, Object> proxyMap = SettingsUtils.get(crawlSettings,
+                        "proxy", null);
                 if (proxyMap != null) {
                     Object host = proxyMap.get("host");
                     if (host != null) {
@@ -246,17 +288,16 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 // authentications
                 // "authentications":[{"scope":{"scheme":"","host":"","port":0,"realm":""},
                 //   "credentials":{"username":"","password":""}},{...}]
-                final List<Map<String, Object>> authList = ParameterUtil
-                        .getValue(crawlSettings, "authentications", null);
+                final List<Map<String, Object>> authList = SettingsUtils.get(
+                        crawlSettings, "authentications", null);
                 if (authList != null && !authList.isEmpty()) {
                     final List<Authentication> basicAuthList = new ArrayList<Authentication>();
                     for (final Map<String, Object> authObj : authList) {
                         @SuppressWarnings("unchecked")
                         final Map<String, Object> scopeMap = (Map<String, Object>) authObj
                                 .get("scope");
-                        String scheme = ParameterUtil.getValue(scopeMap,
-                                "scheme", EMPTY_STRING).toUpperCase(
-                                Locale.ENGLISH);
+                        String scheme = SettingsUtils.get(scopeMap, "scheme",
+                                EMPTY_STRING).toUpperCase(Locale.ENGLISH);
                         if (StringUtil.isBlank(scheme)) {
                             logger.warn("Invalid authentication: " + authObj);
                             continue;
@@ -264,19 +305,19 @@ public class WebRiver extends AbstractRiverComponent implements River {
                         @SuppressWarnings("unchecked")
                         final Map<String, Object> credentialMap = (Map<String, Object>) authObj
                                 .get("credentials");
-                        final String username = ParameterUtil.getValue(
+                        final String username = SettingsUtils.get(
                                 credentialMap, "username", null);
                         if (StringUtil.isBlank(username)) {
                             logger.warn("Invalid authentication: " + authObj);
                             continue;
                         }
-                        final String host = ParameterUtil.getValue(authObj,
-                                "host", AuthScope.ANY_HOST);
-                        final int port = ParameterUtil.getValue(authObj,
-                                "port", AuthScope.ANY_PORT);
-                        final String realm = ParameterUtil.getValue(authObj,
+                        final String host = SettingsUtils.get(authObj, "host",
+                                AuthScope.ANY_HOST);
+                        final int port = SettingsUtils.get(authObj, "port",
+                                AuthScope.ANY_PORT);
+                        final String realm = SettingsUtils.get(authObj,
                                 "realm", AuthScope.ANY_REALM);
-                        final String password = ParameterUtil.getValue(
+                        final String password = SettingsUtils.get(
                                 credentialMap, "password", null);
 
                         AuthScheme authScheme = null;
@@ -292,9 +333,9 @@ public class WebRiver extends AbstractRiverComponent implements River {
                         } else if (NTLM_SCHEME.equals(scheme)) {
                             authScheme = new NTLMScheme(new JcifsEngine());
                             scheme = AuthScope.ANY_SCHEME;
-                            final String workstation = ParameterUtil.getValue(
+                            final String workstation = SettingsUtils.get(
                                     credentialMap, "workstation", null);
-                            final String domain = ParameterUtil.getValue(
+                            final String domain = SettingsUtils.get(
                                     credentialMap, "domain", null);
                             credentials = new NTCredentials(username, password,
                                     workstation == null ? EMPTY_STRING
@@ -315,14 +356,14 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
                 // request header
                 // "headers":[{"name":"","value":""},{}]
-                final List<Map<String, Object>> headerList = ParameterUtil
-                        .getValue(crawlSettings, "headers", null);
+                final List<Map<String, Object>> headerList = SettingsUtils.get(
+                        crawlSettings, "headers", null);
                 if (headerList != null && !headerList.isEmpty()) {
                     final List<RequestHeader> requestHeaderList = new ArrayList<RequestHeader>();
                     for (final Map<String, Object> headerObj : headerList) {
-                        final String name = ParameterUtil.getValue(headerObj,
+                        final String name = SettingsUtils.get(headerObj,
                                 "name", null);
-                        final String value = ParameterUtil.getValue(headerObj,
+                        final String value = SettingsUtils.get(headerObj,
                                 "value", null);
                         if (name != null && value != null) {
                             requestHeaderList
@@ -369,20 +410,20 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 final S2RobotContext robotContext = s2Robot.getRobotContext();
 
                 // max depth
-                final int maxDepth = ParameterUtil.getValue(crawlSettings,
+                final int maxDepth = SettingsUtils.get(crawlSettings,
                         "maxDepth", -1);
 
                 robotContext.setMaxDepth(maxDepth);
                 // max access count
-                final int maxAccessCount = ParameterUtil.getValue(
-                        crawlSettings, "maxAccessCount", 100);
+                final int maxAccessCount = SettingsUtils.get(crawlSettings,
+                        "maxAccessCount", 100);
                 robotContext.setMaxAccessCount(maxAccessCount);
                 // num of thread
-                final int numOfThread = ParameterUtil.getValue(crawlSettings,
+                final int numOfThread = SettingsUtils.get(crawlSettings,
                         "numOfThread", 5);
                 robotContext.setNumOfThread(numOfThread);
                 // interval
-                final long interval = ParameterUtil.getValue(crawlSettings,
+                final long interval = SettingsUtils.get(crawlSettings,
                         "interval", 1000);
                 final WebRiverIntervalController intervalController = (WebRiverIntervalController) s2Robot
                         .getIntervalController();
@@ -391,14 +432,14 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 // river params
                 final Map<String, Object> riverParamMap = new HashMap<String, Object>();
                 riverParamMap.put("index",
-                        ParameterUtil.getValue(crawlSettings, "index", "web"));
+                        SettingsUtils.get(crawlSettings, "index", "web"));
                 riverParamMap.put(
                         "type",
-                        ParameterUtil.getValue(crawlSettings, "type",
+                        SettingsUtils.get(crawlSettings, "type",
                                 riverName.getName()));
-                riverParamMap.put("overwrite", ParameterUtil.getValue(
-                        crawlSettings, "overwrite", Boolean.FALSE));
-                riverParamMap.put("incremental", ParameterUtil.getValue(
+                riverParamMap.put("overwrite", SettingsUtils.get(crawlSettings,
+                        "overwrite", Boolean.FALSE));
+                riverParamMap.put("incremental", SettingsUtils.get(
                         crawlSettings, "incremental", Boolean.FALSE));
 
                 // crawl config
@@ -434,6 +475,8 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 s2Robot.stop();
 
             } finally {
+                executeScript(rootSettings, vars, "finish");
+
                 runningJob.set(null);
                 if (riverConfig != null) {
                     riverConfig.cleanup(sessionId);
