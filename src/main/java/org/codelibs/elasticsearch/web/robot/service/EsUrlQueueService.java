@@ -5,10 +5,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.Lock;
 
 import javax.annotation.Resource;
 
 import org.codelibs.elasticsearch.web.robot.entity.EsUrlQueue;
+import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
@@ -18,6 +22,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.seasar.framework.util.StringUtil;
 import org.seasar.robot.Constants;
 import org.seasar.robot.entity.AccessResult;
 import org.seasar.robot.entity.UrlQueue;
@@ -26,12 +31,17 @@ import org.seasar.robot.util.AccessResultCallback;
 
 public class EsUrlQueueService extends AbstractRobotService implements
         UrlQueueService {
-    private static final ESLogger logger = Loggers.getLogger(EsUrlQueueService.class);
+    private static final ESLogger logger = Loggers
+            .getLogger(EsUrlQueueService.class);
 
     @Resource
     protected EsDataService dataService;
 
+    protected Queue<UrlQueue> crawlingUrlQueue = new ConcurrentLinkedQueue<UrlQueue>();
+
     public int pollingFetchSize = 20;
+
+    public int maxCrawlingQueueSize = 100;
 
     @Override
     public void updateSessionId(final String oldSessionId,
@@ -53,7 +63,7 @@ public class EsUrlQueueService extends AbstractRobotService implements
 
     @Override
     public void insert(final UrlQueue urlQueue) {
-        super.insert(urlQueue);
+        super.insert(urlQueue, OpType.CREATE);
     }
 
     @Override
@@ -64,6 +74,10 @@ public class EsUrlQueueService extends AbstractRobotService implements
     @Override
     public void offerAll(final String sessionId,
             final List<UrlQueue> urlQueueList) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Offering URL: Session ID: {}, UrlQueue: {}",
+                    sessionId, urlQueueList);
+        }
         final List<UrlQueue> targetList = new ArrayList<UrlQueue>(
                 urlQueueList.size());
         for (final UrlQueue urlQueue : urlQueueList) {
@@ -71,35 +85,59 @@ public class EsUrlQueueService extends AbstractRobotService implements
                     && !dataService.exists(sessionId, urlQueue.getUrl())) {
                 urlQueue.setSessionId(sessionId);
                 targetList.add(urlQueue);
+            } else if (logger.isDebugEnabled()) {
+                logger.debug("Existed URL: Session ID: {}, UrlQueue: {}",
+                        sessionId, urlQueue);
             }
         }
+        if (logger.isDebugEnabled()) {
+            logger.debug("Offered URL: Session ID: {}, UrlQueue: {}",
+                    sessionId, targetList);
+        }
         if (!targetList.isEmpty()) {
-            insertAll(targetList);
+            insertAll(targetList, OpType.CREATE);
         }
     }
 
     @Override
     public UrlQueue poll(final String sessionId) {
-        final List<EsUrlQueue> urlQueueList = getList(EsUrlQueue.class,
-                sessionId, null, 0, pollingFetchSize,
-                SortBuilders.fieldSort(CREATE_TIME).order(SortOrder.ASC));
-        if (urlQueueList.isEmpty()) {
+        final Lock lock = riverConfig.getLock(sessionId);
+        if (lock == null) {
             return null;
         }
-        final Client client = riverConfig.getClient();
-        for (final EsUrlQueue urlQueue : urlQueueList) {
-            synchronized (client) {
+
+        try {
+            lock.lock();
+            final List<EsUrlQueue> urlQueueList = getList(EsUrlQueue.class,
+                    sessionId, null, 0, pollingFetchSize, SortBuilders
+                            .fieldSort(CREATE_TIME).order(SortOrder.ASC));
+            if (urlQueueList.isEmpty()) {
+                return null;
+            }
+            if (logger.isDebugEnabled()) {
+                logger.debug("Queued URL: {}", urlQueueList);
+            }
+            final Client client = riverConfig.getClient();
+            for (final EsUrlQueue urlQueue : urlQueueList) {
                 final String url = urlQueue.getUrl();
                 if (exists(sessionId, url)) {
+                    crawlingUrlQueue.add(urlQueue);
+                    if (crawlingUrlQueue.size() > maxCrawlingQueueSize) {
+                        crawlingUrlQueue.poll();
+                    }
                     super.delete(sessionId, url);
                     if (riverConfig.isIncremental(sessionId)) {
                         updateLastModified(sessionId, client, urlQueue, url);
                     }
                     return urlQueue;
+                } else if (logger.isDebugEnabled()) {
+                    logger.debug("Already Deleted: {}", urlQueue);
                 }
             }
+            return null;
+        } finally {
+            lock.unlock();
         }
-        return null;
     }
 
     private void updateLastModified(final String sessionId,
@@ -121,7 +159,7 @@ public class EsUrlQueueService extends AbstractRobotService implements
                     urlQueue.setLastModified(new Timestamp(date.getTime()));
                 }
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Failed to update a last modified: " + sessionId,
                         e);
@@ -136,7 +174,40 @@ public class EsUrlQueueService extends AbstractRobotService implements
 
     @Override
     public boolean visited(final UrlQueue urlQueue) {
-        return exists(urlQueue.getSessionId(), urlQueue.getUrl());
+        final String url = urlQueue.getUrl();
+        if (StringUtil.isBlank(url)) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("URL is a blank: " + url);
+            }
+            return false;
+        }
+
+        final String sessionId = urlQueue.getSessionId();
+        if (super.exists(sessionId, url)) {
+            return true;
+        }
+
+        final AccessResult accessResult = dataService.getAccessResult(
+                sessionId, url);
+        if (accessResult != null) {
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    protected boolean exists(final String sessionId, final String url) {
+        final boolean ret = super.exists(sessionId, url);
+        if (!ret) {
+            for (final UrlQueue urlQueue : crawlingUrlQueue) {
+                if (sessionId.equals(urlQueue.getSessionId())
+                        && url.equals(urlQueue.getUrl())) {
+                    return true;
+                }
+            }
+        }
+        return ret;
     }
 
     @Override

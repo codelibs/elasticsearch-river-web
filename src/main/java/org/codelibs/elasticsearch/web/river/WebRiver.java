@@ -133,9 +133,10 @@ public class WebRiver extends AbstractRiverComponent implements River {
         }
 
         if (cron == null) {
-            Date now = new Date();
+            final Date now = new Date();
             DateUtils.addSeconds(now, 60);
-            SimpleDateFormat sdf = new SimpleDateFormat("s m H d M ? yyyy");
+            final SimpleDateFormat sdf = new SimpleDateFormat(
+                    "s m H d M ? yyyy");
             cron = sdf.format(now);
             jobDataMap.put(ONE_TIME, Boolean.TRUE);
         }
@@ -145,7 +146,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
         jobDataMap.put(ES_CLIENT, client);
         jobDataMap.put(RUNNING_JOB, runningJob);
 
-        Map<String, Object> vars = new HashMap<String, Object>();
+        final Map<String, Object> vars = new HashMap<String, Object>();
         vars.put("riverName", riverName);
         vars.put("client", client);
         executeScript(settings.settings(), vars, "start");
@@ -166,7 +167,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
             return;
         }
 
-        Map<String, Object> vars = new HashMap<String, Object>();
+        final Map<String, Object> vars = new HashMap<String, Object>();
         vars.put("riverName", riverName);
         vars.put("client", client);
         executeScript(settings.settings(), vars, "close");
@@ -180,13 +181,13 @@ public class WebRiver extends AbstractRiverComponent implements River {
         scheduleService.deleteJob(jobKey(id + JOB_ID_SUFFIX, groupId));
     }
 
-    protected static void executeScript(Map<String, Object> settings,
-            Map<String, Object> vars, String target) {
-        Map<String, Object> crawlSettings = SettingsUtils
-                .get(settings, "crawl");
-        Map<String, Object> scriptSettings = SettingsUtils.get(crawlSettings,
-                "script");
-        String script = SettingsUtils.get(scriptSettings, target);
+    protected static void executeScript(final Map<String, Object> settings,
+            final Map<String, Object> vars, final String target) {
+        final Map<String, Object> crawlSettings = SettingsUtils.get(settings,
+                "crawl");
+        final Map<String, Object> scriptSettings = SettingsUtils.get(
+                crawlSettings, "script");
+        final String script = SettingsUtils.get(scriptSettings, target);
         if (StringUtils.isNotBlank(script)) {
             final Map<String, Object> localVars = new HashMap<String, Object>(
                     vars);
@@ -196,7 +197,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
             try {
                 logger.info("[{}] \"{}\" => {}", target, script,
                         MVEL.eval(script, localVars));
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 logger.warn("Failed to execute script: {}", e, script);
             }
         }
@@ -222,15 +223,15 @@ public class WebRiver extends AbstractRiverComponent implements River {
             final RiverName riverName = (RiverName) data.get(RIVER_NAME);
             final String sessionId = UUID.randomUUID().toString();
 
-            Client client = getClient(data);
-            Map<String, Object> vars = new HashMap<String, Object>();
+            final Client client = getClient(data);
+            final Map<String, Object> vars = new HashMap<String, Object>();
             vars.put("riverName", riverName);
             vars.put("sessionId", sessionId);
             vars.put("client", client);
 
             RiverConfig riverConfig = null;
             final RiverSettings settings = (RiverSettings) data.get(SETTINGS);
-            Map<String, Object> rootSettings = settings.settings();
+            final Map<String, Object> rootSettings = settings.settings();
             try {
 
                 executeScript(rootSettings, vars, "execute");
@@ -272,13 +273,13 @@ public class WebRiver extends AbstractRiverComponent implements River {
                         robotsTxtEnabled);
 
                 // proxy
-                Map<String, Object> proxyMap = SettingsUtils.get(crawlSettings,
-                        "proxy", null);
+                final Map<String, Object> proxyMap = SettingsUtils.get(
+                        crawlSettings, "proxy", null);
                 if (proxyMap != null) {
-                    Object host = proxyMap.get("host");
+                    final Object host = proxyMap.get("host");
                     if (host != null) {
                         paramMap.put(HcHttpClient.PROXY_HOST_PROPERTY, host);
-                        Object portObj = proxyMap.get("port");
+                        final Object portObj = proxyMap.get("port");
                         if (portObj instanceof Integer) {
                             paramMap.put(HcHttpClient.PROXY_PORT_PROPERTY,
                                     portObj);
@@ -449,6 +450,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 // crawl config
                 riverConfig = SingletonS2Container
                         .getComponent(RiverConfig.class);
+                riverConfig.createLock(sessionId);
                 riverConfig.addRiverParams(sessionId, riverParamMap);
                 for (final Map<String, Object> targetMap : targetList) {
                     @SuppressWarnings("unchecked")
@@ -498,10 +500,10 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 SingletonS2Container.getComponent(EsUrlFilterService.class)
                         .delete(sessionId);
 
-                Object oneTime = data.get(ONE_TIME);
+                final Object oneTime = data.get(ONE_TIME);
                 if (oneTime != null) {
                     if (client != null) {
-                        DeleteMappingResponse deleteMappingResponse = client
+                        final DeleteMappingResponse deleteMappingResponse = client
                                 .admin().indices()
                                 .prepareDeleteMapping("_river")
                                 .setType(riverName.name()).execute()
@@ -519,8 +521,8 @@ public class WebRiver extends AbstractRiverComponent implements River {
             }
         }
 
-        private Client getClient(JobDataMap data) {
-            Object clientObj = data.get(ES_CLIENT);
+        private Client getClient(final JobDataMap data) {
+            final Object clientObj = data.get(ES_CLIENT);
             if (clientObj instanceof Client) {
                 return (Client) clientObj;
             }

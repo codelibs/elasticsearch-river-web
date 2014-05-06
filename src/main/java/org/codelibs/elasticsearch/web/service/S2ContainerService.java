@@ -32,7 +32,7 @@ public class S2ContainerService extends
 
     @Inject
     public S2ContainerService(final Settings settings, final Client client,
-            ClusterService clusterService) {
+            final ClusterService clusterService) {
         super(settings);
         this.client = client;
 
@@ -97,20 +97,21 @@ public class S2ContainerService extends
     }
 
     private void createRobotIndex() {
-        String robotIndexName = SingletonS2Container
+        final String robotIndexName = SingletonS2Container
                 .getComponent("robotIndexName");
-        IndicesExistsResponse indicesExistsResponse = client.admin().indices()
-                .prepareExists(robotIndexName).execute().actionGet();
+        final IndicesExistsResponse indicesExistsResponse = client.admin()
+                .indices().prepareExists(robotIndexName).execute().actionGet();
         if (!indicesExistsResponse.isExists()) {
-            CreateIndexResponse createIndexResponse = client.admin().indices()
-                    .prepareCreate(robotIndexName).execute().actionGet();
+            final CreateIndexResponse createIndexResponse = client.admin()
+                    .indices().prepareCreate(robotIndexName).execute()
+                    .actionGet();
             if (createIndexResponse.isAcknowledged()) {
                 try {
                     createMapping(robotIndexName, "queue", createQueueMapping());
                     createMapping(robotIndexName, "filter",
                             createFilterMapping());
                     createMapping(robotIndexName, "data", createDataMapping());
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     logger.error("Failed to create a mapping.", e);
                 }
             } else {
@@ -119,10 +120,10 @@ public class S2ContainerService extends
         }
     }
 
-    private void createMapping(String robotIndexName, String type,
-            XContentBuilder builder) {
-        PutMappingResponse queueMappingResponse = client.admin().indices()
-                .preparePutMapping(robotIndexName).setType(type)
+    private void createMapping(final String robotIndexName, final String type,
+            final XContentBuilder builder) {
+        final PutMappingResponse queueMappingResponse = client.admin()
+                .indices().preparePutMapping(robotIndexName).setType(type)
                 .setSource(builder).execute().actionGet();
         if (!queueMappingResponse.isAcknowledged()) {
             logger.warn("Failed to create " + type + " mapping.");
@@ -276,7 +277,7 @@ public class S2ContainerService extends
                 .field("index", "not_analyzed")//
                 .endObject()//
 
-                .endObject()//                                
+                .endObject()//
                 .endObject()//
 
                 .endObject()//

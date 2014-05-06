@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.elasticsearch.client.Client;
 import org.seasar.robot.entity.ResponseData;
@@ -16,12 +18,22 @@ public class RiverConfig {
 
     protected Map<String, Map<String, Object>> riverParamMap = new ConcurrentHashMap<String, Map<String, Object>>();
 
+    protected Map<String, Lock> lockMap = new ConcurrentHashMap<String, Lock>();
+
     public Client getClient() {
         return client;
     }
 
     public void setClient(final Client client) {
         this.client = client;
+    }
+
+    public void createLock(final String sessionId) {
+        lockMap.put(sessionId, new ReentrantLock());
+    }
+
+    public Lock getLock(final String sessionId) {
+        return lockMap.get(sessionId);
     }
 
     public void addRiverParams(final String sessionId,
@@ -105,6 +117,7 @@ public class RiverConfig {
     public void cleanup(final String sessionId) {
         riverParamMap.remove(sessionId);
         sessionScrapingRuleMap.remove(sessionId);
+        lockMap.remove(sessionId);
     }
 
 }

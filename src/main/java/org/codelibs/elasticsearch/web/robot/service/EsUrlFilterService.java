@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -24,7 +25,7 @@ public class EsUrlFilterService extends AbstractRobotService implements
         esUrlFilter.setSessionId(sessionId);
         esUrlFilter.setFilterType(INCLUDE);
         esUrlFilter.setUrl(url);
-        insert(esUrlFilter);
+        insert(esUrlFilter, OpType.CREATE);
     }
 
     @Override
@@ -39,7 +40,7 @@ public class EsUrlFilterService extends AbstractRobotService implements
             esUrlFilter.setUrl(url);
             urlFilterList.add(esUrlFilter);
         }
-        insertAll(urlFilterList);
+        insertAll(urlFilterList, OpType.CREATE);
     }
 
     @Override
@@ -48,7 +49,7 @@ public class EsUrlFilterService extends AbstractRobotService implements
         esUrlFilter.setSessionId(sessionId);
         esUrlFilter.setFilterType(EXCLUDE);
         esUrlFilter.setUrl(url);
-        insert(esUrlFilter);
+        insert(esUrlFilter, OpType.CREATE);
     }
 
     @Override
@@ -63,7 +64,7 @@ public class EsUrlFilterService extends AbstractRobotService implements
             esUrlFilter.setUrl(url);
             urlFilterList.add(esUrlFilter);
         }
-        insertAll(urlFilterList);
+        insertAll(urlFilterList, OpType.CREATE);
     }
 
     @Override

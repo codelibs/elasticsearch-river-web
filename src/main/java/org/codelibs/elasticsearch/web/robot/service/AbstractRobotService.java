@@ -16,6 +16,7 @@ import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -74,21 +75,22 @@ public abstract class AbstractRobotService {
                 .execute().actionGet();
     }
 
-    protected void insert(final Object target) {
+    protected void insert(final Object target, final OpType opType) {
         final String id = getId(getSessionId(target), getUrl(target));
         final XContentBuilder source = getXContentBuilder(target);
         riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
-                .setRefresh(true).execute().actionGet();
+                .setOpType(opType).setRefresh(true).execute().actionGet();
     }
 
-    protected <T> void insertAll(final List<T> list) {
+    protected <T> void insertAll(final List<T> list, final OpType opType) {
         final BulkRequestBuilder bulkRequest = riverConfig.getClient()
                 .prepareBulk();
         for (final T target : list) {
             final String id = getId(getSessionId(target), getUrl(target));
             final XContentBuilder source = getXContentBuilder(target);
             bulkRequest.add(riverConfig.getClient()
-                    .prepareIndex(index, type, id).setSource(source));
+                    .prepareIndex(index, type, id).setSource(source)
+                    .setOpType(opType));
         }
         final BulkResponse bulkResponse = bulkRequest.setRefresh(true)
                 .execute().actionGet();
@@ -100,7 +102,8 @@ public abstract class AbstractRobotService {
     protected boolean exists(final String sessionId, final String url) {
         final String id = getId(sessionId, url);
         final GetResponse response = riverConfig.getClient()
-                .prepareGet(index, type, id).execute().actionGet();
+                .prepareGet(index, type, id).setRefresh(true).execute()
+                .actionGet();
         return response.isExists();
     }
 

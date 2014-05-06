@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.codelibs.elasticsearch.web.robot.entity.EsAccessResult;
+import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.common.unit.TimeValue;
@@ -24,7 +25,7 @@ public class EsDataService extends AbstractRobotService implements DataService {
 
     @Override
     public void store(final AccessResult accessResult) {
-        super.insert(accessResult);
+        super.insert(accessResult, OpType.CREATE);
     }
 
     @Override
@@ -34,7 +35,7 @@ public class EsDataService extends AbstractRobotService implements DataService {
 
     @Override
     public void update(final List<AccessResult> accessResultList) {
-        insertAll(accessResultList);
+        insertAll(accessResultList, OpType.INDEX);
     }
 
     @Override

@@ -98,7 +98,7 @@ public class ScrapingTransformer extends
     }
 
     @Override
-    public ResultData transform(ResponseData responseData) {
+    public ResultData transform(final ResponseData responseData) {
         try {
             return super.transform(responseData);
         } finally {
@@ -112,7 +112,7 @@ public class ScrapingTransformer extends
         final ScrapingRule scrapingRule = riverConfig
                 .getScrapingRule(responseData);
         if (scrapingRule != null) {
-            Integer s = scrapingRule.getSetting("preloadSizeForCharset",
+            final Integer s = scrapingRule.getSetting("preloadSizeForCharset",
                     Integer.valueOf(0));
             if (s.intValue() > 0) {
                 preloadSize = s.intValue();
@@ -135,7 +135,8 @@ public class ScrapingTransformer extends
         }
     }
 
-    protected String loadCharset(final InputStream inputStream, int preloadSize) {
+    protected String loadCharset(final InputStream inputStream,
+            final int preloadSize) {
         BufferedInputStream bis = null;
         String encoding = null;
         try {
@@ -241,8 +242,8 @@ public class ScrapingTransformer extends
                     strList.add(trimSpaces(value.toString(), isTrimSpaces));
                 } else if (value instanceof List) {
                     @SuppressWarnings("unchecked")
-                    List<Object> list = (List<Object>) value;
-                    for (Object obj : list) {
+                    final List<Object> list = (List<Object>) value;
+                    for (final Object obj : list) {
                         strList.add(trimSpaces(obj.toString(), isTrimSpaces));
                     }
                 }
@@ -304,15 +305,15 @@ public class ScrapingTransformer extends
                     childUrlSetLocal.set(childUrlSet);
                 }
                 if (propertyValue instanceof String) {
-                    String str = (String) propertyValue;
+                    final String str = (String) propertyValue;
                     if (StringUtils.isNotBlank(str)) {
                         childUrlSet.add(str);
                     }
                 } else if (propertyValue instanceof List) {
                     @SuppressWarnings("unchecked")
-                    List<Object> list = (List<Object>) propertyValue;
-                    for (Object obj : list) {
-                        String str = obj.toString();
+                    final List<Object> list = (List<Object>) propertyValue;
+                    for (final Object obj : list) {
+                        final String str = obj.toString();
                         if (StringUtils.isNotBlank(str)) {
                             childUrlSet.add(str);
                         }
@@ -618,7 +619,7 @@ public class ScrapingTransformer extends
     @Override
     protected void storeChildUrls(final ResponseData responseData,
             final ResultData resultData) {
-        Set<String> childLinkSet = childUrlSetLocal.get();
+        final Set<String> childLinkSet = childUrlSetLocal.get();
         if (childLinkSet != null) {
             resultData.setChildUrlSet(childLinkSet);
             final String u = responseData.getUrl();
@@ -631,7 +632,7 @@ public class ScrapingTransformer extends
 
     /**
      * Returns data as XML content of String.
-     * 
+     *
      * @return XML content of String.
      */
     @Override
