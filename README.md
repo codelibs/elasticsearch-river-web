@@ -10,7 +10,8 @@ This plugin provides a feature to crawl web sites and extract the content by CSS
 
 | River Web | elasticsearch |
 |:---------:|:-------------:|
-| master    | 1.0.X         |
+| master    | 1.2.X         |
+| 1.1.2     | 1.1.1         |
 | 1.1.1     | 1.0.2         |
 | 1.0.1     | 0.90.7        |
 
@@ -29,7 +30,7 @@ River Web plugin depends on Quartz plugin.
 
 ### Install River Web Plugin
 
-    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-river-web/1.1.1
+    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-river-web/1.1.2
 
 ## Usage
 
@@ -431,6 +432,55 @@ In "properties" object, put "script" value to a property you want to rewrite.
               },
 
 The above is, if a string value of body element in HTML contains "Elasticsearch", set "yes" to "flag" property.
+
+### Start a crawler immediately
+
+To start a crawler immediately, remove "cron" property in a configuration to register a river.
+No "cron" property means that the crawler starts right now and the river configuration is removed automatically at the end of the crawling.
+
+### Use HTTP proxy
+
+Put "proxy" property in "crawl" property.
+
+    curl -XPUT 'localhost:9200/_river/my_web/_meta' -d '{
+        "type" : "web",
+        "crawl" : {
+    ...
+            "proxy" : {
+              "host" : "proxy.server.com",
+              "port" : 8080
+            },
+
+### Specify next crawled urls when crawling
+
+To set "isChildUrl" property to true, the property values is used as next crawled urls.
+
+    "crawl" : {
+    ...
+        "target" : [
+          {
+    ...
+            "properties" : {
+              "childUrl" : {
+                "value" : ["http://fess.codelibs.org/","http://fess.codelibs.org/ja/"],
+                "isArray" : true,
+                "isChildUrl" : true
+              },
+
+### Intercept start/execute/finish/close actions
+
+You can insert your script to Starting River(start)/Executing Crawler(execute)/Finished Crawler(finish)/Closed River(close).
+To insert scripts, put "script" property to "crawl" property.
+
+    {
+      "crawl" : {
+      ...
+        "script":{
+          "start":"your MVEL script...",
+          "execute":"your MVEL script...",
+          "finish":"your MVEL script...",
+          "close":"your MVEL script..."
+        },
 
 ### Create Index For Crawling (1.0.0 - 1.1.0)
 
