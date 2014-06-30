@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.codelibs.elasticsearch.util.SettingsUtils;
+import org.codelibs.elasticsearch.util.settings.SettingsUtils;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.codelibs.elasticsearch.web.config.ScrapingRule;
 import org.elasticsearch.client.Client;

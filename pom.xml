@@ -27,7 +27,7 @@
 		<version>7</version>
 	</parent>
 	<properties>
-		<elasticsearch.version>1.1.1</elasticsearch.version>
+		<elasticsearch.version>1.2.1</elasticsearch.version>
 	</properties>
 	<repositories>
 		<repository>
@@ -52,8 +52,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>2.3.2</version>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
+					<source>1.7</source>
+					<target>1.7</target>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -114,12 +114,12 @@
 		<dependency>
 			<groupId>org.codelibs</groupId>
 			<artifactId>elasticsearch-util</artifactId>
-			<version>0.2.1</version>
+			<version>0.3.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.seasar.robot</groupId>
 			<artifactId>s2-robot</artifactId>
-			<version>0.7.1</version>
+			<version>0.7.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jsoup</groupId>
