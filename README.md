@@ -10,7 +10,8 @@ This plugin provides a feature to crawl web sites and extract the content by CSS
 
 | River Web | elasticsearch |
 |:---------:|:-------------:|
-| master    | 1.2.X         |
+| master    | 1.3.X         |
+| 1.3.0     | 1.3.0         |
 | 1.2.0     | 1.2.1         |
 | 1.1.2     | 1.1.1         |
 | 1.1.1     | 1.0.2         |
@@ -32,7 +33,7 @@ River Web plugin depends on Quartz plugin.
 
 ### Install River Web Plugin
 
-    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-river-web/1.2.0
+    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-river-web/1.3.0
 
 ## Usage
 
@@ -182,7 +183,7 @@ The configuration is:
 | crawl.target.properties.name        | string  | "name" is used as a property name in the index. |
 | crawl.target.properties.name.text   | string  | CSS Query for the property value.               |
 | crawl.target.properties.name.html   | string  | CSS Query for the property value.               |
-| crawl.target.properties.name.script | string  | Rewrite the property value by MVEL.             |
+| crawl.target.properties.name.script | string  | Rewrite the property value by Script(Groovy).   |
 | schedule.cron                       | string  | [Cron format](http://quartz-scheduler.org/api/2.2.0/org/quartz/CronExpression.html) to start a crawler.                 |
 
 
@@ -420,9 +421,10 @@ and then create "webindex" index with analyzers for Japanese.
       }
     }'
 
-### Rewrite a property value by MVEL
+### Rewrite a property value by Script
 
-River Web allows you to rewrite crawled data by [MVEL](http://mvel.codehaus.org/).
+River Web allows you to rewrite crawled data by [Elasticsearch's scripting](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html).
+The default script language is Groovy.
 In "properties" object, put "script" value to a property you want to rewrite.
 
     ...
@@ -478,10 +480,10 @@ To insert scripts, put "script" property to "crawl" property.
       "crawl" : {
       ...
         "script":{
-          "start":"your MVEL script...",
-          "execute":"your MVEL script...",
-          "finish":"your MVEL script...",
-          "close":"your MVEL script..."
+          "start":"your script...",
+          "execute":"your script...",
+          "finish":"your script...",
+          "close":"your script..."
         },
 
 ### Create Index For Crawling (1.0.0 - 1.1.0)
