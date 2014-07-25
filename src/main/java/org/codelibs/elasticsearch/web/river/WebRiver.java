@@ -198,7 +198,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
         final Map<String, Object> scriptSettings = SettingsUtils.get(
                 crawlSettings, "script");
         final String script = SettingsUtils.get(scriptSettings, target);
-        final String lang = SettingsUtils.get(scriptSettings, "lang");
+        final String lang = SettingsUtils.get(scriptSettings, "lang", "groovy");
         final String scriptTypeValue = SettingsUtils.get(scriptSettings,
                 "script_type", "inline");
         ScriptType scriptType;
