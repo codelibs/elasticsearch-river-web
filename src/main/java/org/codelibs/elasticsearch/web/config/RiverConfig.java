@@ -8,6 +8,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.elasticsearch.client.Client;
+import org.elasticsearch.script.ScriptService;
 import org.seasar.robot.entity.ResponseData;
 
 public class RiverConfig {
@@ -20,12 +21,22 @@ public class RiverConfig {
 
     protected Map<String, Lock> lockMap = new ConcurrentHashMap<String, Lock>();
 
+    private ScriptService scriptService;
+
     public Client getClient() {
         return client;
     }
 
     public void setClient(final Client client) {
         this.client = client;
+    }
+
+    public void setScriptService(final ScriptService scriptService) {
+        this.scriptService = scriptService;
+    }
+
+    public ScriptService getScriptService() {
+        return scriptService;
     }
 
     public void createLock(final String sessionId) {

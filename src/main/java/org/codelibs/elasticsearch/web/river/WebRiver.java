@@ -38,11 +38,13 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
-import org.elasticsearch.common.mvel2.MVEL;
 import org.elasticsearch.river.AbstractRiverComponent;
 import org.elasticsearch.river.River;
 import org.elasticsearch.river.RiverName;
 import org.elasticsearch.river.RiverSettings;
+import org.elasticsearch.script.CompiledScript;
+import org.elasticsearch.script.ScriptService;
+import org.elasticsearch.script.ScriptService.ScriptType;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -69,6 +71,8 @@ public class WebRiver extends AbstractRiverComponent implements River {
     private static final String SETTINGS = "settings";
 
     private static final String RUNNING_JOB = "runningJob";
+
+    private static final String SCRIPT_SERVICE = "scriptService";
 
     private static final String TRIGGER_ID_SUFFIX = "Trigger";
 
@@ -99,12 +103,16 @@ public class WebRiver extends AbstractRiverComponent implements River {
 
     private AtomicReference<CrawlJob> runningJob = new AtomicReference<CrawlJob>();
 
+    private ScriptService scriptService;
+
     @Inject
     public WebRiver(final RiverName riverName, final RiverSettings settings,
-            final Client client, final ScheduleService scheduleService) {
+            final Client client, final ScheduleService scheduleService,
+            final ScriptService scriptService) {
         super(riverName, settings);
         this.client = client;
         this.scheduleService = scheduleService;
+        this.scriptService = scriptService;
 
         groupId = riverName.type() == null ? "web" : riverName.type();
         id = riverName.name();
@@ -145,11 +153,12 @@ public class WebRiver extends AbstractRiverComponent implements River {
         jobDataMap.put(SETTINGS, settings);
         jobDataMap.put(ES_CLIENT, client);
         jobDataMap.put(RUNNING_JOB, runningJob);
+        jobDataMap.put(SCRIPT_SERVICE, scriptService);
 
         final Map<String, Object> vars = new HashMap<String, Object>();
         vars.put("riverName", riverName);
         vars.put("client", client);
-        executeScript(settings.settings(), vars, "start");
+        executeScript(scriptService, settings.settings(), vars, "start");
 
         final JobDetail crawlJob = newJob(CrawlJob.class)
                 .withIdentity(id + JOB_ID_SUFFIX, groupId)
@@ -170,7 +179,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
         final Map<String, Object> vars = new HashMap<String, Object>();
         vars.put("riverName", riverName);
         vars.put("client", client);
-        executeScript(settings.settings(), vars, "close");
+        executeScript(scriptService, settings.settings(), vars, "close");
 
         logger.info("Unscheduling  CrawlJob...");
 
@@ -181,13 +190,26 @@ public class WebRiver extends AbstractRiverComponent implements River {
         scheduleService.deleteJob(jobKey(id + JOB_ID_SUFFIX, groupId));
     }
 
-    protected static void executeScript(final Map<String, Object> settings,
-            final Map<String, Object> vars, final String target) {
+    protected static void executeScript(final ScriptService scriptService,
+            final Map<String, Object> settings, final Map<String, Object> vars,
+            final String target) {
         final Map<String, Object> crawlSettings = SettingsUtils.get(settings,
                 "crawl");
         final Map<String, Object> scriptSettings = SettingsUtils.get(
                 crawlSettings, "script");
         final String script = SettingsUtils.get(scriptSettings, target);
+        final String lang = SettingsUtils.get(scriptSettings, "lang");
+        final String scriptTypeValue = SettingsUtils.get(scriptSettings,
+                "script_type", "inline");
+        ScriptType scriptType;
+        if (ScriptType.FILE.toString().equalsIgnoreCase(scriptTypeValue)) {
+            scriptType = ScriptType.FILE;
+        } else if (ScriptType.INDEXED.toString().equalsIgnoreCase(
+                scriptTypeValue)) {
+            scriptType = ScriptType.INDEXED;
+        } else {
+            scriptType = ScriptType.INLINE;
+        }
         if (StringUtils.isNotBlank(script)) {
             final Map<String, Object> localVars = new HashMap<String, Object>(
                     vars);
@@ -195,8 +217,10 @@ public class WebRiver extends AbstractRiverComponent implements River {
                     SingletonS2ContainerFactory.getContainer());
             localVars.put("settings", settings);
             try {
+                final CompiledScript compiledScript = scriptService.compile(
+                        lang, script, scriptType);
                 logger.info("[{}] \"{}\" => {}", target, script,
-                        MVEL.eval(script, localVars));
+                        scriptService.execute(compiledScript, localVars));
             } catch (final Exception e) {
                 logger.warn("Failed to execute script: {}", e, script);
             }
@@ -215,6 +239,8 @@ public class WebRiver extends AbstractRiverComponent implements River {
             @SuppressWarnings("unchecked")
             final AtomicReference<Job> runningJob = (AtomicReference<Job>) data
                     .get(RUNNING_JOB);
+            final ScriptService scriptSerivce = (ScriptService) data
+                    .get(SCRIPT_SERVICE);
             if (!runningJob.compareAndSet(null, this)) {
                 logger.info(context.getJobDetail().getKey() + " is running.");
                 return;
@@ -234,7 +260,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
             final Map<String, Object> rootSettings = settings.settings();
             try {
 
-                executeScript(rootSettings, vars, "execute");
+                executeScript(scriptSerivce, rootSettings, vars, "execute");
 
                 @SuppressWarnings("unchecked")
                 final Map<String, Object> crawlSettings = (Map<String, Object>) rootSettings
@@ -481,7 +507,7 @@ public class WebRiver extends AbstractRiverComponent implements River {
                 s2Robot.stop();
 
             } finally {
-                executeScript(rootSettings, vars, "finish");
+                executeScript(scriptSerivce, rootSettings, vars, "finish");
 
                 runningJob.set(null);
                 if (riverConfig != null) {

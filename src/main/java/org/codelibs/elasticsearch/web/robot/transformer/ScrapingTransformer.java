@@ -26,8 +26,10 @@ import org.codelibs.elasticsearch.util.settings.SettingsUtils;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.codelibs.elasticsearch.web.config.ScrapingRule;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.mvel2.MVEL;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.script.CompiledScript;
+import org.elasticsearch.script.ScriptService;
+import org.elasticsearch.script.ScriptService.ScriptType;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -266,8 +268,8 @@ public class ScrapingTransformer extends
             }
 
             Object propertyValue;
-            final String script = getScriptValue(params);
-            if (StringUtil.isBlank(script)) {
+            final ScriptInfo scriptInfo = getScriptValue(params);
+            if (scriptInfo == null) {
                 propertyValue = isArray ? strList : StringUtils.join(strList,
                         " ");
             } else {
@@ -289,12 +291,16 @@ public class ScrapingTransformer extends
                                 vars);
                         localVars.put("index", i);
                         localVars.put("value", StringUtils.join(strList, " "));
-                        list.add(MVEL.eval(script, localVars));
+                        list.add(executeScript(scriptInfo.getLang(),
+                                scriptInfo.getScript(),
+                                scriptInfo.getScriptType(), localVars));
                     }
                     propertyValue = list;
                 } else {
                     vars.put("value", StringUtils.join(strList, " "));
-                    propertyValue = MVEL.eval(script, vars);
+                    propertyValue = executeScript(scriptInfo.getLang(),
+                            scriptInfo.getScript(), scriptInfo.getScriptType(),
+                            vars);
                 }
             }
             addPropertyData(dataMap, propName, propertyValue);
@@ -325,16 +331,75 @@ public class ScrapingTransformer extends
         storeIndex(responseData, dataMap);
     }
 
-    protected String getScriptValue(final Map<String, Object> params) {
+    private Object executeScript(final String lang, final String script,
+            final String scriptTypeValue, final Map<String, Object> vars) {
+        ScriptType scriptType;
+        if (ScriptType.FILE.toString().equalsIgnoreCase(scriptTypeValue)) {
+            scriptType = ScriptType.FILE;
+        } else if (ScriptType.INDEXED.toString().equalsIgnoreCase(
+                scriptTypeValue)) {
+            scriptType = ScriptType.INDEXED;
+        } else {
+            scriptType = ScriptType.INLINE;
+        }
+        final ScriptService scriptService = riverConfig.getScriptService();
+        final CompiledScript compiledScript = scriptService.compile(lang,
+                script, scriptType);
+        return scriptService.execute(compiledScript, vars);
+    }
+
+    protected ScriptInfo getScriptValue(final Map<String, Object> params) {
         final Object value = SettingsUtils.get(params, SCRIPT_QUERY_TYPE, null);
         if (value == null) {
             return null;
         } else if (value instanceof String) {
-            return value.toString();
+            return new ScriptInfo(value.toString());
         } else if (value instanceof List) {
-            return StringUtils.join((List<?>) value, "");
+            return new ScriptInfo(StringUtils.join((List<?>) value, ""));
+        } else if (value instanceof Map) {
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> scriptMap = (Map<String, Object>) value;
+            final String script = SettingsUtils.get(scriptMap,
+                    SCRIPT_QUERY_TYPE);
+            if (script == null) {
+                return null;
+            }
+            return new ScriptInfo(script, SettingsUtils.get(scriptMap, "lang",
+                    "groovy"), SettingsUtils.get(scriptMap, "script_type",
+                    "inline"));
         }
         return null;
+    }
+
+    private static class ScriptInfo {
+        private String script;
+
+        private String lang;
+
+        private String scriptType;
+
+        ScriptInfo(final String script) {
+            this(script, "groovy", "inline");
+        }
+
+        ScriptInfo(final String script, final String lang,
+                final String scriptType) {
+            this.script = script;
+            this.lang = lang;
+            this.scriptType = scriptType;
+        }
+
+        public String getScript() {
+            return script;
+        }
+
+        public String getLang() {
+            return lang;
+        }
+
+        public String getScriptType() {
+            return scriptType;
+        }
     }
 
     protected void processCssQuery(final org.jsoup.nodes.Document document,

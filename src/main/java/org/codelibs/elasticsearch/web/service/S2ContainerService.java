@@ -20,6 +20,7 @@ import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.script.ScriptService;
 import org.seasar.framework.container.SingletonS2Container;
 import org.seasar.framework.container.factory.SingletonS2ContainerFactory;
 
@@ -30,11 +31,15 @@ public class S2ContainerService extends
 
     private Client client;
 
+    private ScriptService scriptService;
+
     @Inject
     public S2ContainerService(final Settings settings, final Client client,
-            final ClusterService clusterService) {
+            final ClusterService clusterService,
+            final ScriptService scriptService) {
         super(settings);
         this.client = client;
+        this.scriptService = scriptService;
 
         logger.info("Creating S2Container...");
 
@@ -93,7 +98,7 @@ public class S2ContainerService extends
         final RiverConfig riverConfig = SingletonS2Container
                 .getComponent(RiverConfig.class);
         riverConfig.setClient(client);
-
+        riverConfig.setScriptService(scriptService);
     }
 
     private void createRobotIndex() {
