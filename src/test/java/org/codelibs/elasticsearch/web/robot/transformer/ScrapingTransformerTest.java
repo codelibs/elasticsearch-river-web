@@ -10,10 +10,10 @@ import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
+import org.codelibs.robot.entity.ResponseData;
+import org.codelibs.robot.entity.ResultData;
 import org.junit.Test;
 import org.seasar.framework.util.ResourceUtil;
-import org.seasar.robot.entity.ResponseData;
-import org.seasar.robot.entity.ResultData;
 
 public class ScrapingTransformerTest {
     @Test

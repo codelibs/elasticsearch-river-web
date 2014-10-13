@@ -2,9 +2,9 @@ package org.codelibs.elasticsearch.web.robot.entity;
 
 import java.io.IOException;
 
+import org.codelibs.robot.entity.UrlQueueImpl;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.seasar.robot.entity.UrlQueueImpl;
 
 public class EsUrlQueue extends UrlQueueImpl implements ToXContent {
 

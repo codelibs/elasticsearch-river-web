@@ -21,10 +21,21 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.codelibs.elasticsearch.util.settings.SettingsUtils;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.codelibs.elasticsearch.web.config.ScrapingRule;
+import org.codelibs.robot.Constants;
+import org.codelibs.robot.RobotCrawlAccessException;
+import org.codelibs.robot.RobotSystemException;
+import org.codelibs.robot.builder.RequestDataBuilder;
+import org.codelibs.robot.entity.AccessResultData;
+import org.codelibs.robot.entity.RequestData;
+import org.codelibs.robot.entity.ResponseData;
+import org.codelibs.robot.entity.ResultData;
+import org.codelibs.robot.helper.EncodingHelper;
+import org.codelibs.robot.transformer.impl.HtmlTransformer;
+import org.codelibs.robot.util.StreamUtil;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.CompiledScript;
@@ -43,19 +54,10 @@ import org.seasar.framework.util.Base64Util;
 import org.seasar.framework.util.FileUtil;
 import org.seasar.framework.util.MethodUtil;
 import org.seasar.framework.util.StringUtil;
-import org.seasar.robot.Constants;
-import org.seasar.robot.RobotCrawlAccessException;
-import org.seasar.robot.RobotSystemException;
-import org.seasar.robot.entity.AccessResultData;
-import org.seasar.robot.entity.ResponseData;
-import org.seasar.robot.entity.ResultData;
-import org.seasar.robot.helper.EncodingHelper;
-import org.seasar.robot.util.StreamUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ScrapingTransformer extends
-        org.seasar.robot.transformer.impl.HtmlTransformer {
+public class ScrapingTransformer extends HtmlTransformer {
 
     private static final long DEFAULT_MAX_ATTACHMENT_SIZE = 1000 * 1000; // 1M
 
@@ -686,10 +688,17 @@ public class ScrapingTransformer extends
             final ResultData resultData) {
         final Set<String> childLinkSet = childUrlSetLocal.get();
         if (childLinkSet != null) {
-            resultData.setChildUrlSet(childLinkSet);
-            final String u = responseData.getUrl();
-            resultData.removeUrl(u);
-            resultData.removeUrl(getDuplicateUrl(u));
+            List<RequestData> requestDataList = new ArrayList<>();
+            for (String childUrl : childLinkSet) {
+                requestDataList.add(RequestDataBuilder.newRequestData().get()
+                        .url(childUrl).build());
+            }
+            requestDataList = convertChildUrlList(requestDataList);
+            resultData.addAllUrl(requestDataList);
+
+            final RequestData requestData = responseData.getRequestData();
+            resultData.removeUrl(requestData);
+            resultData.removeUrl(getDuplicateUrl(requestData));
         } else {
             super.storeChildUrls(responseData, resultData);
         }

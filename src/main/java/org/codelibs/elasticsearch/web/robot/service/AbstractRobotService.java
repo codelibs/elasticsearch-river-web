@@ -13,6 +13,7 @@ import javax.annotation.Resource;
 
 import org.apache.commons.codec.binary.Base64;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
+import org.codelibs.robot.RobotSystemException;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
@@ -32,7 +33,6 @@ import org.seasar.framework.beans.PropertyDesc;
 import org.seasar.framework.beans.factory.BeanDescFactory;
 import org.seasar.framework.beans.util.Beans;
 import org.seasar.framework.util.StringUtil;
-import org.seasar.robot.RobotSystemException;
 
 public abstract class AbstractRobotService {
 

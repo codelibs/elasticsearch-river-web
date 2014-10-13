@@ -3,13 +3,13 @@ package org.codelibs.elasticsearch.web.robot.entity;
 import java.io.IOException;
 import java.sql.Timestamp;
 
+import org.codelibs.robot.entity.AccessResultData;
+import org.codelibs.robot.entity.AccessResultImpl;
+import org.codelibs.robot.entity.ResponseData;
+import org.codelibs.robot.entity.ResultData;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.seasar.framework.beans.util.Beans;
-import org.seasar.robot.entity.AccessResultData;
-import org.seasar.robot.entity.AccessResultImpl;
-import org.seasar.robot.entity.ResponseData;
-import org.seasar.robot.entity.ResultData;
 
 public class EsAccessResult extends AccessResultImpl implements ToXContent {
 

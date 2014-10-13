@@ -1,6 +1,6 @@
 package org.codelibs.elasticsearch.web.robot.interval;
 
-import org.seasar.robot.interval.impl.DefaultIntervalController;
+import org.codelibs.robot.interval.impl.DefaultIntervalController;
 
 public class WebRiverIntervalController extends DefaultIntervalController {
     public void setDelayMillisForWaitingNewUrl(

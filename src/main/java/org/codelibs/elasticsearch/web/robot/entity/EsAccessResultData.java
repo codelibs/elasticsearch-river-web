@@ -2,9 +2,9 @@ package org.codelibs.elasticsearch.web.robot.entity;
 
 import java.io.IOException;
 
+import org.codelibs.robot.entity.AccessResultDataImpl;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.seasar.robot.entity.AccessResultDataImpl;
 
 public class EsAccessResultData extends AccessResultDataImpl implements
         ToXContent {

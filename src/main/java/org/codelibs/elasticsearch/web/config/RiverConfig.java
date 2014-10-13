@@ -7,9 +7,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.codelibs.robot.entity.ResponseData;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.script.ScriptService;
-import org.seasar.robot.entity.ResponseData;
 
 public class RiverConfig {
 

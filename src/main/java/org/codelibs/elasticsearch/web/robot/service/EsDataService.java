@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.codelibs.elasticsearch.web.robot.entity.EsAccessResult;
+import org.codelibs.robot.entity.AccessResult;
+import org.codelibs.robot.service.DataService;
+import org.codelibs.robot.util.AccessResultCallback;
 import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
@@ -13,9 +16,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.seasar.framework.beans.util.Beans;
-import org.seasar.robot.entity.AccessResult;
-import org.seasar.robot.service.DataService;
-import org.seasar.robot.util.AccessResultCallback;
 
 public class EsDataService extends AbstractRobotService implements DataService {
 

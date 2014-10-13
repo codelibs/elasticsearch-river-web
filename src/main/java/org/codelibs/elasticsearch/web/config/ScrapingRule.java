@@ -7,10 +7,10 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.codelibs.elasticsearch.util.settings.SettingsUtils;
+import org.codelibs.robot.entity.ResponseData;
 import org.seasar.framework.beans.BeanDesc;
 import org.seasar.framework.beans.factory.BeanDescFactory;
 import org.seasar.framework.util.FieldUtil;
-import org.seasar.robot.entity.ResponseData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

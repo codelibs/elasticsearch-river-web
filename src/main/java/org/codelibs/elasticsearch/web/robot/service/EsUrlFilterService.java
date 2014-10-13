@@ -5,11 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.codelibs.robot.service.UrlFilterService;
 import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.seasar.robot.service.UrlFilterService;
 
 public class EsUrlFilterService extends AbstractRobotService implements
         UrlFilterService {

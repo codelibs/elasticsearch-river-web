@@ -12,6 +12,11 @@ import java.util.concurrent.locks.Lock;
 import javax.annotation.Resource;
 
 import org.codelibs.elasticsearch.web.robot.entity.EsUrlQueue;
+import org.codelibs.robot.Constants;
+import org.codelibs.robot.entity.AccessResult;
+import org.codelibs.robot.entity.UrlQueue;
+import org.codelibs.robot.service.UrlQueueService;
+import org.codelibs.robot.util.AccessResultCallback;
 import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
@@ -23,11 +28,6 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.seasar.framework.util.StringUtil;
-import org.seasar.robot.Constants;
-import org.seasar.robot.entity.AccessResult;
-import org.seasar.robot.entity.UrlQueue;
-import org.seasar.robot.service.UrlQueueService;
-import org.seasar.robot.util.AccessResultCallback;
 
 public class EsUrlQueueService extends AbstractRobotService implements
         UrlQueueService {
