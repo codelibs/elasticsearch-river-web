@@ -14,11 +14,11 @@
 	<include path="s2robot_sitemaps.dicon"/>
 
 	<!-- S2Robot -->
-	<component name="s2Robot" class="org.seasar.robot.S2Robot" instance="prototype">
+	<component name="s2Robot" class="org.codelibs.robot.S2Robot" instance="prototype">
 	</component>
 
 	<!-- Robot Thread -->
-	<component name="robotThread" class="org.seasar.robot.S2RobotThread" instance="prototype">
+	<component name="robotThread" class="org.codelibs.robot.S2RobotThread" instance="prototype">
 	</component>
 	
 	<!-- Entity -->
