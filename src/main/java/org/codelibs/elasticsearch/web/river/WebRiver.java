@@ -141,8 +141,8 @@ public class WebRiver extends AbstractRiverComponent implements River {
         }
 
         if (cron == null) {
-            final Date now = new Date();
-            DateUtils.addSeconds(now, 60);
+            Date now = new Date();
+            now = DateUtils.addSeconds(now, 60);
             final SimpleDateFormat sdf = new SimpleDateFormat(
                     "s m H d M ? yyyy");
             cron = sdf.format(now);
