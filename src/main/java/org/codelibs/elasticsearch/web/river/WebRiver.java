@@ -50,6 +50,7 @@ import org.elasticsearch.river.River;
 import org.elasticsearch.river.RiverName;
 import org.elasticsearch.river.RiverSettings;
 import org.elasticsearch.script.CompiledScript;
+import org.elasticsearch.script.ExecutableScript;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.script.ScriptService.ScriptType;
 import org.quartz.Job;
@@ -219,8 +220,10 @@ public class WebRiver extends AbstractRiverComponent implements River {
             try {
                 final CompiledScript compiledScript = scriptService.compile(
                         lang, script, scriptType);
-                logger.info("[{}] \"{}\" => {}", target, script,
-                        scriptService.execute(compiledScript, localVars));
+                ExecutableScript executable = scriptService.executable(
+                        compiledScript, localVars);
+                Object result = executable.run();
+                logger.info("[{}] \"{}\" => {}", target, script, result);
             } catch (final Exception e) {
                 logger.warn("Failed to execute script: {}", e, script);
             }

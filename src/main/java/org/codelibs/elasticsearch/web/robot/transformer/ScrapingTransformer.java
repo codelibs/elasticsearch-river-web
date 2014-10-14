@@ -39,6 +39,7 @@ import org.codelibs.robot.util.StreamUtil;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.CompiledScript;
+import org.elasticsearch.script.ExecutableScript;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.script.ScriptService.ScriptType;
 import org.jsoup.Jsoup;
@@ -347,7 +348,9 @@ public class ScrapingTransformer extends HtmlTransformer {
         final ScriptService scriptService = riverConfig.getScriptService();
         final CompiledScript compiledScript = scriptService.compile(lang,
                 script, scriptType);
-        return scriptService.execute(compiledScript, vars);
+        ExecutableScript executable = scriptService.executable(compiledScript,
+                vars);
+        return executable.run();
     }
 
     protected ScriptInfo getScriptValue(final Map<String, Object> params) {
