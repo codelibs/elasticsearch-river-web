@@ -10,8 +10,8 @@ This plugin provides a feature to crawl web sites and extract the content by CSS
 
 | River Web | elasticsearch |
 |:---------:|:-------------:|
-| master    | 1.3.X         |
-| 1.3.0     | 1.3.0         |
+| master    | 1.4.X         |
+| 1.3.1     | 1.3.4         |
 | 1.2.0     | 1.2.1         |
 | 1.1.2     | 1.1.1         |
 | 1.1.1     | 1.0.2         |
@@ -33,7 +33,7 @@ River Web plugin depends on Quartz plugin.
 
 ### Install River Web Plugin
 
-    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-river-web/1.3.0
+    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-river-web/1.3.1
 
 ## Usage
 
