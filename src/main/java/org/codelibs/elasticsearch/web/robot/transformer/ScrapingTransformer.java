@@ -36,6 +36,7 @@ import org.codelibs.robot.entity.ResultData;
 import org.codelibs.robot.helper.EncodingHelper;
 import org.codelibs.robot.transformer.impl.HtmlTransformer;
 import org.codelibs.robot.util.StreamUtil;
+import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.CompiledScript;
@@ -602,11 +603,16 @@ public class ScrapingTransformer extends HtmlTransformer {
             client.admin().indices().prepareRefresh(indexName).execute()
                     .actionGet();
         }
-
+        // Getting count of URL in index before storeIndex
+        CountResponse occured = client.prepareCount(indexName)
+                .setQuery(QueryBuilders.termQuery("url", responseData.getUrl()))
+                .execute()
+                .actionGet();
+        Long occurences = occured.getCount();
         @SuppressWarnings("unchecked")
         final Map<String, Object> arrayDataMap = (Map<String, Object>) dataMap
                 .remove(ARRAY_PROPERTY_PREFIX);
-        if (arrayDataMap != null) {
+        if (arrayDataMap != null && occurences == 0L ) {
             final Map<String, Object> flatArrayDataMap = new LinkedHashMap<String, Object>();
             convertFlatMap("", arrayDataMap, flatArrayDataMap);
             int maxSize = 0;
