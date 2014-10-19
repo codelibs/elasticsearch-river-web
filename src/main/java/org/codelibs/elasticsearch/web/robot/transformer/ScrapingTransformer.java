@@ -181,7 +181,7 @@ public class ScrapingTransformer extends HtmlTransformer {
         System.out.println("Counter : "+ response.getCount());
         logger.info("Counter : "+ response.getCount());
         if (scrapingRule == null || response.getCount() > 0) {
-            logger.info("No scraping rule.");
+            logger.info("No scraping rule :");
             return;
         }
         } catch (final Exception e){
