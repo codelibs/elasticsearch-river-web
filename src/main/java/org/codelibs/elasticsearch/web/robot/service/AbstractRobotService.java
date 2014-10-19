@@ -13,6 +13,7 @@ import javax.annotation.Resource;
 
 import org.apache.commons.codec.binary.Base64;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
+import org.codelibs.elasticsearch.web.robot.transformer.ScrapingTransformer;
 import org.codelibs.robot.RobotSystemException;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -36,6 +37,8 @@ import org.seasar.framework.beans.PropertyDesc;
 import org.seasar.framework.beans.factory.BeanDescFactory;
 import org.seasar.framework.beans.util.Beans;
 import org.seasar.framework.util.StringUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractRobotService {
 
@@ -60,7 +63,8 @@ public abstract class AbstractRobotService {
     protected String index;
 
     protected String type;
-
+    private static final Logger logger = LoggerFactory
+            .getLogger(AbstractRobotService.class);
     @Resource
     protected RiverConfig riverConfig;
 
@@ -85,6 +89,7 @@ public abstract class AbstractRobotService {
         CountResponse counter = riverConfig.getClient().prepareCount(index).setQuery(QueryBuilders.termQuery("url", getUrl(target)))
 .execute().actionGet();
         Long counterValue = counter.getCount();
+        logger.info("Counter : "+ counterValue);
         
         if(counterValue.equals(0L)){
         	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
