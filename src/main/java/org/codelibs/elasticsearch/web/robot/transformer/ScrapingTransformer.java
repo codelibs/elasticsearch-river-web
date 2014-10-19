@@ -36,7 +36,6 @@ import org.codelibs.robot.entity.ResultData;
 import org.codelibs.robot.helper.EncodingHelper;
 import org.codelibs.robot.transformer.impl.HtmlTransformer;
 import org.codelibs.robot.util.StreamUtil;
-import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.CompiledScript;
@@ -277,9 +276,6 @@ public class ScrapingTransformer extends HtmlTransformer {
                 propertyValue = isArray ? strList : StringUtils.join(strList,
                         " ");
             } else {
-            	
-            	
-                
                 final Client client = riverConfig.getClient();
                 final Map<String, Object> vars = new HashMap<String, Object>();
                 vars.put("container",
@@ -291,15 +287,6 @@ public class ScrapingTransformer extends HtmlTransformer {
                 vars.put("parameters", params);
                 vars.put("array", isArray);
                 vars.put("list", strList);
-                // Getting count of URL in index before storeIndex
-                final String sessionID = responseData.getSessionId();
-                final String indexer = riverConfig.getIndexName(sessionID);
-                CountResponse occured = client.prepareCount(indexer)
-                        .setQuery(QueryBuilders.termQuery("url", responseData.getUrl()))
-                        .execute()
-                        .actionGet();
-                Long occurences = occured.getCount();
-                System.out.println(occurences);
                 if (isArray) {
                     final List<Object> list = new ArrayList<Object>();
                     for (int i = 0; i < strList.size(); i++) {
@@ -343,7 +330,7 @@ public class ScrapingTransformer extends HtmlTransformer {
                 }
             }
         }
-        
+
         storeIndex(responseData, dataMap);
     }
 
@@ -615,7 +602,7 @@ public class ScrapingTransformer extends HtmlTransformer {
             client.admin().indices().prepareRefresh(indexName).execute()
                     .actionGet();
         }
-        
+
         @SuppressWarnings("unchecked")
         final Map<String, Object> arrayDataMap = (Map<String, Object>) dataMap
                 .remove(ARRAY_PROPERTY_PREFIX);
