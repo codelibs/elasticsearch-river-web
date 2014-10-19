@@ -187,7 +187,7 @@ public class ScrapingTransformer extends HtmlTransformer {
         } catch (final Exception e){
         	//NOP
         	 if (scrapingRule == null) {
-                 logger.info("No scraping rule.");
+                 logger.info("No scraping rule."+ riverConfig.getIndexName(responseData.getSessionId()));
                  return;
              }
         }
