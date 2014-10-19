@@ -180,15 +180,20 @@ public class ScrapingTransformer extends HtmlTransformer {
                 .actionGet();
         System.out.println("Counter : "+ response.getCount());
         logger.info("Counter : "+ response.getCount());
-        } catch (final Exception e){
-        	//NOP
-        }
-        
-        
-        if (scrapingRule == null) {
+        if (scrapingRule == null || response.getCount() > 0) {
             logger.info("No scraping rule.");
             return;
         }
+        } catch (final Exception e){
+        	//NOP
+        	 if (scrapingRule == null) {
+                 logger.info("No scraping rule.");
+                 return;
+             }
+        }
+        
+        
+       
 
         File file = null;
         try {
