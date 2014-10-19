@@ -173,8 +173,18 @@ public class ScrapingTransformer extends HtmlTransformer {
             final ResultData resultData) {
         final ScrapingRule scrapingRule = riverConfig
                 .getScrapingRule(responseData);
+        try {
+        CountResponse response = riverConfig.getClient().prepareCount(riverConfig.getIndexName(responseData.getSessionId()))
+                .setQuery(QueryBuilders.termQuery("url", responseData.getUrl()))
+                .execute()
+                .actionGet();
+        System.out.println("Counter : "+ response.getCount());
+        logger.info("Counter : "+ response.getCount());
+        } catch (final Exception e){
+        	//NOP
+        }
         
-        logger.info("Counter : "+ responseData.getUrl());
+        
         if (scrapingRule == null) {
             logger.info("No scraping rule.");
             return;
