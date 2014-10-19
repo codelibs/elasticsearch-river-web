@@ -16,14 +16,17 @@ import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.codelibs.robot.RobotSystemException;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.query.FilterBuilders.*;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryBuilders.*;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortBuilder;
@@ -78,8 +81,15 @@ public abstract class AbstractRobotService {
     protected void insert(final Object target, final OpType opType) {
         final String id = getId(getSessionId(target), getUrl(target));
         final XContentBuilder source = getXContentBuilder(target);
-        riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
+
+        CountResponse counter = riverConfig.getClient().prepareCount(index).setQuery(QueryBuilders.termQuery("url", getUrl(target)))
+.execute().actionGet();
+        Long counterValue = counter.getCount();
+        
+        if(counterValue.equals(0L)){
+        	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
                 .setOpType(opType).setRefresh(true).execute().actionGet();
+        }
     }
 
     protected <T> void insertAll(final List<T> list, final OpType opType) {
