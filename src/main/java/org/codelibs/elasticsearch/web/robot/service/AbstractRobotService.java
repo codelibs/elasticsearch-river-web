@@ -103,12 +103,21 @@ public abstract class AbstractRobotService {
         for (final T target : list) {
             final String id = getId(getSessionId(target), getUrl(target));
             final XContentBuilder source = getXContentBuilder(target);
+            CountResponse counter = riverConfig.getClient().prepareCount(index).setQuery(QueryBuilders.termQuery("url",getUrl(target)))
+            		.execute().actionGet();
+            Long counterValue = counter.getCount();
+            logger.info("Counter : "+ counterValue);
+            		        
+            if(counterValue.equals(0L)){
             bulkRequest.add(riverConfig.getClient()
                     .prepareIndex(index, type, id).setSource(source)
                     .setOpType(opType));
+            }
         }
-        final BulkResponse bulkResponse = bulkRequest.setRefresh(true)
+       
+        	final BulkResponse bulkResponse = bulkRequest.setRefresh(true)
                 .execute().actionGet();
+        
         if (bulkResponse.hasFailures()) {
             throw new RobotSystemException(bulkResponse.buildFailureMessage());
         }
