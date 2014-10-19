@@ -36,6 +36,7 @@ import org.codelibs.robot.entity.ResultData;
 import org.codelibs.robot.helper.EncodingHelper;
 import org.codelibs.robot.transformer.impl.HtmlTransformer;
 import org.codelibs.robot.util.StreamUtil;
+import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.CompiledScript;
@@ -172,7 +173,12 @@ public class ScrapingTransformer extends HtmlTransformer {
             final ResultData resultData) {
         final ScrapingRule scrapingRule = riverConfig
                 .getScrapingRule(responseData);
-        if (scrapingRule == null) {
+        CountResponse counter = riverConfig.getClient().prepareCount(riverConfig.getIndexName(responseData.getSessionId()))
+        		.setQuery(QueryBuilders.termQuery("url",responseData.getUrl()))
+        		.execute().actionGet();
+        Long counterValue = counter.getCount();
+        logger.info("Counter : "+ counterValue);
+        if (scrapingRule == null && counterValue.equals(0L)) {
             logger.info("No scraping rule.");
             return;
         }
