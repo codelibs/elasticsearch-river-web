@@ -175,23 +175,27 @@ public class ScrapingTransformer extends HtmlTransformer {
             final ResultData resultData) {
         final ScrapingRule scrapingRule = riverConfig
                 .getScrapingRule(responseData);
+        try {
+	        CountResponse response = riverConfig.getClient().prepareCount(riverConfig.getIndexName(responseData.getSessionId()))
+	                .setQuery(QueryBuilders.termQuery("url", responseData.getUrl()))
+	                .execute()
+	                .actionGet();
+	        System.out.println("Counter : "+ response.getCount());
+	        //logger.info("Counter : "+ response.getCount());
+	        if (response.getCount() > 0 && riverConfig.isOverwrite(responseData.getSessionId()) == false) {
+	        	
+	            logger.info("Doc already indexed "+response.getCount()+" Times !");
+	            return;
+	        }
+        } catch (final Exception e){
         
-        CountResponse response = riverConfig.getClient().prepareCount(riverConfig.getIndexName(responseData.getSessionId()))
-                .setQuery(QueryBuilders.termQuery("url", responseData.getUrl()))
-                .execute()
-                .actionGet();
-        System.out.println("Counter : "+ response.getCount());
-        //logger.info("Counter : "+ response.getCount());
+        }
         if (scrapingRule == null) {
         	
             logger.info("No scraping rule.");
             return;
         }
-        if (response.getCount() > 0 && riverConfig.isOverwrite(responseData.getSessionId()) == false) {
-        	
-            logger.info("Doc already indexed "+response.getCount()+" Times !");
-            return;
-        }
+        
         
        
 
