@@ -666,15 +666,19 @@ public class ScrapingTransformer extends HtmlTransformer {
                     }
                 }
                 if(update){
+                	logger.info("Trying to update 1");
                 	updateIndex(client, indexName, typeName, newDataMap);
                 }else{
+                	logger.info("Trying to store 1");
                 	storeIndex(client, indexName, typeName, newDataMap);
                 }
             }
         } else {
             if(update){
+            	logger.info("Trying to update 2");
             	updateIndex(client, indexName, typeName, dataMap);
             }else{
+            	logger.info("Trying to store 2");
             	storeIndex(client, indexName, typeName, dataMap);
             }
         }
