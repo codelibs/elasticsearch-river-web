@@ -37,14 +37,12 @@ import org.codelibs.robot.helper.EncodingHelper;
 import org.codelibs.robot.transformer.impl.HtmlTransformer;
 import org.codelibs.robot.util.StreamUtil;
 import org.elasticsearch.action.count.CountResponse;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.CompiledScript;
 import org.elasticsearch.script.ExecutableScript;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.script.ScriptService.ScriptType;
-import org.elasticsearch.search.SearchHit;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -176,24 +174,22 @@ public class ScrapingTransformer extends HtmlTransformer {
         final ScrapingRule scrapingRule = riverConfig
                 .getScrapingRule(responseData);
         try {
-	        CountResponse response = riverConfig.getClient().prepareCount(riverConfig.getIndexName(responseData.getSessionId()))
-	                .setQuery(QueryBuilders.termQuery("url", responseData.getUrl()))
-	                .execute()
-	                .actionGet();
-	        System.out.println("Counter : "+ response.getCount());
-	        //logger.info("Counter : "+ response.getCount());
-	        if (response.getCount() > 0 && riverConfig.isOverwrite(responseData.getSessionId()) == false) {
-	        	
-	            logger.info("Doc already indexed "+response.getCount()+" Times !");
-	            return;
-	        }
-        } catch (final Exception e){
-        
-        }
-        if (scrapingRule == null) {
-        	
-            logger.info("No scraping rule.");
+        CountResponse response = riverConfig.getClient().prepareCount(riverConfig.getIndexName(responseData.getSessionId()))
+                .setQuery(QueryBuilders.termQuery("url", responseData.getUrl()))
+                .execute()
+                .actionGet();
+        System.out.println("Counter : "+ response.getCount());
+        logger.info("Counter : "+ response.getCount());
+        if (scrapingRule == null || response.getCount() > 0) {
+            logger.info("No scraping rule :");
             return;
+        }
+        } catch (final Exception e){
+        	//NOP
+        	 if (scrapingRule == null) {
+                 logger.info("No scraping rule :"+ riverConfig.getIndexName(responseData.getSessionId()));
+                 return;
+             }
         }
         
         
@@ -609,24 +605,20 @@ public class ScrapingTransformer extends HtmlTransformer {
         final String typeName = riverConfig.getTypeName(sessionId);
         final boolean overwrite = riverConfig.isOverwrite(sessionId);
         final Client client = riverConfig.getClient();
-        boolean update = false;
+
         if (logger.isDebugEnabled()) {
             logger.debug("Index: " + indexName + ", sessionId: " + sessionId
                     + ", Data: " + dataMap);
         }
 
         if (overwrite) {
-        	CountResponse response = riverConfig.getClient().prepareCount(indexName)
-                    .setQuery(QueryBuilders.termQuery("url", responseData.getUrl()))
-                    .execute()
+            client.prepareDeleteByQuery(indexName)
+                    .setQuery(
+                            QueryBuilders.termQuery("url",
+                                    responseData.getUrl())).execute()
                     .actionGet();
-            logger.info("Counter if Overwrite : "+ response.getCount());
-            
-            if(response.getCount()>0){
-            	update = true;
-            }else{
-            	update = false;
-            }
+            client.admin().indices().prepareRefresh(indexName).execute()
+                    .actionGet();
         }
 
         @SuppressWarnings("unchecked")
@@ -665,22 +657,10 @@ public class ScrapingTransformer extends HtmlTransformer {
                         addPropertyData(newDataMap, entry.getKey(), value);
                     }
                 }
-                if(update){
-                	logger.info("Trying to update 1");
-                	updateIndex(client, indexName, typeName, newDataMap);
-                }else{
-                	logger.info("Trying to store 1");
-                	storeIndex(client, indexName, typeName, newDataMap);
-                }
+                storeIndex(client, indexName, typeName, newDataMap);
             }
         } else {
-            if(update){
-            	logger.info("Trying to update 2");
-            	updateIndex(client, indexName, typeName, dataMap);
-            }else{
-            	logger.info("Trying to store 2");
-            	storeIndex(client, indexName, typeName, dataMap);
-            }
+            storeIndex(client, indexName, typeName, dataMap);
         }
     }
 
@@ -696,34 +676,6 @@ public class ScrapingTransformer extends HtmlTransformer {
             client.prepareIndex(indexName, typeName).setRefresh(true)
                     .setSource(jsonBuilder().value(dataMap)).execute()
                     .actionGet();
-        } catch (final Exception e) {
-            logger.warn("Could not write a content into index.", e);
-        }
-    }
-    
-    protected void updateIndex(final Client client, final String indexName,
-            final String typeName, final Map<String, Object> dataMap) {
-        dataMap.put(TIMESTAMP_FIELD, new Date());
-
-        if (logger.isDebugEnabled()) {
-            logger.debug(indexName + "/" + typeName + " : dataMap" + dataMap);
-        }
-        logger.info("Trying to update : "+ dataMap.get("url").toString());
-        
-        try {
-        	//getting ID to update
-        	SearchResponse Resp = client.prepareSearch(indexName)
-        	        .setTypes(typeName)
-        	        .setQuery(QueryBuilders.termQuery("url", dataMap.get("url")))
-        	        .execute()
-        	        .actionGet();
-        	for (SearchHit hit : Resp.getHits()) {
-                //Handle the hit...
-        		client.prepareUpdate(indexName, typeName, hit.getId()).setSource(jsonBuilder().value(dataMap)).execute()
-                .actionGet();
-            }
-
-            
         } catch (final Exception e) {
             logger.warn("Could not write a content into index.", e);
         }
