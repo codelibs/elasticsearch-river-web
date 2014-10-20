@@ -620,7 +620,7 @@ public class ScrapingTransformer extends HtmlTransformer {
                     .setQuery(QueryBuilders.termQuery("url", responseData.getUrl()))
                     .execute()
                     .actionGet();
-            System.out.println("Counter : "+ response.getCount());
+            logger.info("Counter if Overwrite : "+ response.getCount());
             
             if(response.getCount()>0){
             	update = true;
@@ -704,7 +704,8 @@ public class ScrapingTransformer extends HtmlTransformer {
         if (logger.isDebugEnabled()) {
             logger.debug(indexName + "/" + typeName + " : dataMap" + dataMap);
         }
-
+        logger.info("Trying to update : "+ dataMap.get("url").toString());
+        
         try {
         	//getting ID to update
         	SearchResponse Resp = client.prepareSearch(indexName)
