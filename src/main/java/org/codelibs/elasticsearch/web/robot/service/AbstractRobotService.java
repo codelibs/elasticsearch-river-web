@@ -93,7 +93,7 @@ public abstract class AbstractRobotService {
         String className = Thread.currentThread().getStackTrace()[2].getClassName();
         logger.info("Stack trace class : "+ className);
         
-        if(counterValue.equals(0L) && className.equals("org.codelibs.elasticsearch.web.robot.service.EsDataService")){
+        if(counterValue.equals(0L) && className=="org.codelibs.elasticsearch.web.robot.service.EsDataService"){
         	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
                 .setOpType(opType).setRefresh(true).execute().actionGet();
         }
@@ -112,7 +112,7 @@ public abstract class AbstractRobotService {
             String className = Thread.currentThread().getStackTrace()[2].getClassName();
             logger.info("InsertAll className : "+ className);
             		        
-            if(counterValue.equals(0L) && className.equals("org.codelibs.elasticsearch.web.robot.service.EsDataService")){
+            if(counterValue.equals(0L) && className=="org.codelibs.elasticsearch.web.robot.service.EsDataService"){
             bulkRequest.add(riverConfig.getClient()
                     .prepareIndex(index, type, id).setSource(source)
                     .setOpType(opType));
