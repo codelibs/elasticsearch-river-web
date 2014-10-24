@@ -92,11 +92,23 @@ public abstract class AbstractRobotService {
         logger.info("Counter : "+ counterValue);
         String className = Thread.currentThread().getStackTrace()[2].getClassName();
         logger.info("Stack trace class : "+ className);
-        
-        if(counterValue.equals(0L) && className=="org.codelibs.elasticsearch.web.robot.service.EsDataService"){
-        	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
+        switch (className) {
+	        case "org.codelibs.elasticsearch.web.robot.service.EsUrlQueueService":  
+	        	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
                 .setOpType(opType).setRefresh(true).execute().actionGet();
+	            break;
+	        case "org.codelibs.elasticsearch.web.robot.service.EsUrlFilterService":  
+	        	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
+                .setOpType(opType).setRefresh(true).execute().actionGet();
+	            break;
+	        case "org.codelibs.elasticsearch.web.robot.service.EsDataService":  
+	        	if(counterValue.equals(0L)){
+	            	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
+	                    .setOpType(opType).setRefresh(true).execute().actionGet();
+	            }
+	            break;
         }
+        
     }
 
     protected <T> void insertAll(final List<T> list, final OpType opType) {
@@ -112,10 +124,21 @@ public abstract class AbstractRobotService {
             String className = Thread.currentThread().getStackTrace()[2].getClassName();
             logger.info("InsertAll className : "+ className);
             		        
-            if(counterValue.equals(0L) && className=="org.codelibs.elasticsearch.web.robot.service.EsDataService"){
-            bulkRequest.add(riverConfig.getClient()
-                    .prepareIndex(index, type, id).setSource(source)
-                    .setOpType(opType));
+            switch (className) {
+		        case "org.codelibs.elasticsearch.web.robot.service.EsUrlQueueService":  
+		        	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
+	                .setOpType(opType).setRefresh(true).execute().actionGet();
+		            break;
+		        case "org.codelibs.elasticsearch.web.robot.service.EsUrlFilterService":  
+		        	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
+	                .setOpType(opType).setRefresh(true).execute().actionGet();
+		            break;
+		        case "org.codelibs.elasticsearch.web.robot.service.EsDataService":  
+		        	if(counterValue.equals(0L)){
+		            	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
+		                    .setOpType(opType).setRefresh(true).execute().actionGet();
+		            }
+		            break;
             }
         }
        
