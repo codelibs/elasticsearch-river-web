@@ -90,8 +90,10 @@ public abstract class AbstractRobotService {
 .execute().actionGet();
         Long counterValue = counter.getCount();
         logger.info("Counter : "+ counterValue);
+        String className = Thread.currentThread().getStackTrace().getClass().getName();
+        logger.info("Stack trace class : "+ className);
         
-        if(counterValue.equals(0L) && opType.equals(opType.INDEX)){
+        if(counterValue.equals(0L)){
         	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
                 .setOpType(opType).setRefresh(true).execute().actionGet();
         }
@@ -108,7 +110,7 @@ public abstract class AbstractRobotService {
             Long counterValue = counter.getCount();
             logger.info("Counter : "+ counterValue);
             		        
-            if(counterValue.equals(0L) && opType.equals(opType.INDEX)){
+            if(counterValue.equals(0L)){
             bulkRequest.add(riverConfig.getClient()
                     .prepareIndex(index, type, id).setSource(source)
                     .setOpType(opType));
