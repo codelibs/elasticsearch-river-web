@@ -126,8 +126,10 @@ public abstract class AbstractRobotService {
             		        
             switch (className) {
 		        case "org.codelibs.elasticsearch.web.robot.service.EsUrlQueueService":  
-		        	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
-	                .setOpType(opType).setRefresh(true).execute().actionGet();
+		        	if(counterValue.equals(0L)){
+		            	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
+		                    .setOpType(opType).setRefresh(true).execute().actionGet();
+		            }
 		            break;
 		        case "org.codelibs.elasticsearch.web.robot.service.EsUrlFilterService":  
 		        	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
