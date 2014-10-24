@@ -90,7 +90,7 @@ public abstract class AbstractRobotService {
 .execute().actionGet();
         Long counterValue = counter.getCount();
         logger.info("Counter : "+ counterValue);
-        String className = Thread.currentThread().getStackTrace().getClass().getSimpleName();
+        String className = Thread.currentThread().getStackTrace()[2].getClassName();
         logger.info("Stack trace class : "+ className);
         
         if(counterValue.equals(0L)){
