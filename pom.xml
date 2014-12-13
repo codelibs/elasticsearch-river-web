@@ -24,10 +24,10 @@
 	<parent>
 		<groupId>org.sonatype.oss</groupId>
 		<artifactId>oss-parent</artifactId>
-		<version>7</version>
+		<version>9</version>
 	</parent>
 	<properties>
-		<elasticsearch.version>1.4.0</elasticsearch.version>
+		<elasticsearch.version>1.4.1</elasticsearch.version>
 	</properties>
 	<repositories>
 		<repository>
