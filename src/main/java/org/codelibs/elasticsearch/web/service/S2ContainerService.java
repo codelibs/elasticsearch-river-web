@@ -20,6 +20,7 @@ import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.indices.IndexMissingException;
 import org.elasticsearch.script.ScriptService;
 import org.seasar.framework.container.SingletonS2Container;
 import org.seasar.framework.container.factory.SingletonS2ContainerFactory;
@@ -74,7 +75,9 @@ public class S2ContainerService extends
                                 if (response.getStatus() == ClusterHealthStatus.RED) {
                                     logger.warn("The cluster is not available. The status is RED.");
                                 } else {
-                                    createRobotIndex();
+                                    final String robotIndexName = SingletonS2Container
+                                            .getComponent("robotIndexName");
+                                    checkRobotIndex(robotIndexName);
                                 }
                             }
 
@@ -101,41 +104,139 @@ public class S2ContainerService extends
         riverConfig.setScriptService(scriptService);
     }
 
-    private void createRobotIndex() {
-        final String robotIndexName = SingletonS2Container
-                .getComponent("robotIndexName");
-        final IndicesExistsResponse indicesExistsResponse = client.admin()
-                .indices().prepareExists(robotIndexName).execute().actionGet();
-        if (!indicesExistsResponse.isExists()) {
-            final CreateIndexResponse createIndexResponse = client.admin()
-                    .indices().prepareCreate(robotIndexName).execute()
-                    .actionGet();
-            if (createIndexResponse.isAcknowledged()) {
-                try {
-                    createMapping(robotIndexName, "queue", createQueueMapping());
-                    createMapping(robotIndexName, "filter",
-                            createFilterMapping());
-                    createMapping(robotIndexName, "data", createDataMapping());
-                } catch (final IOException e) {
-                    logger.error("Failed to create a mapping.", e);
-                }
-            } else {
-                logger.warn("Failed to create " + robotIndexName);
-            }
-        }
+    private void checkRobotIndex(final String robotIndexName) {
+        client.admin().indices().prepareExists(robotIndexName)
+                .execute(new ActionListener<IndicesExistsResponse>() {
+                    @Override
+                    public void onResponse(IndicesExistsResponse response) {
+                        if (response.isExists()) {
+                            if (logger.isDebugEnabled()) {
+                                logger.debug("{} index exists.", robotIndexName);
+                            }
+                        } else {
+                            createRobotIndex(robotIndexName);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Throwable e) {
+                        if (e instanceof IndexMissingException) {
+                            createRobotIndex(robotIndexName);
+                        } else {
+                            logger.warn("The state of {} index is invalid.", e,
+                                    robotIndexName);
+                        }
+                    }
+                });
+    }
+
+    private void createRobotIndex(final String robotIndexName) {
+        client.admin().indices().prepareCreate(robotIndexName)
+                .execute(new ActionListener<CreateIndexResponse>() {
+                    @Override
+                    public void onResponse(CreateIndexResponse response) {
+                        if (response.isAcknowledged()) {
+                            try {
+                                createQueueMapping(robotIndexName);
+                            } catch (final IOException e) {
+                                logger.error("Failed to create queue mapping.",
+                                        e);
+                            }
+                        } else {
+                            logger.warn("Failed to create {}.", robotIndexName);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Throwable e) {
+                        logger.warn("Failed to create {}", e, robotIndexName);
+
+                    }
+                });
+    }
+
+    private void createQueueMapping(final String robotIndexName)
+            throws IOException {
+        final String type = "queue";
+        createMapping(robotIndexName, type, createQueueMappingBuilder(),
+                new ActionListener<PutMappingResponse>() {
+                    @Override
+                    public void onResponse(PutMappingResponse response) {
+                        if (response.isAcknowledged()) {
+                            try {
+                                createFilterMapping(robotIndexName);
+                            } catch (final IOException e) {
+                                logger.error(
+                                        "Failed to create filter mapping.", e);
+                            }
+                        } else {
+                            logger.warn("Failed to create {} mapping.", type);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Throwable e) {
+                        logger.warn("Failed to create {} mapping.", e, type);
+                    }
+                });
+    }
+
+    private void createFilterMapping(final String robotIndexName)
+            throws IOException {
+        final String type = "filter";
+        createMapping(robotIndexName, type, createFilterMappingBuilder(),
+                new ActionListener<PutMappingResponse>() {
+                    @Override
+                    public void onResponse(PutMappingResponse response) {
+                        if (response.isAcknowledged()) {
+                            try {
+                                createDataMapping(robotIndexName);
+                            } catch (final IOException e) {
+                                logger.error("Failed to create data mapping.",
+                                        e);
+                            }
+                        } else {
+                            logger.warn("Failed to create {} mapping.", type);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Throwable e) {
+                        logger.warn("Failed to create {} mapping.", e, type);
+                    }
+                });
+    }
+
+    private void createDataMapping(final String robotIndexName)
+            throws IOException {
+        final String type = "data";
+        createMapping(robotIndexName, type, createDataMappingBuilder(),
+                new ActionListener<PutMappingResponse>() {
+                    @Override
+                    public void onResponse(PutMappingResponse response) {
+                        if (response.isAcknowledged()) {
+                            logger.info("Create an index and mapping for {}.",
+                                    robotIndexName);
+                        } else {
+                            logger.warn("Failed to create {} mapping.", type);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Throwable e) {
+                        logger.warn("Failed to create {} mapping.", e, type);
+                    }
+                });
     }
 
     private void createMapping(final String robotIndexName, final String type,
-            final XContentBuilder builder) {
-        final PutMappingResponse queueMappingResponse = client.admin()
-                .indices().preparePutMapping(robotIndexName).setType(type)
-                .setSource(builder).execute().actionGet();
-        if (!queueMappingResponse.isAcknowledged()) {
-            logger.warn("Failed to create " + type + " mapping.");
-        }
+            final XContentBuilder builder,
+            ActionListener<PutMappingResponse> listener) {
+        client.admin().indices().preparePutMapping(robotIndexName)
+                .setType(type).setSource(builder).execute(listener);
     }
 
-    private XContentBuilder createQueueMapping() throws IOException {
+    private XContentBuilder createQueueMappingBuilder() throws IOException {
         return XContentFactory.jsonBuilder()//
                 .startObject()//
                 .startObject("queue")//
@@ -181,7 +282,7 @@ public class S2ContainerService extends
                 .endObject();
     }
 
-    private XContentBuilder createFilterMapping() throws IOException {
+    private XContentBuilder createFilterMappingBuilder() throws IOException {
         return XContentFactory.jsonBuilder()//
                 .startObject()//
                 .startObject("filter")//
@@ -208,7 +309,7 @@ public class S2ContainerService extends
                 .endObject();
     }
 
-    private XContentBuilder createDataMapping() throws IOException {
+    private XContentBuilder createDataMappingBuilder() throws IOException {
         return XContentFactory.jsonBuilder()//
                 .startObject()//
                 .startObject("data")//
