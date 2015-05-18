@@ -1,0 +1,5 @@
+CodeLibs
+Copyright 2011-2015 CodeLibs
+
+This product includes software developed by The Apache Software
+Foundation (http://www.apache.org/).

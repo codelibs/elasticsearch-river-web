@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE components PUBLIC "-//DBFLUTE//DTD LastaDi 1.0//EN"
+    "http://dbflute.org/meta/lastadi10.dtd">
+<components namespace="s2robot">
+    <include path="s2robot/container.xml" />
+    <include path="s2robot/es_transformer.xml" />
+
+	<component name="ruleManager" class="org.codelibs.robot.rule.impl.RuleManagerImpl">
+		<initMethod name="addRule">
+			<arg>sitemapsRule</arg>
+		</initMethod>
+		<initMethod name="addRule">
+			<arg>scrapingRule</arg>
+		</initMethod>
+	</component>
+
+	<component name="sitemapsRule" class="org.codelibs.robot.rule.impl.SitemapsRule">
+		<property name="ruleId">"sitemapsRule"</property>
+		<property name="responseProcessor">
+			<component
+				class="org.codelibs.robot.processor.impl.SitemapsResponseProcessor">
+			</component>
+		</property>
+		<initMethod name="addRule">
+			<arg>"url"</arg>
+			<arg>".*sitemap.*"
+			</arg>
+		</initMethod>
+	</component>
+
+	<component name="scrapingRule" class="org.codelibs.robot.rule.impl.RegexRule">
+		<property name="ruleId">"scraping"</property>
+		<property name="defaultRule">true</property>
+		<property name="responseProcessor">
+			<component class="org.codelibs.robot.processor.impl.DefaultResponseProcessor">
+				<property name="transformer">scrapingTransformer</property>
+			</component>
+		</property>
+	</component>
+
+</components>
