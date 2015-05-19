@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.codelibs</groupId>
 	<artifactId>elasticsearch-river-web</artifactId>
@@ -30,6 +31,8 @@
 		<elasticsearch.version>1.5.2</elasticsearch.version>
 		<lastaflute.version>0.6.0-RC6</lastaflute.version>
 		<s2robot.version>1.0.0-SNAPSHOT</s2robot.version>
+		<jta.version>1.2</jta.version>
+		<slf4j.version>1.7.12</slf4j.version>
 	</properties>
 	<repositories>
 		<repository>
@@ -38,15 +41,15 @@
 		</repository>
 	</repositories>
 	<build>
-        <resources>
-            <resource>
-                <directory>${basedir}/src/main/resources</directory>
-                <includes>
-                    <include>**/*.*</include>
-                </includes>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
+		<resources>
+			<resource>
+				<directory>${basedir}/src/main/resources</directory>
+				<includes>
+					<include>**/*.*</include>
+				</includes>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -80,192 +83,192 @@
 					</execution>
 				</executions>
 			</plugin>
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>2.6</version>
-                <executions>
-                    <execution>
-                        <id>copy-resources</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/bin</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${basedir}/bin</directory>
-                                    <filtering>true</filtering>
-                                    <excludes>
-                                        <exclude>*.exe</exclude>
-                                    </excludes>
-                                </resource>
-                                <resource>
-                                    <directory>${basedir}/bin</directory>
-                                    <filtering>false</filtering>
-                                    <includes>
-                                        <include>*.exe</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.4</version>
-                <configuration>
-                    <appendAssemblyId>false</appendAssemblyId>
-                    <outputDirectory>${project.build.directory}/releases/</outputDirectory>
-                    <descriptors>
-                        <descriptor>${basedir}/src/main/assemblies/targz-bin.xml</descriptor>
-                        <descriptor>${basedir}/src/main/assemblies/zip-bin.xml</descriptor>
-                    </descriptors>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>buildnumber-maven-plugin</artifactId>
-                <version>1.2</version>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>create</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <doCheck>false</doCheck>
-                    <doUpdate>false</doUpdate>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.8</version>
-                <executions>
-                    <execution>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
-                            <includeScope>runtime</includeScope>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>rpm-maven-plugin</artifactId>
-                <version>2.1-alpha-3</version>
-                <configuration>
-                    <copyright>2015, CodeLibs Project</copyright>
-                    <distribution>CodeLibs</distribution>
-                    <group>Application/Internet</group>
-                    <packager>CodeLibs</packager>
-                    <prefix>/usr</prefix>
-                    <changelogFile>src/changelog</changelogFile>
-                    <defineStatements>
-                        <defineStatement>_unpackaged_files_terminate_build 0</defineStatement>
-                        <defineStatement>_binaries_in_noarch_packages_terminate_build 0</defineStatement>
-                    </defineStatements>
-                    <defaultFilemode>644</defaultFilemode>
-                    <defaultDirmode>755</defaultDirmode>
-                    <defaultUsername>root</defaultUsername>
-                    <defaultGroupname>root</defaultGroupname>
-                    <keyname>${gpg.key}</keyname>
-                    <keypath>${gpg.keyring}</keypath>
-                    <keyPassphrase>
-                        <passphrase>${gpg.passphrase}</passphrase>
-                    </keyPassphrase>
-                    <mappings>
-                        <mapping>
-                            <directory>/var/log/river-web/</directory>
-                            <filemode>755</filemode>
-                            <username>river-web</username>
-                            <groupname>river-web</groupname>
-                        </mapping>
-                        <mapping>
-                            <directory>/usr/share/river-web/bin/</directory>
-                            <filemode>755</filemode>
-                            <sources>
-                                <source>
-                                    <location>target/bin</location>
-                                    <includes>
-                                        <include>elasticsearch</include>
-                                        <include>elasticsearch.in.sh</include>
-                                        <include>plugin</include>
-                                    </includes>
-                                </source>
-                            </sources>
-                        </mapping>
-                        <mapping>
-                            <directory>/usr/share/river-web/lib</directory>
-                            <sources>
-                                <source>
-                                    <location>target/lib/</location>
-                                    <includes>
-                                        <include>lucene*</include>
-                                        <include>*log4j*</include>
-                                        <include>jna*</include>
-                                        <include>spatial4j*</include>
-                                        <include>jts*</include>
-                                        <include>groovy*</include>
-                                        <include>antlr-runtime*</include>
-                                        <include>asm*</include>
-                                    </includes>
-                                </source>
-                                <source>
-                                    <location>${project.build.directory}/</location>
-                                    <includes>
-                                        <include>${project.build.finalName}.jar</include>
-                                    </includes>
-                                </source>
-                            </sources>
-                        </mapping>
-                        <mapping>
-                            <directory>/usr/share/river-web/</directory>
-                            <sources>
-                                <source>
-                                    <location>.</location>
-                                    <includes>
-                                        <include>LICENSE.txt</include>
-                                        <include>NOTICE.txt</include>
-                                        <include>README.md</include>
-                                    </includes>
-                                </source>
-                            </sources>
-                        </mapping>
-                    </mappings>
-                    <preinstallScriptlet>
-                        <scriptFile>src/rpm/scripts/preinstall</scriptFile>
-                        <fileEncoding>utf-8</fileEncoding>
-                    </preinstallScriptlet>
-                    <postinstallScriptlet>
-                        <scriptFile>src/rpm/scripts/postinstall</scriptFile>
-                        <fileEncoding>utf-8</fileEncoding>
-                    </postinstallScriptlet>
-                    <preremoveScriptlet>
-                        <scriptFile>src/rpm/scripts/preremove</scriptFile>
-                        <fileEncoding>utf-8</fileEncoding>
-                    </preremoveScriptlet>
-                    <postremoveScriptlet>
-                        <scriptFile>src/rpm/scripts/postremove</scriptFile>
-                        <fileEncoding>utf-8</fileEncoding>
-                    </postremoveScriptlet>
-                </configuration>
-            </plugin>
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>2.6</version>
+				<executions>
+					<execution>
+						<id>copy-resources</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/bin</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${basedir}/bin</directory>
+									<filtering>true</filtering>
+									<excludes>
+										<exclude>*.exe</exclude>
+									</excludes>
+								</resource>
+								<resource>
+									<directory>${basedir}/bin</directory>
+									<filtering>false</filtering>
+									<includes>
+										<include>*.exe</include>
+									</includes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.4</version>
+				<configuration>
+					<appendAssemblyId>false</appendAssemblyId>
+					<outputDirectory>${project.build.directory}/releases/</outputDirectory>
+					<descriptors>
+						<descriptor>${basedir}/src/main/assemblies/targz-bin.xml</descriptor>
+						<descriptor>${basedir}/src/main/assemblies/zip-bin.xml</descriptor>
+					</descriptors>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>buildnumber-maven-plugin</artifactId>
+				<version>1.2</version>
+				<executions>
+					<execution>
+						<phase>validate</phase>
+						<goals>
+							<goal>create</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<doCheck>false</doCheck>
+					<doUpdate>false</doUpdate>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>2.8</version>
+				<executions>
+					<execution>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/lib</outputDirectory>
+							<includeScope>runtime</includeScope>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>rpm-maven-plugin</artifactId>
+				<version>2.1-alpha-3</version>
+				<configuration>
+					<copyright>2015, CodeLibs Project</copyright>
+					<distribution>CodeLibs</distribution>
+					<group>Application/Internet</group>
+					<packager>CodeLibs</packager>
+					<prefix>/usr</prefix>
+					<changelogFile>src/changelog</changelogFile>
+					<defineStatements>
+						<defineStatement>_unpackaged_files_terminate_build 0</defineStatement>
+						<defineStatement>_binaries_in_noarch_packages_terminate_build 0</defineStatement>
+					</defineStatements>
+					<defaultFilemode>644</defaultFilemode>
+					<defaultDirmode>755</defaultDirmode>
+					<defaultUsername>root</defaultUsername>
+					<defaultGroupname>root</defaultGroupname>
+					<keyname>${gpg.key}</keyname>
+					<keypath>${gpg.keyring}</keypath>
+					<keyPassphrase>
+						<passphrase>${gpg.passphrase}</passphrase>
+					</keyPassphrase>
+					<mappings>
+						<mapping>
+							<directory>/var/log/river-web/</directory>
+							<filemode>755</filemode>
+							<username>river-web</username>
+							<groupname>river-web</groupname>
+						</mapping>
+						<mapping>
+							<directory>/usr/share/river-web/bin/</directory>
+							<filemode>755</filemode>
+							<sources>
+								<source>
+									<location>target/bin</location>
+									<includes>
+										<include>elasticsearch</include>
+										<include>elasticsearch.in.sh</include>
+										<include>plugin</include>
+									</includes>
+								</source>
+							</sources>
+						</mapping>
+						<mapping>
+							<directory>/usr/share/river-web/lib</directory>
+							<sources>
+								<source>
+									<location>target/lib/</location>
+									<includes>
+										<include>lucene*</include>
+										<include>*log4j*</include>
+										<include>jna*</include>
+										<include>spatial4j*</include>
+										<include>jts*</include>
+										<include>groovy*</include>
+										<include>antlr-runtime*</include>
+										<include>asm*</include>
+									</includes>
+								</source>
+								<source>
+									<location>${project.build.directory}/</location>
+									<includes>
+										<include>${project.build.finalName}.jar</include>
+									</includes>
+								</source>
+							</sources>
+						</mapping>
+						<mapping>
+							<directory>/usr/share/river-web/</directory>
+							<sources>
+								<source>
+									<location>.</location>
+									<includes>
+										<include>LICENSE.txt</include>
+										<include>NOTICE.txt</include>
+										<include>README.md</include>
+									</includes>
+								</source>
+							</sources>
+						</mapping>
+					</mappings>
+					<preinstallScriptlet>
+						<scriptFile>src/rpm/scripts/preinstall</scriptFile>
+						<fileEncoding>utf-8</fileEncoding>
+					</preinstallScriptlet>
+					<postinstallScriptlet>
+						<scriptFile>src/rpm/scripts/postinstall</scriptFile>
+						<fileEncoding>utf-8</fileEncoding>
+					</postinstallScriptlet>
+					<preremoveScriptlet>
+						<scriptFile>src/rpm/scripts/preremove</scriptFile>
+						<fileEncoding>utf-8</fileEncoding>
+					</preremoveScriptlet>
+					<postremoveScriptlet>
+						<scriptFile>src/rpm/scripts/postremove</scriptFile>
+						<fileEncoding>utf-8</fileEncoding>
+					</postremoveScriptlet>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 	<dependencies>
@@ -280,6 +283,12 @@
 			<version>${lastaflute.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>javax.transaction</groupId>
+			<artifactId>javax.transaction-api</artifactId>
+			<version>${jta.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>args4j</groupId>
 			<artifactId>args4j</artifactId>
 			<version>2.0.29</version>
@@ -291,13 +300,13 @@
 		</dependency>
 		<dependency>
 			<groupId>org.codelibs.robot</groupId>
-			<artifactId>s2robot</artifactId>
+			<artifactId>s2robot-lasta</artifactId>
 			<version>${s2robot.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-			<version>1.7.12</version>
+			<version>${slf4j.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jsoup</groupId>
@@ -308,6 +317,12 @@
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.11</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.codelibs</groupId>
+			<artifactId>elasticsearch-cluster-runner</artifactId>
+			<version>1.5.0.1</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

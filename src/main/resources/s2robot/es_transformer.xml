@@ -5,10 +5,10 @@
     <include path="s2robot/transformer_basic.xml"/>
 
 	<component name="scrapingFeatureMap" class="java.util.LinkedHashMap">
-		<initMethod name="put">
+		<postConstruct name="put">
 			<arg>"http://xml.org/sax/features/namespaces"</arg>
 			<arg>"false"</arg>
-		</initMethod>
+		</postConstruct>
 	</component>
 
 	<component name="scrapingTransformer"

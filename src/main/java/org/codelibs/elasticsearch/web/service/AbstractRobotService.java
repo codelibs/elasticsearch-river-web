@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Resource;
 
@@ -19,9 +20,12 @@ import org.codelibs.core.beans.factory.BeanDescFactory;
 import org.codelibs.core.beans.util.BeanUtil;
 import org.codelibs.core.lang.StringUtil;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
+import org.codelibs.robot.entity.AccessResult;
+import org.codelibs.robot.entity.AccessResultDataImpl;
 import org.codelibs.robot.exception.RobotSystemException;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -104,9 +108,15 @@ public abstract class AbstractRobotService {
         final String id = getId(sessionId, url);
         final GetResponse response = esClient.prepareGet(index, type, id).execute().actionGet();
         if (response.isExists()) {
-            return BeanUtil.copyMapToNewBean(response.getSource(), clazz, option -> {
-                option.converter(new EsTimestampConverter(), timestampFields).excludeWhitespace();
+            final Map<String, Object> source = response.getSource();
+            final T bean = BeanUtil.copyMapToNewBean(source, clazz, option -> {
+                option.exclude("accessResultData").converter(new EsTimestampConverter(), timestampFields).excludeWhitespace();
             });
+            if (source.containsKey("accessResultData")) {
+                ((AccessResult) bean).setAccessResultData(BeanUtil.copyMapToNewBean((Map<String, Object>) source.get("accessResultData"),
+                        AccessResultDataImpl.class));
+            }
+            return bean;
         }
         return null;
     }
@@ -130,14 +140,15 @@ public abstract class AbstractRobotService {
         return targetList;
     }
 
-    protected void delete(final String sessionId, final String url) {
+    protected boolean delete(final String sessionId, final String url) {
         final String id = getId(sessionId, url);
-        esClient.prepareDelete(index, type, id).setRefresh(true).execute().actionGet();
+        final DeleteResponse response = esClient.prepareDelete(index, type, id).setRefresh(true).execute().actionGet();
+        return response.isFound();
     }
 
     protected void deleteBySessionId(final String sessionId) {
-        esClient.prepareDeleteByQuery(index).setTypes(type).setQuery(QueryBuilders.queryString(SESSION_ID + ":" + sessionId)).execute()
-                .actionGet();
+        esClient.prepareDeleteByQuery(index).setTypes(type).setQuery(QueryBuilders.queryStringQuery(SESSION_ID + ":" + sessionId))
+                .execute().actionGet();
         refresh();
     }
 
@@ -150,7 +161,7 @@ public abstract class AbstractRobotService {
             final Integer size, final SortBuilder sortBuilder) {
         final SearchRequestBuilder builder = esClient.prepareSearch(index).setTypes(type);
         if (StringUtil.isNotBlank(sessionId)) {
-            builder.setPostFilter(FilterBuilders.queryFilter(QueryBuilders.queryString(SESSION_ID + ":" + sessionId)));
+            builder.setPostFilter(FilterBuilders.queryFilter(QueryBuilders.queryStringQuery(SESSION_ID + ":" + sessionId)));
         }
         if (queryBuilder != null) {
             builder.setQuery(queryBuilder);

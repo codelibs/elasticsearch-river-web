@@ -2,15 +2,16 @@
 <!DOCTYPE components PUBLIC "-//DBFLUTE//DTD LastaDi 1.0//EN" 
 	"http://dbflute.org/meta/lastadi10.dtd">
 <components>
-    <include path="s2robot_es.xml"/>
-    <include path="es.xml"/>
-    <include path="config.xml"/>
+	<include path="s2robot_es.xml" />
+	<include path="es.xml" />
+	<include path="config.xml" />
 
-    <component name="riverWeb" class="org.codelibs.elasticsearch.web.RiverWeb">
-    </component>
+	<component name="riverWeb" class="org.codelibs.elasticsearch.web.RiverWeb">
+	</component>
 
 	<component name="defaultUserAgent" class="java.lang.String">
 		<arg>"Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Elasticsearch River Web/"
-            + org.codelibs.elasticsearch.web.WebRiverConstants.VERSION + ")"</arg>
+			+ org.codelibs.elasticsearch.web.WebRiverConstants.VERSION + ")"
+		</arg>
 	</component>
 </components>

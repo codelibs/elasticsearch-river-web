@@ -6,6 +6,7 @@ import java.util.List;
 import org.codelibs.core.beans.util.BeanUtil;
 import org.codelibs.elasticsearch.web.entity.EsAccessResult;
 import org.codelibs.robot.entity.AccessResult;
+import org.codelibs.robot.entity.AccessResultImpl;
 import org.codelibs.robot.service.DataService;
 import org.codelibs.robot.util.AccessResultCallback;
 import org.elasticsearch.action.index.IndexRequest.OpType;
@@ -50,7 +51,7 @@ public class EsDataService extends AbstractRobotService implements DataService {
 
     @Override
     public AccessResult getAccessResult(final String sessionId, final String url) {
-        return get(AccessResult.class, sessionId, url);
+        return get(AccessResultImpl.class, sessionId, url);
     }
 
     @Override

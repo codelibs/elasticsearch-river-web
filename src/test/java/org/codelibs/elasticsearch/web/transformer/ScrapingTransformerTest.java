@@ -11,7 +11,6 @@ import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.codelibs.core.io.ResourceUtil;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
-import org.codelibs.elasticsearch.web.transformer.ScrapingTransformer;
 import org.codelibs.robot.entity.ResponseData;
 import org.codelibs.robot.entity.ResultData;
 import org.junit.Test;
@@ -19,11 +18,11 @@ import org.junit.Test;
 public class ScrapingTransformerTest {
     @Test
     public void fess_codelibs_org() {
-        RiverConfig riverConfig = new RiverConfig();
-        ScrapingTransformer transformer = new ScrapingTransformer() {
+        final RiverConfig riverConfig = new RiverConfig();
+        final ScrapingTransformer transformer = new ScrapingTransformer() {
             @SuppressWarnings("unchecked")
             @Override
-            protected void storeIndex(ResponseData responseData, Map<String, Object> dataMap) {
+            protected void storeIndex(final ResponseData responseData, final Map<String, Object> dataMap) {
                 System.out.println(dataMap);
                 assertThat(((List<String>) ((Map<String, Object>) dataMap.get("nav")).get("sideMenus")).size(), is(27));
                 assertThat(((Map<String, Object>) dataMap.get("section1")).get("title").toString(), is("What is Fess?"));
@@ -34,27 +33,27 @@ public class ScrapingTransformerTest {
         };
         transformer.riverConfig = riverConfig;
 
-        String sessionId = "test";
-        String url = "http://fess.codelibs.org/";
+        final String sessionId = "test";
+        final String url = "http://fess.codelibs.org/";
 
-        Map<String, Map<String, Object>> scrapingRuleMap = new HashMap<String, Map<String, Object>>();
+        final Map<String, Map<String, Object>> scrapingRuleMap = new HashMap<String, Map<String, Object>>();
         addScrapingRuleMap(scrapingRuleMap, "text", "nav.sideMenus", "div.sidebar-nav ul li", Boolean.TRUE, Boolean.TRUE);
         addScrapingRuleMap(scrapingRuleMap, "text", "section1.title", "div.section:eq(0) h2", null, null);
         addScrapingRuleMap(scrapingRuleMap, "text", "section1.body", "div.section:eq(0) p", Boolean.TRUE, Boolean.TRUE);
         addScrapingRuleMap(scrapingRuleMap, "text", "section2.title", "div.section:eq(1) h2", null, null);
         addScrapingRuleMap(scrapingRuleMap, "text", "section2.body", "div.section:eq(1) ul li", Boolean.TRUE, Boolean.TRUE);
-        Map<String, Object> patternMap = new HashMap<String, Object>();
+        final Map<String, Object> patternMap = new HashMap<String, Object>();
         patternMap.put("url", url);
         riverConfig.setScrapingRule(null, patternMap, scrapingRuleMap);
         InputStream is = null;
         try {
             is = ResourceUtil.getResourceAsStream("html/fess_codelibs_org.html");
-            ResponseData responseData = new ResponseData();
+            final ResponseData responseData = new ResponseData();
             responseData.setSessionId(sessionId);
             responseData.setUrl(url);
             responseData.setResponseBody(is);
             responseData.setCharSet("UTF-8");
-            ResultData resultData = new ResultData();
+            final ResultData resultData = new ResultData();
 
             transformer.storeData(responseData, resultData);
         } finally {
@@ -62,9 +61,9 @@ public class ScrapingTransformerTest {
         }
     }
 
-    private void addScrapingRuleMap(Map<String, Map<String, Object>> scrapingRuleMap, String type, String property, String path,
-            Boolean isArray, Boolean trimSpaces) {
-        Map<String, Object> valueMap = new HashMap<String, Object>();
+    private void addScrapingRuleMap(final Map<String, Map<String, Object>> scrapingRuleMap, final String type, final String property,
+            final String path, final Boolean isArray, final Boolean trimSpaces) {
+        final Map<String, Object> valueMap = new HashMap<String, Object>();
         valueMap.put(type, path);
         if (isArray != null) {
             valueMap.put("isArray", isArray);

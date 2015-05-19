@@ -6,12 +6,12 @@
     <include path="s2robot/es_transformer.xml" />
 
 	<component name="ruleManager" class="org.codelibs.robot.rule.impl.RuleManagerImpl">
-		<initMethod name="addRule">
+		<postConstruct name="addRule">
 			<arg>sitemapsRule</arg>
-		</initMethod>
-		<initMethod name="addRule">
+		</postConstruct>
+		<postConstruct name="addRule">
 			<arg>scrapingRule</arg>
-		</initMethod>
+		</postConstruct>
 	</component>
 
 	<component name="sitemapsRule" class="org.codelibs.robot.rule.impl.SitemapsRule">
@@ -21,11 +21,11 @@
 				class="org.codelibs.robot.processor.impl.SitemapsResponseProcessor">
 			</component>
 		</property>
-		<initMethod name="addRule">
+		<postConstruct name="addRule">
 			<arg>"url"</arg>
 			<arg>".*sitemap.*"
 			</arg>
-		</initMethod>
+		</postConstruct>
 	</component>
 
 	<component name="scrapingRule" class="org.codelibs.robot.rule.impl.RegexRule">

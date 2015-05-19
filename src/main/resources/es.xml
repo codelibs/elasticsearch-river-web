@@ -2,16 +2,7 @@
 <!DOCTYPE components PUBLIC "-//DBFLUTE//DTD LastaDi 1.0//EN" 
 	"http://dbflute.org/meta/lastadi10.dtd">
 <components>
-    <include path="config.xml"/>
-
-    <component name="esClient" class="org.elasticsearch.client.transport.TransportClient">
-    	<postConstruct name="addTransportAddress">
-    		<arg>
-    			<component class="org.elasticsearch.common.transport.InetSocketTransportAddress">
-    				<arg>config.getProperty("elasticsearch.host")</arg>
-    				<arg>java.lang.Integer.parseInt(config.getProperty("elasticsearch.port"))</arg>
-    			</component>
-    		</arg>
-    	</postConstruct>
-    </component>
+	<component name="esClient"
+		class="org.codelibs.elasticsearch.web.client.EsClient">
+	</component>
 </components>

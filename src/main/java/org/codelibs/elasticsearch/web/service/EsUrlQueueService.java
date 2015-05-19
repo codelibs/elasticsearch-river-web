@@ -90,8 +90,6 @@ public class EsUrlQueueService extends AbstractRobotService implements UrlQueueS
 
     @Override
     public UrlQueue poll(final String sessionId) {
-        // TODO lock
-
         final List<EsUrlQueue> urlQueueList =
                 getList(EsUrlQueue.class, sessionId, null, 0, pollingFetchSize, SortBuilders.fieldSort(CREATE_TIME).order(SortOrder.ASC));
         if (urlQueueList.isEmpty()) {
@@ -103,12 +101,11 @@ public class EsUrlQueueService extends AbstractRobotService implements UrlQueueS
         final Client client = esClient;
         for (final EsUrlQueue urlQueue : urlQueueList) {
             final String url = urlQueue.getUrl();
-            if (exists(sessionId, url)) {
+            if (crawlingUrlQueue.size() > maxCrawlingQueueSize) {
+                return null;
+            }
+            if (super.delete(sessionId, url)) {
                 crawlingUrlQueue.add(urlQueue);
-                if (crawlingUrlQueue.size() > maxCrawlingQueueSize) {
-                    crawlingUrlQueue.poll();
-                }
-                super.delete(sessionId, url);
                 if (riverConfig.isIncremental()) {
                     updateLastModified(sessionId, client, urlQueue, url);
                 }

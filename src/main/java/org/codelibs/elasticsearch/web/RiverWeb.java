@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.IntConsumer;
 
 import javax.annotation.Resource;
 
@@ -20,6 +21,7 @@ import org.apache.http.impl.auth.NTLMScheme;
 import org.codelibs.core.lang.StringUtil;
 import org.codelibs.core.misc.DynamicProperties;
 import org.codelibs.elasticsearch.web.app.service.ScriptService;
+import org.codelibs.elasticsearch.web.client.EsClient;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.codelibs.elasticsearch.web.interval.WebRiverIntervalController;
 import org.codelibs.elasticsearch.web.util.SettingsUtils;
@@ -58,6 +60,15 @@ public class RiverWeb {
     @Option(name = "--cleanup")
     protected boolean cleanup;
 
+    @Option(name = "--es-host")
+    protected String esHost = "localhost";
+
+    @Option(name = "--es-port")
+    protected int esPort = 9200;
+
+    @Option(name = "--cluster-name")
+    protected String clusterName;
+
     @Resource
     protected Client esClient;
 
@@ -76,6 +87,8 @@ public class RiverWeb {
     @Resource
     protected String defaultUserAgent;
 
+    protected static IntConsumer exitMethod = System::exit;
+
     public static void main(final String[] args) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -92,11 +105,11 @@ public class RiverWeb {
             parser.parseArgument(args);
         } catch (final Exception e) {
             parser.printUsage(System.out);
-            System.exit(1);
+            exitMethod.accept(1);
             return;
         }
 
-        System.exit(riverWeb.execute());
+        exitMethod.accept(riverWeb.execute());
     }
 
     private void print(final String format, final Object... args) {
@@ -104,11 +117,14 @@ public class RiverWeb {
     }
 
     private int execute() {
+        // update esClient
+        ((EsClient) esClient).connect(clusterName, esHost, esPort);
+
         // Load config data
         final String configIndex = config.getProperty("config.index");
         final String configType = config.getProperty("config.type");
         final GetResponse response = esClient.prepareGet(configIndex, configType, configId).execute().actionGet();
-        if (response.isExists()) {
+        if (!response.isExists()) {
             print("Config ID {} is not found in {}/{}.", configId, configIndex, configType);
             return 1;
         }

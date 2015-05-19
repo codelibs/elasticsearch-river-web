@@ -2,10 +2,12 @@
 <!DOCTYPE components PUBLIC "-//DBFLUTE//DTD LastaDi 1.0//EN" 
 	"http://dbflute.org/meta/lastadi10.dtd">
 <components>
-    <component name="config" class="org.codelibs.core.misc.DynamicProperties">
-    	<arg>"riverweb_env.properties"</arg>
-    </component>
+	<component name="config" class="org.codelibs.core.misc.DynamicProperties">
+		<arg>org.codelibs.core.io.ResourceUtil.getResourceAsFile("riverweb_env.properties").getAbsolutePath()
+		</arg>
+	</component>
 
-	<component name="riverConfig" class="org.codelibs.elasticsearch.web.config.RiverConfig">
+	<component name="riverConfig"
+		class="org.codelibs.elasticsearch.web.config.RiverConfig">
 	</component>
 </components>
