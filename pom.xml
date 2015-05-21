@@ -32,6 +32,18 @@
 			<url>ftp://maven.codelibs.org/home/codelibs/maven/</url>
 		</repository>
 	</distributionManagement>
+	<repositories>
+		<repository>
+			<id>snapshots-repo</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
 	<properties>
 		<elasticsearch.version>1.5.2</elasticsearch.version>
 		<lastaflute.version>0.6.0-RC6</lastaflute.version>
