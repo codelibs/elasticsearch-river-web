@@ -3,20 +3,18 @@ Elasticsearch River Web
 
 ## Overview
 
-Elasticsearch River Web Plugin is a web crawler for Elasticsearch.
-This plugin provides a feature to crawl web sites and extract the content by CSS Query.
+Elasticsearch River Web is a web crawler application for Elasticsearch.
+This application provides a feature to crawl web sites and extract the content by CSS Query.
+(As of version 1.5, River Web is not Elasticsearch plugin)
 
 ## Version
 
-| River Web | elasticsearch |
-|:---------:|:-------------:|
-| master    | 1.4.X         |
-| 1.4.0     | 1.4.1         |
-| 1.3.1     | 1.3.4         |
-| 1.2.0     | 1.2.1         |
-| 1.1.2     | 1.1.1         |
-| 1.1.1     | 1.0.2         |
-| 1.0.1     | 0.90.7        |
+| River Web | elasticsearch | Download |
+|:---------:|:-------------:|:--------:|
+| master    | 1.5.X         | [Snapshot](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/ "Snapshot") |
+| 1.5.0     | 1.5.2         | TBD |
+
+For old plugin version, see [README_old.md](https://github.com/codelibs/elasticsearch-river-web/blob/master/README_old.md "README_old.md").
 
 ### Issues/Questions
 
@@ -25,217 +23,185 @@ Please file an [issue](https://github.com/codelibs/elasticsearch-river-web/issue
 
 ## Installation
 
-### Install Quartz Plugin
+### Install River Web 
 
-River Web plugin depends on Quartz plugin. 
-[Quartz plugin](https://github.com/codelibs/elasticsearch-quartz) needs to be installed before installing River Web plugin.
+#### Zip File
 
-    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-quartz/1.0.1
+    $ unzip elasticsearch-river-web-[VERSION].zip
 
-### Install River Web Plugin
+#### Tar.GZ File
 
-    $ $ES_HOME/bin/plugin --install org.codelibs/elasticsearch-river-web/1.4.0
+    $ tar zxvf elasticsearch-river-web-[VERSION].tar.gz
 
 ## Usage
 
 ### Create Index To Store Crawl Data
 
-An index is needed to store crawl data before starting a river.
-For example, to store data to "webindex", create it as below:
+An index for storing crawl data is needed before starting River Web.
+For example, to store data to "webindex/my_web", create it as below:
 
-    $ curl -XPUT 'localhost:9200/webindex'
+    $ curl -XPUT 'localhost:9200/webindex' -d '
+    {  
+      "settings":{  
+        "index":{  
+          "refresh_interval":"1s",
+          "number_of_shards":"10",
+          "number_of_replicas" : "0"
+        }
+      },
+      "mappings":{  
+        "my_web":{  
+          "properties":{  
+            "url":{  
+              "type":"string",
+              "index":"not_analyzed"
+            },
+            "method":{  
+              "type":"string",
+              "index":"not_analyzed"
+            },
+            "charSet":{  
+              "type":"string",
+              "index":"not_analyzed"
+            },
+            "mimeType":{  
+              "type":"string",
+              "index":"not_analyzed"
+            }
+          }
+        }
+      }
+    }'
 
-and then create a mapping setting if using "overwrite" option:
+Feel free to add any properties other than the above if you need them.
 
-    $ curl -XPUT "localhost:9200/webindex/my_web/_mapping" -d '
-    {
-      "my_web" : {
-        "dynamic_templates" : [
+### Register Crawl Config Data
+
+A crawling configuration is created by registering a document to .river_web index as below.
+This example crawls sites of http://www.codelibs.org/ and http://fess.codelibs.org/.
+
+    $ curl -XPUT 'localhost:9200/.river_web/config/1' -d '{
+        "index" : "webindex",
+        "type" : "my_web",
+        "url" : ["http://www.codelibs.org/", "http://fess.codelibs.org/"],
+        "includeFilter" : ["http://www.codelibs.org/.*", "http://fess.codelibs.org/.*"],
+        "maxDepth" : 3,
+        "maxAccessCount" : 100,
+        "numOfThread" : 5,
+        "interval" : 1000,
+        "target" : [
           {
-            "url" : {
-              "match" : "url",
-              "mapping" : {
-                "type" : "string",
-                "store" : "yes",
-                "index" : "not_analyzed"
+            "pattern" : {
+              "url" : "http://www.codelibs.org/.*",
+              "mimeType" : "text/html"
+            },
+            "properties" : {
+              "title" : {
+                "text" : "title"
+              },
+              "body" : {
+                "text" : "body"
+              },
+              "bodyAsHtml" : {
+                "html" : "body"
+              },
+              "projects" : {
+                "text" : "ul.nav-list li a",
+                "isArray" : true
               }
             }
           },
           {
-            "method" : {
-              "match" : "method",
-              "mapping" : {
-                "type" : "string",
-                "store" : "yes",
-                "index" : "not_analyzed"
-              }
-            }
-          },
-          {
-            "charSet" : {
-              "match" : "charSet",
-              "mapping" : {
-                "type" : "string",
-                "store" : "yes",
-                "index" : "not_analyzed"
-              }
-            }
-          },
-          {
-            "mimeType" : {
-              "match" : "mimeType",
-              "mapping" : {
-                "type" : "string",
-                "store" : "yes",
-                "index" : "not_analyzed"
+            "pattern" : {
+              "url" : "http://fess.codelibs.org/.*",
+              "mimeType" : "text/html"
+            },
+            "properties" : {
+              "title" : {
+                "text" : "title"
+              },
+              "body" : {
+                "text" : "body",
+                "trimSpaces" : true
+              },
+              "menus" : {
+                "text" : "ul.nav-list li a",
+                "isArray" : true
               }
             }
           }
         ]
-      }
     }'
-
-"my\_web" is a type given by your river name or "crawl.type".
-
-### Register Crawl Data
-
-A crawling configuration is created by registering a river as below.
-This example crawls sites of http://www.codelibs.org/ and http://fess.codelibs.org/ at 6:00am.
-
-    $ curl -XPUT 'localhost:9200/_river/my_web/_meta' -d '{
-        "type" : "web",
-        "crawl" : {
-            "index" : "webindex",
-            "url" : ["http://www.codelibs.org/", "http://fess.codelibs.org/"],
-            "includeFilter" : ["http://www.codelibs.org/.*", "http://fess.codelibs.org/.*"],
-            "maxDepth" : 3,
-            "maxAccessCount" : 100,
-            "numOfThread" : 5,
-            "interval" : 1000,
-            "target" : [
-              {
-                "pattern" : {
-                  "url" : "http://www.codelibs.org/.*",
-                  "mimeType" : "text/html"
-                },
-                "properties" : {
-                  "title" : {
-                    "text" : "title"
-                  },
-                  "body" : {
-                    "text" : "body"
-                  },
-                  "bodyAsHtml" : {
-                    "html" : "body"
-                  },
-                  "projects" : {
-                    "text" : "ul.nav-list li a",
-                    "isArray" : true
-                  }
-                }
-              },
-              {
-                "pattern" : {
-                  "url" : "http://fess.codelibs.org/.*",
-                  "mimeType" : "text/html"
-                },
-                "properties" : {
-                  "title" : {
-                    "text" : "title"
-                  },
-                  "body" : {
-                    "text" : "body",
-                    "trimSpaces" : true
-                  },
-                  "menus" : {
-                    "text" : "ul.nav-list li a",
-                    "isArray" : true
-                  }
-                }
-              }
-            ]
-        },
-        "schedule" : {
-            "cron" : "0 0 6 * * ?"
-        }
-    }'
-
-"my\_web" is a configuration name for River, and you can replace it with one you want.
 
 The configuration is:
 
-| Property                          | Type    | Description                                     |
-|:------------------------------------|:-------:|:------------------------------------------------|
-| crawl.index                         | string  | Stored index name.                              |
-| crawl.type                          | string  | Stored type name.                               |
-| crawl.url                           | array   | Start point of URL for crawling.                |
-| crawl.includeFilter                 | array   | White list of URL for crawling.                 |
-| crawl.excludeFilter                 | array   | Black list of URL for crawling.                 |
-| crawl.maxDepth                      | int     | Depth of crawling documents.                    |
-| crawl.maxAccessCount                | int     | The number of crawling documents.               |
-| crawl.numOfThread                   | int     | The number of crawler threads.                  |
-| crawl.interval                      | int     | Interval time (ms) to crawl documents.          |
-| crawl.incremental                   | boolean | Incremental crawling.                           |
-| crawl.overwrite                     | boolean | Delete documents of old duplicated url.         |
-| crawl.userAgent                     | string  | User-agent name when crawling.                  |
-| crawl.robotsTxt                     | boolean | If you want to ignore robots.txt, false.        |
-| crawl.authentications               | object  | Specify BASIC/DIGEST/NTLM authentication info.  |
-| crawl.target.urlPattern             | string  | URL pattern to extract contents by CSS Query.   |
-| crawl.target.properties.name        | string  | "name" is used as a property name in the index. |
-| crawl.target.properties.name.text   | string  | CSS Query for the property value.               |
-| crawl.target.properties.name.html   | string  | CSS Query for the property value.               |
-| crawl.target.properties.name.script | string  | Rewrite the property value by Script(Groovy).   |
-| schedule.cron                       | string  | [Cron format](http://quartz-scheduler.org/api/2.2.0/org/quartz/CronExpression.html) to start a crawler.                 |
+| Property                      | Type    | Description                                     |
+|:------------------------------|:-------:|:------------------------------------------------|
+| index                         | string  | Stored index name.                              |
+| type                          | string  | Stored type name.                               |
+| url                           | array   | Start point of URL for crawling.                |
+| includeFilter                 | array   | White list of URL for crawling.                 |
+| excludeFilter                 | array   | Black list of URL for crawling.                 |
+| maxDepth                      | int     | Depth of crawling documents.                    |
+| maxAccessCount                | int     | The number of crawling documents.               |
+| numOfThread                   | int     | The number of crawler threads.                  |
+| interval                      | int     | Interval time (ms) to crawl documents.          |
+| incremental                   | boolean | Incremental crawling.                           |
+| overwrite                     | boolean | Delete documents of old duplicated url.         |
+| userAgent                     | string  | User-agent name when crawling.                  |
+| robotsTxt                     | boolean | If you want to ignore robots.txt, false.        |
+| authentications               | object  | Specify BASIC/DIGEST/NTLM authentication info.  |
+| target.urlPattern             | string  | URL pattern to extract contents by CSS Query.   |
+| target.properties.name        | string  | "name" is used as a property name in the index. |
+| target.properties.name.text   | string  | CSS Query for the property value.               |
+| target.properties.name.html   | string  | CSS Query for the property value.               |
+| target.properties.name.script | string  | Rewrite the property value by Script(Groovy).   |
 
 
-### Unregister Crawl Data
+### Unregister Crawl Config Data
 
-If you want to stop the crawler, type as below: (replace my\_web with your river name)
+If you want to stop the crawler, kill the crawler process and then delete the config document as below:
 
-    $ curl -XDELETE 'localhost:9200/_river/my_web/'
+    $ curl -XDELETE 'localhost:9200/.river_web/config/1'
 
 ## Examples
 
 ### Full Text Search for Your site (ex. http://fess.codelibs.org/)
 
-    $ curl -XPUT 'localhost:9200/_river/fess/_meta' -d '{
-        "type" : "web",
-        "crawl" : {
-            "index" : "webindex",
-            "url" : ["http://fess.codelibs.org/"],
-            "includeFilter" : ["http://fess.codelibs.org/.*"],
-            "maxDepth" : 3,
-            "maxAccessCount" : 1000,
-            "numOfThread" : 5,
-            "interval" : 1000,
-            "target" : [{
-                "pattern" : {
-                    "url" : "http://fess.codelibs.org/.*",
-                    "mimeType" : "text/html"
+    $ curl -XPUT 'localhost:9200/.river_web/fess/fess_site' -d '{
+        "index" : "webindex",
+        "type" : "fess_site",
+        "url" : ["http://fess.codelibs.org/"],
+        "includeFilter" : ["http://fess.codelibs.org/.*"],
+        "maxDepth" : 3,
+        "maxAccessCount" : 1000,
+        "numOfThread" : 5,
+        "interval" : 1000,
+        "target" : [
+          {
+            "pattern" : {
+                "url" : "http://fess.codelibs.org/.*",
+                "mimeType" : "text/html"
+            },
+            "properties" : {
+                "title" : {
+                    "text" : "title"
                 },
-                "properties" : {
-                    "title" : {
-                        "text" : "title"
-                    },
-                    "body" : {
-                        "text" : "body",
-                        "trimSpaces" : true
-                    }
+                "body" : {
+                    "text" : "body",
+                    "trimSpaces" : true
                 }
-            }]
-        },
-        "schedule" : {
-            "cron" : "0 0 0 * * ?"
-        }
+            }
+          }
+        ]
     }'
 
 
 ### Aggregate a title/content from news.yahoo.com
 
-    $ curl -XPUT 'localhost:9200/_river/yahoo_com/_meta' -d '{
-      "type" : "web",
-      "crawl" : {
+    $ curl -XPUT 'localhost:9200/.river_web/config/yahoo_site' -d '{
         "index" : "webindex",
+        "type" : "my_web",
         "url" : ["http://news.yahoo.com/"],
         "includeFilter" : ["http://news.yahoo.com/.*"],
         "maxDepth" : 1,
@@ -270,10 +236,6 @@ If you want to stop the crawler, type as below: (replace my\_web with your river
             }
           }
         ]
-      },
-      "schedule" : {
-        "cron" : "0 0 * * * ?"
-      }
     }'
 
 (if news.yahoo.com is updated, the above example needs to be updated.)
@@ -283,7 +245,7 @@ If you want to stop the crawler, type as below: (replace my\_web with your river
 ### BASIC/DIGEST/NTLM authentication
 
 River Web supports BASIC/DIGEST/NTLM authentication.
-Set crawl.authentications object.
+Set authentications object.
 
     ...
     "numOfThread" : 5,
@@ -303,16 +265,16 @@ Set crawl.authentications object.
 
 The configuration is:
 
-| Property                                      | Type    | Description                                     |
-|:----------------------------------------------|:-------:|:------------------------------------------------|
-| crawl.authentications.scope.scheme            | string  | BASIC, DIGEST or NTLM                           |
-| crawl.authentications.scope.host              | string  | (Optional)Target hostname.                      |
-| crawl.authentications.scope.port              | int     | (Optional)Port number.                          |
-| crawl.authentications.scope.realm             | string  | (Optional)Realm name.                           |
-| crawl.authentications.credentials.username    | string  | Username.                                       |
-| crawl.authentications.credentials.password    | string  | Password.                                       |
-| crawl.authentications.credentials.workstation | string  | (Optional)Workstation for NTLM.                 |
-| crawl.authentications.credentials.domain      | string  | (Optional)Domain for NTLM.                      |
+| Property                                | Type    | Description                                     |
+|:----------------------------------------|:-------:|:------------------------------------------------|
+| authentications.scope.scheme            | string  | BASIC, DIGEST or NTLM                           |
+| authentications.scope.host              | string  | (Optional)Target hostname.                      |
+| authentications.scope.port              | int     | (Optional)Port number.                          |
+| authentications.scope.realm             | string  | (Optional)Realm name.                           |
+| authentications.credentials.username    | string  | Username.                                       |
+| authentications.credentials.password    | string  | Password.                                       |
+| authentications.credentials.workstation | string  | (Optional)Workstation for NTLM.                 |
+| authentications.credentials.domain      | string  | (Optional)Domain for NTLM.                      |
 
 For example, if you want to use an user in ActiveDirectory, the configuration is below:
 
@@ -336,12 +298,9 @@ For example, create a mapping with attachment type:
 
     curl -XPUT "localhost:9200/web/test/_mapping?pretty" -d '{
       "test" : {
-        "dynamic_templates" : [
-        {
+        "properties" : {
     ...
           "my_attachment" : {
-            "match" : "my_attachment",
-            "mapping" : {
               "type" : "attachment",
               "fields" : {
                 "file" : { "index" : "no" },
@@ -352,16 +311,14 @@ For example, create a mapping with attachment type:
                 "content_type" : { "store" : "yes" },
                 "content_length" : { "store" : "yes" }
               }
-            }
           }
     ...
 
 and then start your river. In "properties" object, when a value of "type" is "attachment", the crawled url is stored as base64-encoded data.
 
-    curl -XPUT 'localhost:9200/_river/test/_meta?pretty' -d '{
-      "type" : "web",
-      "crawl" : {
+    curl -XPUT localhost:9200/.river_web/config/2 -d '{
           "index" : "web",
+          "type" : "data",
           "url" : "http://...",
     ...
           "target" : [
@@ -438,18 +395,13 @@ In "properties" object, put "script" value to a property you want to rewrite.
 
 The above is, if a string value of body element in HTML contains "Elasticsearch", set "yes" to "flag" property.
 
-### Start a crawler immediately
-
-To start a crawler immediately, remove "cron" property in a configuration to register a river.
-No "cron" property means that the crawler starts right now and the river configuration is removed automatically at the end of the crawling.
-
 ### Use HTTP proxy
 
 Put "proxy" property in "crawl" property.
 
-    curl -XPUT 'localhost:9200/_river/my_web/_meta' -d '{
-        "type" : "web",
-        "crawl" : {
+    curl -XPUT 'localhost:9200/.river_web/config/my_web' -d '{
+        "index" : "webindex",
+        "type" : "my_web",
     ...
             "proxy" : {
               "host" : "proxy.server.com",
@@ -460,7 +412,6 @@ Put "proxy" property in "crawl" property.
 
 To set "isChildUrl" property to true, the property values is used as next crawled urls.
 
-    "crawl" : {
     ...
         "target" : [
           {
@@ -474,35 +425,22 @@ To set "isChildUrl" property to true, the property values is used as next crawle
 
 ### Intercept start/execute/finish/close actions
 
-You can insert your script to Starting River(start)/Executing Crawler(execute)/Finished Crawler(finish)/Closed River(close).
-To insert scripts, put "script" property to "crawl" property.
+You can insert your script to Executing Crawler(execute)/Finished Crawler(finish).
+To insert scripts, put "script" property as below:
 
-    {
-      "crawl" : {
-      ...
+    curl -XPUT 'localhost:9200/.river_web/config/my_web' -d '{
         "script":{
-          "start":"your script...",
           "execute":"your script...",
           "finish":"your script...",
-          "close":"your script..."
         },
-
-### Create Index For Crawling (1.0.0 - 1.1.0)
-
-River Web Plugin needs 'robot' index for web crawling.
-Therefore, in version 1.0.0 - 1.1.0, you need to create it before starting the crawl.
-Type the following commands to create 'robot' index:
-
-    $ curl -XPUT 'localhost:9200/robot/'
-
-As of 1.1.1, "robot" index is created automatically.
+        ...
 
 ## FAQ
 
 ### What does "No scraping rule." mean?
 
-In a river setting, "crawl.url" is starting urls to crawl a site, "crawl.includeFilter" filters urls whether are crawled or not, and "crawl.target.pattern.url" is a rule to store extracted web data.
-If a crawling url does not match "crawl.target.pattern.url", you would see the message.
+In a river setting, "url" is starting urls to crawl a site, "includeFilter" filters urls whether are crawled or not, and "target.pattern.url" is a rule to store extracted web data.
+If a crawling url does not match "target.pattern.url", you would see the message.
 Therefore, it means the crawled url does not have an extraction rule.
 
 ### How to extract an attribute of meta tag
@@ -527,4 +465,4 @@ See [Create Index To Store Crawl Data](https://github.com/codelibs/elasticsearch
 
 ### Where is crawled data stored?
 
-crawled data are stored to "robot" index during cralwing, data extracted from them are stored to your index specified by a river setting, and then data in "robot" index are removed when the crawler is finished.
+crawled data are stored to ".s2robot" index during cralwing, data extracted from them are stored to your index specified by a river setting, and then data in "robot" index are removed when the crawler is finished.
