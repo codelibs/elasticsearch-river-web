@@ -80,7 +80,7 @@ Feel free to add any properties other than the above if you need them.
 A crawling configuration is created by registering a document to .river_web index as below.
 This example crawls sites of http://www.codelibs.org/ and http://fess.codelibs.org/.
 
-    $ curl -XPUT 'localhost:9200/.river_web/config/1' -d '{
+    $ curl -XPUT 'localhost:9200/.river_web/config/my_web' -d '{
         "index" : "webindex",
         "type" : "my_web",
         "url" : ["http://www.codelibs.org/", "http://fess.codelibs.org/"],
@@ -157,6 +157,13 @@ The configuration is:
 | target.properties.name.html   | string  | CSS Query for the property value.               |
 | target.properties.name.script | string  | Rewrite the property value by Script(Groovy).   |
 
+### Start Crawler
+
+    ./bin/riverweb --config-id [config doc id] --cluster-name [Elasticsearch Cluster Name] --cleanup
+
+For example,
+
+    ./bin/riverweb --config-id my_web --cluster-name elasticsearch --cleanup
 
 ### Unregister Crawl Config Data
 
