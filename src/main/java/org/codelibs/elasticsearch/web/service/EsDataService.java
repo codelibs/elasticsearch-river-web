@@ -73,8 +73,12 @@ public class EsDataService extends AbstractRobotService implements DataService {
     @Override
     public void iterate(final String sessionId, final AccessResultCallback callback) {
         SearchResponse response =
-                esClient.prepareSearch(index).setTypes(type).setSearchType(SearchType.SCAN).setScroll(new TimeValue(scrollTimeout))
-                        .setPostFilter(FilterBuilders.termFilter(SESSION_ID, sessionId)).setQuery(QueryBuilders.matchAllQuery())
+                esClient.prepareSearch(index)
+                        .setTypes(type)
+                        .setSearchType(SearchType.SCAN)
+                        .setScroll(new TimeValue(scrollTimeout))
+                        .setQuery(
+                                QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), FilterBuilders.termFilter(SESSION_ID, sessionId)))
                         .setSize(scrollSize).execute().actionGet();
         while (true) {
             final SearchHits searchHits = response.getHits();

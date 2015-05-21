@@ -296,20 +296,6 @@
 			<groupId>org.elasticsearch</groupId>
 			<artifactId>elasticsearch</artifactId>
 			<version>${elasticsearch.version}</version>
-			<exclusions>
-				<exclusion>
-					<artifactId>antlr-runtime</artifactId>
-					<groupId>org.antlr</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>asm</artifactId>
-					<groupId>org.ow2.asm</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>asm-commons</artifactId>
-					<groupId>org.ow2.asm</groupId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.lastaflute</groupId>
@@ -320,7 +306,6 @@
 			<groupId>javax.transaction</groupId>
 			<artifactId>javax.transaction-api</artifactId>
 			<version>${jta.version}</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>args4j</groupId>
@@ -378,6 +363,7 @@
 			<version>1.5.0.1</version>
 			<scope>test</scope>
 		</dependency>
+		<!-- Elasticsearch -->
 		<dependency>
 			<artifactId>lucene-spatial</artifactId>
 			<groupId>org.apache.lucene</groupId>

@@ -64,7 +64,7 @@ public class RiverWeb {
     protected String esHost = "localhost";
 
     @Option(name = "--es-port")
-    protected int esPort = 9200;
+    protected int esPort = 9300;
 
     @Option(name = "--cluster-name")
     protected String clusterName;

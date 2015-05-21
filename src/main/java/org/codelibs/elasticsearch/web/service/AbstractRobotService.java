@@ -32,6 +32,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -161,12 +162,18 @@ public abstract class AbstractRobotService {
             final Integer size, final SortBuilder sortBuilder) {
         final SearchRequestBuilder builder = esClient.prepareSearch(index).setTypes(type);
         if (StringUtil.isNotBlank(sessionId)) {
-            builder.setPostFilter(FilterBuilders.queryFilter(QueryBuilders.queryStringQuery(SESSION_ID + ":" + sessionId)));
-        }
-        if (queryBuilder != null) {
-            builder.setQuery(queryBuilder);
+            final FilterBuilder filterBuilder = FilterBuilders.queryFilter(QueryBuilders.queryStringQuery(SESSION_ID + ":" + sessionId));
+            if (queryBuilder != null) {
+                builder.setQuery(QueryBuilders.filteredQuery(queryBuilder, filterBuilder));
+            } else {
+                builder.setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), filterBuilder));
+            }
         } else {
-            builder.setQuery(QueryBuilders.matchAllQuery());
+            if (queryBuilder != null) {
+                builder.setQuery(queryBuilder);
+            } else {
+                builder.setQuery(QueryBuilders.matchAllQuery());
+            }
         }
         if (sortBuilder != null) {
             builder.addSort(sortBuilder);
