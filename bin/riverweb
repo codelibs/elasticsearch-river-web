@@ -1,0 +1,25 @@
+#!/bin/bash
+
+cd `dirname $0`
+cd ..
+BASE_DIR=`pwd`
+
+LIB_DIR=$BASE_DIR/lib
+
+if [ -d /var/log/riverweb ] ; then 
+  RIVERWEB_OPT=$RIVERWEB_OPT -Driverweb.log.file=/var/log/riverweb/riverweb.log
+fi
+
+if [ -d /etc/riverweb ] ; then 
+  CONFIG_DIR=/etc/riverweb
+else
+  CONFIG_DIR=$BASE_DIR/config
+fi
+
+CP_PATH=$CONFIG_DIR
+for JAR_FILE in `ls $LIB_DIR/*.jar 2>/dev/null` ; do
+  CP_PATH="$CP_PATH;$JAR_FILE"
+done
+
+java $RIVERWEB_OPT -cp $CP_PATH org.codelibs.elasticsearch.web.RiverWeb $@
+

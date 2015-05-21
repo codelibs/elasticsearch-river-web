@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE components PUBLIC "-//DBFLUTE//DTD LastaDi 1.0//EN"
+	"http://dbflute.org/meta/lastadi10.dtd">
+<components namespace="s2robot">
+	<include path="s2robot/container.xml" />
+	<include path="s2robot/robotstxt.xml" />
+	<include path="s2robot/contentlength.xml" />
+
+	<component name="internalHttpClient" class="org.codelibs.robot.client.http.HcHttpClient"
+		instance="prototype">
+		<property name="cookieSpec">org.apache.http.client.params.CookiePolicy.BEST_MATCH</property>
+		<property name="clientConnectionManager">clientConnectionManager</property>
+	</component>
+	<component name="httpClient"
+		class="org.codelibs.robot.client.FaultTolerantClient" instance="prototype">
+		<property name="robotClient">internalHttpClient</property>
+		<property name="maxRetryCount">5</property>
+		<property name="retryInterval">500</property>
+	</component>
+
+	<component name="clientConnectionManager"
+		class="org.apache.http.impl.conn.PoolingHttpClientConnectionManager">
+		<arg>5</arg><!-- timeToLive -->
+		<arg>java.util.concurrent.TimeUnit.MINUTES</arg><!-- tunit -->
+		<!-- Increase max total connection to 200 -->
+		<property name="maxTotal">200</property>
+		<!-- Increase default max connection per route to 20 -->
+		<property name="defaultMaxPerRoute">20</property>
+		<preDestroy name="shutdown"></preDestroy>
+	</component>
+
+	<!-- 
+	<component name="fsClient"
+		class="org.codelibs.robot.client.fs.FileSystemClient" instance="prototype">
+		<property name="charset">"UTF-8"</property>
+	</component>
+
+	<component name="smbClient" class="org.codelibs.robot.client.smb.SmbClient"
+		instance="prototype">
+		<property name="charset">"UTF-8"</property>
+	</component>
+	 -->
+
+	<!-- <component name="ftpClient" class="org.codelibs.robot.client.ftp.FtpClient" 
+		instance="prototype"> <property name="charset">"UTF-8"</property> </component> -->
+
+	<component name="clientFactory"
+		class="org.codelibs.robot.client.S2RobotClientFactory" instance="prototype">
+		<postConstruct name="addClient">
+			<arg>["http:.*", "https:.*"]</arg>
+			<arg>httpClient</arg>
+		</postConstruct>
+		<!-- 
+		<postConstruct name="addClient">
+			<arg>"file:.*"</arg>
+			<arg>fsClient</arg>
+		</postConstruct>
+		<postConstruct name="addClient">
+			<arg>"smb:.*"</arg>
+			<arg>smbClient</arg>
+		</postConstruct>
+		 -->
+		<!-- <postConstruct name="addClient"> <arg>"ftp:.*"</arg> <arg>ftpClient</arg> 
+			</postConstruct> -->
+	</component>
+
+</components>

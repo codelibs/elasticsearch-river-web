@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.codelibs.core.beans.BeanDesc;
 import org.codelibs.core.beans.factory.BeanDescFactory;
 import org.codelibs.core.beans.util.BeanUtil;
@@ -252,7 +251,7 @@ public class ScrapingTransformer extends HtmlTransformer {
             Object propertyValue;
             final ScriptInfo scriptInfo = getScriptValue(params);
             if (scriptInfo == null) {
-                propertyValue = isArray ? strList : StringUtils.join(strList, " ");
+                propertyValue = isArray ? strList : String.join( " ",strList);
             } else {
                 final Map<String, Object> vars = new HashMap<String, Object>();
                 vars.put("container", SingletonLaContainerFactory.getContainer());
@@ -268,12 +267,12 @@ public class ScrapingTransformer extends HtmlTransformer {
                     for (int i = 0; i < strList.size(); i++) {
                         final Map<String, Object> localVars = new HashMap<String, Object>(vars);
                         localVars.put("index", i);
-                        localVars.put("value", StringUtils.join(strList, " "));
+                        localVars.put("value", String.join( " ",strList));
                         list.add(executeScript(scriptInfo.getLang(), scriptInfo.getScript(), scriptInfo.getScriptType(), localVars));
                     }
                     propertyValue = list;
                 } else {
-                    vars.put("value", StringUtils.join(strList, " "));
+                    vars.put("value", String.join( " ",strList));
                     propertyValue = executeScript(scriptInfo.getLang(), scriptInfo.getScript(), scriptInfo.getScriptType(), vars);
                 }
             }
@@ -286,7 +285,7 @@ public class ScrapingTransformer extends HtmlTransformer {
                 }
                 if (propertyValue instanceof String) {
                     final String str = (String) propertyValue;
-                    if (StringUtils.isNotBlank(str)) {
+                    if (StringUtil.isNotBlank(str)) {
                         childUrlSet.add(str);
                     }
                 } else if (propertyValue instanceof List) {
@@ -294,7 +293,7 @@ public class ScrapingTransformer extends HtmlTransformer {
                     final List<Object> list = (List<Object>) propertyValue;
                     for (final Object obj : list) {
                         final String str = obj.toString();
-                        if (StringUtils.isNotBlank(str)) {
+                        if (StringUtil.isNotBlank(str)) {
                             childUrlSet.add(str);
                         }
                     }
@@ -325,7 +324,7 @@ public class ScrapingTransformer extends HtmlTransformer {
         } else if (value instanceof String) {
             return new ScriptInfo(value.toString());
         } else if (value instanceof List) {
-            return new ScriptInfo(StringUtils.join((List<?>) value, ""));
+            return new ScriptInfo(String.join( "",(List<CharSequence>) value));
         } else if (value instanceof Map) {
             @SuppressWarnings("unchecked")
             final Map<String, Object> scriptMap = (Map<String, Object>) value;

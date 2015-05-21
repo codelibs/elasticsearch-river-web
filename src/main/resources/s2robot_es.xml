@@ -3,7 +3,7 @@
 	"http://dbflute.org/meta/lastadi10.dtd">
 <components namespace="s2robot">
 	<include path="s2robot/container.xml" />
-	<include path="s2robot/client.xml" />
+	<include path="s2robot/es_client.xml" />
 	<include path="s2robot/es_rule.xml" />
 	<include path="s2robot/filter.xml" />
 	<include path="s2robot/es_interval.xml" />
