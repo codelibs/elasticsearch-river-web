@@ -27,7 +27,7 @@ public class RiverWebTest extends TestCase {
             public void build(final int number, final Builder settingsBuilder) {
                 settingsBuilder.put("http.cors.enabled", true);
             }
-        }).build(newConfigs().clusterName(clusterName).ramIndexStore().numOfNode(1));
+        }).build(newConfigs().clusterName(clusterName).ramIndexStore().numOfNode(3));
 
         // wait for yellow status
         runner.ensureYellow();
@@ -46,7 +46,9 @@ public class RiverWebTest extends TestCase {
         RiverWeb.exitMethod = new IntConsumer() {
             @Override
             public void accept(final int value) {
-                // nothing
+                if (value != 0) {
+                    fail();
+                }
             }
         };
 
@@ -78,7 +80,9 @@ public class RiverWebTest extends TestCase {
         }
 
         RiverWeb.main(new String[] { "--config-id", "1", "--es-port", runner.node().settings().get("transport.tcp.port"), "--cluster-name",
-                clusterName });
+                clusterName, "--cleanup" });
+
+        assertEquals(0, runner.count(index, type).getCount());
 
         runner.ensureYellow();
     }

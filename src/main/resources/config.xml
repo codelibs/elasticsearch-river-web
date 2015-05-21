@@ -3,7 +3,7 @@
 	"http://dbflute.org/meta/lastadi10.dtd">
 <components>
 	<component name="config" class="org.codelibs.core.misc.DynamicProperties">
-		<arg>org.codelibs.core.io.ResourceUtil.getResourceAsFile("riverweb_env.properties").getAbsolutePath()
+		<arg>org.codelibs.core.io.ResourceUtil.getResourceAsFile("riverweb.properties").getAbsolutePath()
 		</arg>
 	</component>
 
