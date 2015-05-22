@@ -43,19 +43,19 @@
 	<!-- Service -->
 	<component name="urlQueueService"
 		class="org.codelibs.elasticsearch.web.service.EsUrlQueueService">
-		<property name="index">config.getProperty("robot.index")</property>
+		<property name="index">config.getProperty("robot.queue_index")</property>
 		<property name="type">config.getProperty("robot.queue_type")
 		</property>
 	</component>
 	<component name="dataService"
 		class="org.codelibs.elasticsearch.web.service.EsDataService">
-		<property name="index">config.getProperty("robot.index")</property>
+		<property name="index">config.getProperty("robot.data_index")</property>
 		<property name="type">config.getProperty("robot.data_type")
 		</property>
 	</component>
 	<component name="urlFilterService"
 		class="org.codelibs.elasticsearch.web.service.EsUrlFilterService">
-		<property name="index">config.getProperty("robot.index")</property>
+		<property name="index">config.getProperty("robot.filter_index")</property>
 		<property name="type">config.getProperty("robot.filter_type")
 		</property>
 	</component>
