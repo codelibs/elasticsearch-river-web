@@ -473,3 +473,8 @@ See [Create Index To Store Crawl Data](https://github.com/codelibs/elasticsearch
 ### Where is crawled data stored?
 
 crawled data are stored to ".s2robot" index during cralwing, data extracted from them are stored to your index specified by a river setting, and then data in "robot" index are removed when the crawler is finished.
+
+## Powered by
+
+* [Lasta Di](https://github.com/lastaflute/lasta-di "Lasta Di")
+* [S2Robot](https://github.com/codelibs/s2robot "S2Robot")
