@@ -294,7 +294,7 @@ public class RiverWeb {
 
             // river params
             riverConfig.setIndex(SettingsUtils.get(crawlSettings, "index", "web"));
-            riverConfig.setType(SettingsUtils.get(crawlSettings, "type", "data"));
+            riverConfig.setType(SettingsUtils.get(crawlSettings, "type", configId));
             riverConfig.setOverwrite(SettingsUtils.get(crawlSettings, "overwrite", Boolean.FALSE));
             riverConfig.setIncremental(SettingsUtils.get(crawlSettings, "incremental", Boolean.FALSE));
 
