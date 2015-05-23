@@ -235,6 +235,18 @@
 									<includes>
 										<include>${project.build.finalName}.jar</include>
 									</includes>
+									<excludes>
+										<exclude>lucene-spatial*</exclude>
+										<exclude>lucene-suggest*</exclude>
+										<exclude>lucene-sandbox*</exclude>
+										<exclude>lucene-queryparser*</exclude>
+										<exclude>lucene-queries*</exclude>
+										<exclude>lucene-misc*</exclude>
+										<exclude>lucene-memory*</exclude>
+										<exclude>lucene-join*</exclude>
+										<exclude>lucene-highlighter*</exclude>
+										<exclude>lucene-grouping*</exclude>
+									</excludes>
 								</source>
 							</sources>
 						</mapping>
@@ -366,67 +378,6 @@
 			<groupId>org.codelibs</groupId>
 			<artifactId>elasticsearch-cluster-runner</artifactId>
 			<version>1.5.0.1</version>
-			<scope>test</scope>
-		</dependency>
-		<!-- Elasticsearch -->
-		<dependency>
-			<artifactId>lucene-spatial</artifactId>
-			<groupId>org.apache.lucene</groupId>
-			<version>${lucene.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<artifactId>lucene-suggest</artifactId>
-			<groupId>org.apache.lucene</groupId>
-			<version>${lucene.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<artifactId>lucene-sandbox</artifactId>
-			<groupId>org.apache.lucene</groupId>
-			<version>${lucene.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<artifactId>lucene-queryparser</artifactId>
-			<groupId>org.apache.lucene</groupId>
-			<version>${lucene.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<artifactId>lucene-queries</artifactId>
-			<groupId>org.apache.lucene</groupId>
-			<version>${lucene.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<artifactId>lucene-misc</artifactId>
-			<groupId>org.apache.lucene</groupId>
-			<version>${lucene.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<artifactId>lucene-memory</artifactId>
-			<groupId>org.apache.lucene</groupId>
-			<version>${lucene.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<artifactId>lucene-join</artifactId>
-			<groupId>org.apache.lucene</groupId>
-			<version>${lucene.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<artifactId>lucene-highlighter</artifactId>
-			<groupId>org.apache.lucene</groupId>
-			<version>${lucene.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<artifactId>lucene-grouping</artifactId>
-			<groupId>org.apache.lucene</groupId>
-			<version>${lucene.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
