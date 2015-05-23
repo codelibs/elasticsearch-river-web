@@ -255,10 +255,15 @@
 							<directory>/etc/riverweb/</directory>
 							<sources>
 								<source>
+									<location>config</location>
+									<includes>
+										<include>log4j.xml</include>
+									</includes>
+								</source>
+								<source>
 									<location>src/main/resources</location>
 									<includes>
 										<include>riverweb.properties</include>
-										<include>log4j.xml</include>
 									</includes>
 								</source>
 							</sources>
