@@ -12,7 +12,7 @@ This application provides a feature to crawl web sites and extract the content b
 | River Web | elasticsearch | Download |
 |:---------:|:-------------:|:--------:|
 | master    | 1.5.X         | [Snapshot](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/ "Snapshot") |
-| 1.5.0     | 1.5.2         | TBD |
+| 1.5.0     | 1.5.2         | [ZIP](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/1.5.0/elasticsearch-river-web-1.5.0.zip "ZIP"),[TGZ](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/1.5.0/elasticsearch-river-web-1.5.0.zip "TGZ") |
 
 For old plugin version, see [README_old.md](https://github.com/codelibs/elasticsearch-river-web/blob/master/README_old.md "README_old.md").
 
@@ -476,5 +476,5 @@ crawled data are stored to ".s2robot" index during cralwing, data extracted from
 
 ## Powered by
 
-* [Lasta Di](https://github.com/lastaflute/lasta-di "Lasta Di")
-* [S2Robot](https://github.com/codelibs/s2robot "S2Robot")
+* [Lasta Di](https://github.com/lastaflute/lasta-di "Lasta Di"): DI Container
+* [S2Robot](https://github.com/codelibs/s2robot "S2Robot"): Web Crawler
