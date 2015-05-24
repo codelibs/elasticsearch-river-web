@@ -388,8 +388,8 @@ and then create "webindex" index with analyzers for Japanese.
 
 ### Rewrite a property value by Script
 
-River Web allows you to rewrite crawled data by [Elasticsearch's scripting](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html).
-The default script language is Groovy.
+River Web allows you to rewrite crawled data by Java's ScriptEngine.
+"javascript" is available.
 In "properties" object, put "script" value to a property you want to rewrite.
 
     ...
@@ -397,7 +397,7 @@ In "properties" object, put "script" value to a property you want to rewrite.
     ...
               "flag" : {
                 "text" : "body",
-                "script" : "value.contains(\"Elasticsearch\") ? \"yes\" : \"no\""
+                "script" : "value.indexOf('Elasticsearch') > 0 ? 'yes' : 'no';"
               },
 
 The above is, if a string value of body element in HTML contains "Elasticsearch", set "yes" to "flag" property.
