@@ -47,7 +47,7 @@
 	<properties>
 		<elasticsearch.version>1.5.2</elasticsearch.version>
 		<lastadi.version>0.6.0</lastadi.version>
-		<s2robot.version>1.0.0-SNAPSHOT</s2robot.version>
+		<s2robot.version>1.0.0-beta1</s2robot.version>
 		<jta.version>1.2</jta.version>
 		<slf4j.version>1.7.12</slf4j.version>
 		<lucene.version>4.10.4</lucene.version>
@@ -333,7 +333,7 @@
 		<dependency>
 			<groupId>org.codelibs</groupId>
 			<artifactId>corelib</artifactId>
-			<version>0.3.0-SNAPSHOT</version>
+			<version>0.3.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.codelibs.robot</groupId>
