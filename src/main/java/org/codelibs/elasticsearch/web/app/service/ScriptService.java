@@ -36,7 +36,7 @@ public class ScriptService {
         }
     }
 
-    private String getScriptContent(String lang, String script, ScriptType scriptType) {
+    private String getScriptContent(final String lang, final String script, final ScriptType scriptType) {
         switch (scriptType) {
         case INLINE:
             return script;

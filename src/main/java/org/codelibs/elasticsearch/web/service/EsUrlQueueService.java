@@ -42,7 +42,7 @@ public class EsUrlQueueService extends AbstractRobotService implements UrlQueueS
     @PostConstruct
     public void init() {
         esClient.addOnConnectListener(() -> {
-            createMapping(logger, "queue");
+            createMapping("queue");
         });
     }
 
@@ -134,7 +134,7 @@ public class EsUrlQueueService extends AbstractRobotService implements UrlQueueS
             if (hits.getTotalHits() > 0) {
                 final SearchHit hit = hits.getHits()[0];
                 final Map<String, Object> sourceMap = hit.getSource();
-                final Date date = (Date) sourceMap.get(LAST_MODIFIED);
+                final Date date = getDateFromSource(sourceMap, LAST_MODIFIED);
                 if (date != null) {
                     urlQueue.setLastModified(date.getTime());
                 }

@@ -12,11 +12,8 @@ import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class EsUrlFilterService extends AbstractRobotService implements UrlFilterService {
-    private static final Logger logger = LoggerFactory.getLogger(EsUrlFilterService.class);
 
     private static final String FILTER_TYPE = "filterType";
 
@@ -27,7 +24,7 @@ public class EsUrlFilterService extends AbstractRobotService implements UrlFilte
     @PostConstruct
     public void init() {
         esClient.addOnConnectListener(() -> {
-            createMapping(logger, "filter");
+            createMapping("filter");
         });
     }
 

@@ -2,10 +2,11 @@
 <!DOCTYPE components PUBLIC "-//DBFLUTE//DTD LastaDi 1.0//EN"
     "http://dbflute.org/meta/lastadi10.dtd">
 <components namespace="s2robot">
-    <include path="s2robot/container.xml" />
-    <include path="s2robot/es_transformer.xml" />
+	<include path="s2robot/container.xml" />
+	<include path="s2robot/es_transformer.xml" />
 
-	<component name="ruleManager" class="org.codelibs.robot.rule.impl.RuleManagerImpl">
+	<component name="ruleManager"
+		class="org.codelibs.robot.rule.impl.RuleManagerImpl">
 		<postConstruct name="addRule">
 			<arg>sitemapsRule</arg>
 		</postConstruct>
@@ -32,8 +33,11 @@
 		<property name="ruleId">"scraping"</property>
 		<property name="defaultRule">true</property>
 		<property name="responseProcessor">
-			<component class="org.codelibs.robot.processor.impl.DefaultResponseProcessor">
+			<component
+				class="org.codelibs.robot.processor.impl.DefaultResponseProcessor">
 				<property name="transformer">scrapingTransformer</property>
+				<property name="successfulHttpCodes">(int[])[200]</property>
+				<property name="notModifiedHttpCodes">(int[])[304]</property>
 			</component>
 		</property>
 	</component>

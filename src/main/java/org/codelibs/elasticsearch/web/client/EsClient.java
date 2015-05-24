@@ -97,7 +97,7 @@ public class EsClient implements Client {
 
     protected List<OnConnectListener> onConnectListenerList = new ArrayList<>();
 
-    public void addOnConnectListener(OnConnectListener listener) {
+    public void addOnConnectListener(final OnConnectListener listener) {
         onConnectListenerList.add(listener);
     }
 

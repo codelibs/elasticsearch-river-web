@@ -5,10 +5,13 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import javax.annotation.Resource;
 
@@ -48,8 +51,10 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractRobotService {
+    private static final Logger logger = LoggerFactory.getLogger(AbstractRobotService.class);
 
     private static final String ID_SEPARATOR = ".";
 
@@ -77,12 +82,12 @@ public abstract class AbstractRobotService {
     @Resource
     protected EsClient esClient;
 
-    protected void createMapping(Logger logger, String mappingName) {
+    protected void createMapping(final String mappingName) {
         boolean exists = false;
         try {
             esClient.prepareExists(index).execute().actionGet();
             exists = true;
-        } catch (IndexMissingException e) {
+        } catch (final IndexMissingException e) {
             // ignore
         }
         if (!exists) {
@@ -100,7 +105,7 @@ public abstract class AbstractRobotService {
 
         final GetMappingsResponse getMappingsResponse =
                 esClient.admin().indices().prepareGetMappings(index).setTypes(type).execute().actionGet();
-        ImmutableOpenMap<String, MappingMetaData> indexMappings = getMappingsResponse.mappings().get(index);
+        final ImmutableOpenMap<String, MappingMetaData> indexMappings = getMappingsResponse.mappings().get(index);
         if (indexMappings == null || !indexMappings.containsKey(type)) {
             final PutMappingResponse putMappingResponse =
                     esClient.admin().indices().preparePutMapping(index).setType(type)
@@ -113,6 +118,26 @@ public abstract class AbstractRobotService {
         } else if (logger.isDebugEnabled()) {
             logger.debug(index + "/" + type + " mapping exists.");
         }
+    }
+
+    protected Date getDateFromSource(final Map<String, Object> sourceMap, final String name) {
+        final Object obj = sourceMap.get(name);
+        if (obj instanceof Date) {
+            return (Date) obj;
+        } else if (obj instanceof Number) {
+            return new Date(((Number) obj).longValue());
+        } else if (obj instanceof String) {
+            final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+            try {
+                return sdf.parse(obj.toString());
+            } catch (final ParseException e) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Failed to parse " + obj, e);
+                }
+            }
+        }
+        return null;
     }
 
     protected XContentBuilder getXContentBuilder(final Object target) {
@@ -162,7 +187,7 @@ public abstract class AbstractRobotService {
             });
             if (source.containsKey("accessResultData")) {
                 @SuppressWarnings("unchecked")
-                Map<String, Object> accessResultDataMap = (Map<String, Object>) source.get("accessResultData");
+                final Map<String, Object> accessResultDataMap = (Map<String, Object>) source.get("accessResultData");
                 ((AccessResult) bean).setAccessResultData(BeanUtil.copyMapToNewBean(accessResultDataMap, AccessResultDataImpl.class));
             }
             return bean;

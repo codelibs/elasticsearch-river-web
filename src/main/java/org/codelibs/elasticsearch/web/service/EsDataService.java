@@ -19,11 +19,8 @@ import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class EsDataService extends AbstractRobotService implements DataService {
-    private static final Logger logger = LoggerFactory.getLogger(EsDataService.class);
 
     public int scrollTimeout = 60000;
 
@@ -32,7 +29,7 @@ public class EsDataService extends AbstractRobotService implements DataService {
     @PostConstruct
     public void init() {
         esClient.addOnConnectListener(() -> {
-            createMapping(logger, "data");
+            createMapping("data");
         });
     }
 
