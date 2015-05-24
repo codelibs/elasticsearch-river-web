@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 
 import org.codelibs.core.lang.StringUtil;
@@ -18,16 +19,16 @@ import org.codelibs.robot.service.UrlQueueService;
 import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EsUrlQueueService extends AbstractRobotService implements UrlQueueService {
-    private static final ESLogger logger = Loggers.getLogger(EsUrlQueueService.class);
+    private static final Logger logger = LoggerFactory.getLogger(EsUrlQueueService.class);
 
     @Resource
     protected EsDataService dataService;
@@ -37,6 +38,13 @@ public class EsUrlQueueService extends AbstractRobotService implements UrlQueueS
     public int pollingFetchSize = 20;
 
     public int maxCrawlingQueueSize = 100;
+
+    @PostConstruct
+    public void init() {
+        esClient.addOnConnectListener(() -> {
+            createMapping(logger, "queue");
+        });
+    }
 
     @Override
     public void updateSessionId(final String oldSessionId, final String newSessionId) {

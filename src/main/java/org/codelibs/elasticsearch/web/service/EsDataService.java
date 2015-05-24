@@ -3,6 +3,8 @@ package org.codelibs.elasticsearch.web.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
+
 import org.codelibs.core.beans.util.BeanUtil;
 import org.codelibs.elasticsearch.web.entity.EsAccessResult;
 import org.codelibs.robot.entity.AccessResult;
@@ -17,12 +19,22 @@ import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EsDataService extends AbstractRobotService implements DataService {
+    private static final Logger logger = LoggerFactory.getLogger(EsDataService.class);
 
     public int scrollTimeout = 60000;
 
     public int scrollSize = 100;
+
+    @PostConstruct
+    public void init() {
+        esClient.addOnConnectListener(() -> {
+            createMapping(logger, "data");
+        });
+    }
 
     @Override
     public void store(final AccessResult accessResult) {

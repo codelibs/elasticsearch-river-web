@@ -5,18 +5,31 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import javax.annotation.PostConstruct;
+
 import org.codelibs.robot.service.UrlFilterService;
 import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EsUrlFilterService extends AbstractRobotService implements UrlFilterService {
+    private static final Logger logger = LoggerFactory.getLogger(EsUrlFilterService.class);
+
     private static final String FILTER_TYPE = "filterType";
 
     private static final String INCLUDE = "include";
 
     private static final String EXCLUDE = "exclude";
+
+    @PostConstruct
+    public void init() {
+        esClient.addOnConnectListener(() -> {
+            createMapping(logger, "filter");
+        });
+    }
 
     @Override
     public void addIncludeUrlFilter(final String sessionId, final String url) {

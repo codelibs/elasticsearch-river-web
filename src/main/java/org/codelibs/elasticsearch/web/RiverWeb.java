@@ -44,7 +44,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RiverWeb {
-    private static Logger logger = LoggerFactory.getLogger(RiverWeb.class);
+    private static final Logger logger = LoggerFactory.getLogger(RiverWeb.class);
+
     private static final String NTLM_SCHEME = "NTLM";
 
     private static final String DIGEST_SCHEME = "DIGEST";

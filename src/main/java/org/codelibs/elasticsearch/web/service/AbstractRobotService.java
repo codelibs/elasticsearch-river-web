@@ -18,11 +18,16 @@ import org.codelibs.core.beans.Converter;
 import org.codelibs.core.beans.PropertyDesc;
 import org.codelibs.core.beans.factory.BeanDescFactory;
 import org.codelibs.core.beans.util.BeanUtil;
+import org.codelibs.core.io.FileUtil;
 import org.codelibs.core.lang.StringUtil;
+import org.codelibs.elasticsearch.web.client.EsClient;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
 import org.codelibs.robot.entity.AccessResult;
 import org.codelibs.robot.entity.AccessResultDataImpl;
 import org.codelibs.robot.exception.RobotSystemException;
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
@@ -30,15 +35,19 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
+import org.elasticsearch.cluster.metadata.MappingMetaData;
+import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.indices.IndexAlreadyExistsException;
+import org.elasticsearch.indices.IndexMissingException;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortBuilder;
+import org.slf4j.Logger;
 
 public abstract class AbstractRobotService {
 
@@ -66,7 +75,45 @@ public abstract class AbstractRobotService {
     protected RiverConfig riverConfig;
 
     @Resource
-    protected Client esClient;
+    protected EsClient esClient;
+
+    protected void createMapping(Logger logger, String mappingName) {
+        boolean exists = false;
+        try {
+            esClient.prepareExists(index).execute().actionGet();
+            exists = true;
+        } catch (IndexMissingException e) {
+            // ignore
+        }
+        if (!exists) {
+            try {
+                final CreateIndexResponse indexResponse = esClient.admin().indices().prepareCreate(index).execute().actionGet();
+                if (indexResponse.isAcknowledged()) {
+                    logger.info("Created " + index + " index.");
+                } else if (logger.isDebugEnabled()) {
+                    logger.debug("Failed to create " + index + " index.");
+                }
+            } catch (final IndexAlreadyExistsException e) {
+                // ignore
+            }
+        }
+
+        final GetMappingsResponse getMappingsResponse =
+                esClient.admin().indices().prepareGetMappings(index).setTypes(type).execute().actionGet();
+        ImmutableOpenMap<String, MappingMetaData> indexMappings = getMappingsResponse.mappings().get(index);
+        if (indexMappings == null || !indexMappings.containsKey(type)) {
+            final PutMappingResponse putMappingResponse =
+                    esClient.admin().indices().preparePutMapping(index).setType(type)
+                            .setSource(FileUtil.readText("mapping/" + mappingName + ".json")).execute().actionGet();
+            if (putMappingResponse.isAcknowledged()) {
+                logger.info("Created " + index + "/" + type + " mapping.");
+            } else {
+                logger.warn("Failed to create " + index + "/" + type + " mapping.");
+            }
+        } else if (logger.isDebugEnabled()) {
+            logger.debug(index + "/" + type + " mapping exists.");
+        }
+    }
 
     protected XContentBuilder getXContentBuilder(final Object target) {
         try {
@@ -91,7 +138,7 @@ public abstract class AbstractRobotService {
         for (final T target : list) {
             final String id = getId(getSessionId(target), getUrl(target));
             final XContentBuilder source = getXContentBuilder(target);
-            bulkRequest.add(esClient.prepareIndex(index, type, id).setSource(source).setOpType(opType));
+            bulkRequest.add(esClient.prepareIndex(index, type, id).setSource(source).setOpType(opType).setRefresh(true));
         }
         final BulkResponse bulkResponse = bulkRequest.setRefresh(true).execute().actionGet();
         if (bulkResponse.hasFailures()) {
@@ -114,8 +161,9 @@ public abstract class AbstractRobotService {
                 option.exclude("accessResultData").converter(new EsTimestampConverter(), timestampFields).excludeWhitespace();
             });
             if (source.containsKey("accessResultData")) {
-                ((AccessResult) bean).setAccessResultData(BeanUtil.copyMapToNewBean((Map<String, Object>) source.get("accessResultData"),
-                        AccessResultDataImpl.class));
+                @SuppressWarnings("unchecked")
+                Map<String, Object> accessResultDataMap = (Map<String, Object>) source.get("accessResultData");
+                ((AccessResult) bean).setAccessResultData(BeanUtil.copyMapToNewBean(accessResultDataMap, AccessResultDataImpl.class));
             }
             return bean;
         }

@@ -1,0 +1,31 @@
+{
+  "queue": {
+    "properties": {
+      "depth": {
+        "type": "integer"
+      },
+      "parentUrl": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "method": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "createTime": {
+        "type": "long"
+      },
+      "lastModified": {
+        "type": "long"
+      },
+      "sessionId": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "url": {
+        "type": "string",
+        "index": "not_analyzed"
+      }
+    }
+  }
+}

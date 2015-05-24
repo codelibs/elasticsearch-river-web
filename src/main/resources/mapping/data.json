@@ -1,0 +1,56 @@
+{
+  "data": {
+    "properties": {
+      "parentUrl": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "method": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "mimeType": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "sessionId": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "url": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "executionTime": {
+        "type": "long"
+      },
+      "createTime": {
+        "type": "long"
+      },
+      "accessResultData": {
+        "properties": {
+          "transformerName": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "contentLength": {
+        "type": "long"
+      },
+      "lastModified": {
+        "type": "long"
+      },
+      "ruleId": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "httpStatusCode": {
+        "type": "integer"
+      },
+      "status": {
+        "type": "integer"
+      }
+    }
+  }
+}

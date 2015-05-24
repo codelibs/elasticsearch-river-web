@@ -1,5 +1,8 @@
 package org.codelibs.elasticsearch.web.client;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.annotation.PreDestroy;
 
 import org.codelibs.core.lang.StringUtil;
@@ -84,16 +87,35 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EsClient implements Client {
+    private static final Logger logger = LoggerFactory.getLogger(EsClient.class);
+
     private Client client;
 
+    protected List<OnConnectListener> onConnectListenerList = new ArrayList<>();
+
+    public void addOnConnectListener(OnConnectListener listener) {
+        onConnectListenerList.add(listener);
+    }
+
+    @SuppressWarnings("resource")
     public void connect(final String clusterName, final String hostname, final int port) {
         destroy();
         final Settings settings =
                 ImmutableSettings.settingsBuilder().put("cluster.name", StringUtil.isBlank(clusterName) ? "elasticsearch" : clusterName)
                         .build();
         client = new TransportClient(settings).addTransportAddress(new InetSocketTransportAddress(hostname, port));
+
+        onConnectListenerList.forEach(l -> {
+            try {
+                l.onConnect();
+            } catch (final Exception e) {
+                logger.warn("Failed to invoke " + l, e);
+            }
+        });
     }
 
     @PreDestroy
@@ -531,4 +553,7 @@ public class EsClient implements Client {
         return client.settings();
     }
 
+    public interface OnConnectListener {
+        void onConnect();
+    }
 }
