@@ -15,7 +15,6 @@ import org.codelibs.robot.Constants;
 import org.codelibs.robot.entity.AccessResult;
 import org.codelibs.robot.entity.UrlQueue;
 import org.codelibs.robot.service.UrlQueueService;
-import org.codelibs.robot.util.AccessResultCallback;
 import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
@@ -182,19 +181,16 @@ public class EsUrlQueueService extends AbstractRobotService implements UrlQueueS
 
     @Override
     public void generateUrlQueues(final String previousSessionId, final String sessionId) {
-        dataService.iterate(previousSessionId, new AccessResultCallback() {
-            @Override
-            public void iterate(final AccessResult accessResult) {
-                final UrlQueue urlQueue = new EsUrlQueue();
-                urlQueue.setSessionId(sessionId);
-                urlQueue.setMethod(accessResult.getMethod());
-                urlQueue.setUrl(accessResult.getUrl());
-                urlQueue.setParentUrl(accessResult.getParentUrl());
-                urlQueue.setDepth(0);
-                urlQueue.setLastModified(accessResult.getLastModified());
-                urlQueue.setCreateTime(System.currentTimeMillis());
-                insert(urlQueue);
-            }
+        dataService.iterate(previousSessionId, accessResult -> {
+            final UrlQueue urlQueue = new EsUrlQueue();
+            urlQueue.setSessionId(sessionId);
+            urlQueue.setMethod(accessResult.getMethod());
+            urlQueue.setUrl(accessResult.getUrl());
+            urlQueue.setParentUrl(accessResult.getParentUrl());
+            urlQueue.setDepth(0);
+            urlQueue.setLastModified(accessResult.getLastModified());
+            urlQueue.setCreateTime(System.currentTimeMillis());
+            insert(urlQueue);
         });
     }
 

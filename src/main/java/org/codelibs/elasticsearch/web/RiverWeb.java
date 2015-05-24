@@ -351,6 +351,7 @@ public class RiverWeb {
             final Map<String, Object> localVars = new HashMap<String, Object>(vars);
             localVars.put("container", SingletonLaContainerFactory.getContainer());
             localVars.put("settings", crawlSettings);
+            localVars.put("logger", logger);
             try {
                 final Object result = scriptService.execute(lang, script, scriptType, localVars);
                 logger.info("[{}] \"{}\" => {}", target, script, result);

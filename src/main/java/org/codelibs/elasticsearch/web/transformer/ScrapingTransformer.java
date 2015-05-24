@@ -251,7 +251,7 @@ public class ScrapingTransformer extends HtmlTransformer {
             Object propertyValue;
             final ScriptInfo scriptInfo = getScriptValue(params);
             if (scriptInfo == null) {
-                propertyValue = isArray ? strList : String.join( " ",strList);
+                propertyValue = isArray ? strList : String.join(" ", strList);
             } else {
                 final Map<String, Object> vars = new HashMap<String, Object>();
                 vars.put("container", SingletonLaContainerFactory.getContainer());
@@ -267,12 +267,12 @@ public class ScrapingTransformer extends HtmlTransformer {
                     for (int i = 0; i < strList.size(); i++) {
                         final Map<String, Object> localVars = new HashMap<String, Object>(vars);
                         localVars.put("index", i);
-                        localVars.put("value", String.join( " ",strList));
+                        localVars.put("value", String.join(" ", strList));
                         list.add(executeScript(scriptInfo.getLang(), scriptInfo.getScript(), scriptInfo.getScriptType(), localVars));
                     }
                     propertyValue = list;
                 } else {
-                    vars.put("value", String.join( " ",strList));
+                    vars.put("value", String.join(" ", strList));
                     propertyValue = executeScript(scriptInfo.getLang(), scriptInfo.getScript(), scriptInfo.getScriptType(), vars);
                 }
             }
@@ -313,6 +313,7 @@ public class ScrapingTransformer extends HtmlTransformer {
         } else {
             scriptType = ScriptType.INLINE;
         }
+        vars.put("logger", logger);
         final ScriptService scriptService = SingletonLaContainer.getComponent(ScriptService.class);
         return scriptService.execute(lang, script, scriptType, vars);
     }
@@ -324,7 +325,7 @@ public class ScrapingTransformer extends HtmlTransformer {
         } else if (value instanceof String) {
             return new ScriptInfo(value.toString());
         } else if (value instanceof List) {
-            return new ScriptInfo(String.join( "",(List<CharSequence>) value));
+            return new ScriptInfo(String.join("", (List<CharSequence>) value));
         } else if (value instanceof Map) {
             @SuppressWarnings("unchecked")
             final Map<String, Object> scriptMap = (Map<String, Object>) value;
@@ -339,11 +340,11 @@ public class ScrapingTransformer extends HtmlTransformer {
     }
 
     private static class ScriptInfo {
-        private String script;
+        private final String script;
 
-        private String lang;
+        private final String lang;
 
-        private String scriptType;
+        private final String scriptType;
 
         ScriptInfo(final String script) {
             this(script, "groovy", "inline");
