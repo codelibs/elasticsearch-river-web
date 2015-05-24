@@ -41,7 +41,7 @@ public class RiverWebTest extends TestCase {
         runner.clean();
     }
 
-    public void test_runCluster() throws Exception {
+    public void test_basic() throws Exception {
 
         RiverWeb.exitMethod = new IntConsumer() {
             @Override
@@ -70,19 +70,130 @@ public class RiverWebTest extends TestCase {
             fail();
         }
 
+        String config = type;
         {
             final String riverWebSource =
-                    "{\"index\":\"webindex\",\"url\":[\"http://www.codelibs.org/\",\"http://fess.codelibs.org/\"],\"includeFilter\":[\"http://www.codelibs.org/.*\",\"http://fess.codelibs.org/.*\"],\"maxDepth\":3,\"maxAccessCount\":100,\"numOfThread\":5,\"interval\":1000,\"target\":[{\"pattern\":{\"url\":\"http://www.codelibs.org/.*\",\"mimeType\":\"text/html\"},\"properties\":{\"title\":{\"text\":\"title\"},\"body\":{\"text\":\"body\"},\"bodyAsHtml\":{\"html\":\"body\"},\"projects\":{\"text\":\"ul.nav-listlia\",\"isArray\":true}}},{\"pattern\":{\"url\":\"http://fess.codelibs.org/.*\",\"mimeType\":\"text/html\"},\"properties\":{\"title\":{\"text\":\"title\"},\"body\":{\"text\":\"body\",\"trimSpaces\":true},\"menus\":{\"text\":\"ul.nav-listlia\",\"isArray\":true}}}]}";
-            final IndexResponse response = runner.insert(riverWebIndex, riverWebType, "1", riverWebSource);
+                    "{\"index\":\""
+                            + index
+                            + "\",\"url\":[\"http://www.codelibs.org/\",\"http://fess.codelibs.org/\"],\"includeFilter\":[\"http://www.codelibs.org/.*\",\"http://fess.codelibs.org/.*\"],\"maxDepth\":3,\"maxAccessCount\":100,\"numOfThread\":5,\"interval\":1000,\"target\":[{\"pattern\":{\"url\":\"http://www.codelibs.org/.*\",\"mimeType\":\"text/html\"},\"properties\":{\"title\":{\"text\":\"title\"},\"body\":{\"text\":\"body\"},\"bodyAsHtml\":{\"html\":\"body\"},\"projects\":{\"text\":\"ul.nav-listlia\",\"isArray\":true}}},{\"pattern\":{\"url\":\"http://fess.codelibs.org/.*\",\"mimeType\":\"text/html\"},\"properties\":{\"title\":{\"text\":\"title\"},\"body\":{\"text\":\"body\",\"trimSpaces\":true},\"menus\":{\"text\":\"ul.nav-listlia\",\"isArray\":true}}}]}";
+            final IndexResponse response = runner.insert(riverWebIndex, riverWebType, config, riverWebSource);
             if (!response.isCreated()) {
                 fail();
             }
         }
 
-        RiverWeb.main(new String[] { "--config-id", "1", "--es-port", runner.node().settings().get("transport.tcp.port"), "--cluster-name",
-                clusterName, "--cleanup" });
+        RiverWeb.main(new String[] { "--config-id", config, "--es-port", runner.node().settings().get("transport.tcp.port"),
+                "--cluster-name", clusterName, "--cleanup" });
 
-        assertEquals(0, runner.count(index, type).getCount());
+        assertTrue(runner.count(index, type).getCount() >= 100);
+
+        runner.ensureYellow();
+    }
+
+    public void test_overwrite() throws Exception {
+
+        RiverWeb.exitMethod = new IntConsumer() {
+            @Override
+            public void accept(final int value) {
+                if (value != 0) {
+                    fail();
+                }
+            }
+        };
+
+        final String index = "webindex";
+        final String type = "my_web";
+        final String riverWebIndex = ".river_web";
+        final String riverWebType = "config";
+
+        // create an index
+        runner.createIndex(index, null);
+        runner.ensureYellow(index);
+
+        // create a mapping
+        final String mappingSource =
+                "{\"my_web\":{\"dynamic_templates\":[{\"url\":{\"match\":\"url\",\"mapping\":{\"type\":\"string\",\"store\":\"yes\",\"index\":\"not_analyzed\"}}},{\"method\":{\"match\":\"method\",\"mapping\":{\"type\":\"string\",\"store\":\"yes\",\"index\":\"not_analyzed\"}}},{\"charSet\":{\"match\":\"charSet\",\"mapping\":{\"type\":\"string\",\"store\":\"yes\",\"index\":\"not_analyzed\"}}},{\"mimeType\":{\"match\":\"mimeType\",\"mapping\":{\"type\":\"string\",\"store\":\"yes\",\"index\":\"not_analyzed\"}}}]}}";
+        runner.createMapping(index, type, mappingSource);
+
+        if (!runner.indexExists(index)) {
+            fail();
+        }
+
+        String config = type;
+        {
+            final String riverWebSource =
+                    "{\"index\":\""
+                            + index
+                            + "\",\"type\":\""
+                            + type
+                            + "\",\"url\":[\"http://fess.codelibs.org/\"],\"includeFilter\":[\"http://fess.codelibs.org/.*\"],\"maxDepth\":1,\"maxAccessCount\":1,\"numOfThread\":1,\"interval\":1000,\"overwrite\":true,\"target\":[{\"pattern\":{\"url\":\"http://fess.codelibs.org/.*\",\"mimeType\":\"text/html\"},\"properties\":{\"title\":{\"text\":\"title\"},\"body\":{\"text\":\"body\",\"trimSpaces\":true}}}]}";
+            final IndexResponse response = runner.insert(riverWebIndex, riverWebType, config, riverWebSource);
+            if (!response.isCreated()) {
+                fail();
+            }
+        }
+
+        RiverWeb.main(new String[] { "--config-id", config, "--es-port", runner.node().settings().get("transport.tcp.port"),
+                "--cluster-name", clusterName, "--cleanup" });
+        assertEquals(1, runner.count(index, type).getCount());
+
+        RiverWeb.main(new String[] { "--config-id", config, "--es-port", runner.node().settings().get("transport.tcp.port"),
+                "--cluster-name", clusterName, "--cleanup" });
+        assertEquals(1, runner.count(index, type).getCount());
+
+        runner.ensureYellow();
+    }
+
+    public void test_incremental() throws Exception {
+
+        RiverWeb.exitMethod = new IntConsumer() {
+            @Override
+            public void accept(final int value) {
+                if (value != 0) {
+                    fail();
+                }
+            }
+        };
+
+        final String index = "webindex";
+        final String type = "my_web";
+        final String riverWebIndex = ".river_web";
+        final String riverWebType = "config";
+
+        // create an index
+        runner.createIndex(index, null);
+        runner.ensureYellow(index);
+
+        // create a mapping
+        final String mappingSource =
+                "{\"my_web\":{\"dynamic_templates\":[{\"url\":{\"match\":\"url\",\"mapping\":{\"type\":\"string\",\"store\":\"yes\",\"index\":\"not_analyzed\"}}},{\"method\":{\"match\":\"method\",\"mapping\":{\"type\":\"string\",\"store\":\"yes\",\"index\":\"not_analyzed\"}}},{\"charSet\":{\"match\":\"charSet\",\"mapping\":{\"type\":\"string\",\"store\":\"yes\",\"index\":\"not_analyzed\"}}},{\"mimeType\":{\"match\":\"mimeType\",\"mapping\":{\"type\":\"string\",\"store\":\"yes\",\"index\":\"not_analyzed\"}}}]}}";
+        runner.createMapping(index, type, mappingSource);
+
+        if (!runner.indexExists(index)) {
+            fail();
+        }
+
+        String config = type;
+        {
+            final String riverWebSource =
+                    "{\"index\":\""
+                            + index
+                            + "\",\"type\":\""
+                            + type
+                            + "\",\"url\":[\"http://fess.codelibs.org/\"],\"includeFilter\":[\"http://fess.codelibs.org/.*\"],\"maxDepth\":1,\"maxAccessCount\":1,\"numOfThread\":1,\"interval\":1000,\"incremental\":true,\"target\":[{\"pattern\":{\"url\":\"http://fess.codelibs.org/.*\",\"mimeType\":\"text/html\"},\"properties\":{\"title\":{\"text\":\"title\"},\"body\":{\"text\":\"body\",\"trimSpaces\":true}}}]}";
+            final IndexResponse response = runner.insert(riverWebIndex, riverWebType, config, riverWebSource);
+            if (!response.isCreated()) {
+                fail();
+            }
+        }
+
+        RiverWeb.main(new String[] { "--config-id", config, "--es-port", runner.node().settings().get("transport.tcp.port"),
+                "--cluster-name", clusterName, "--cleanup" });
+        assertEquals(1, runner.count(index, type).getCount());
+
+        RiverWeb.main(new String[] { "--config-id", config, "--es-port", runner.node().settings().get("transport.tcp.port"),
+                "--cluster-name", clusterName, "--cleanup" });
+        assertEquals(2, runner.count(index, type).getCount());
 
         runner.ensureYellow();
     }

@@ -111,6 +111,7 @@ public class RiverWeb {
         }
 
         exitMethod.accept(riverWeb.execute());
+        SingletonLaContainerFactory.destroy();
     }
 
     private void print(final String format, final Object... args) {
