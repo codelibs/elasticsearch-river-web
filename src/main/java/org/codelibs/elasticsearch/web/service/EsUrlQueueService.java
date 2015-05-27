@@ -109,7 +109,7 @@ public class EsUrlQueueService extends AbstractRobotService implements UrlQueueS
         for (final EsUrlQueue urlQueue : urlQueueList) {
             final String url = urlQueue.getUrl();
             if (crawlingUrlQueue.size() > maxCrawlingQueueSize) {
-                return null;
+                crawlingUrlQueue.poll();
             }
             if (super.delete(sessionId, url)) {
                 crawlingUrlQueue.add(urlQueue);
