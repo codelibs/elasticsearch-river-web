@@ -77,7 +77,14 @@ public class RiverWebTest extends TestCase {
             final String riverWebSource =
                     "{\"index\":\""
                             + index
-                            + "\",\"url\":[\"http://www.codelibs.org/\",\"http://fess.codelibs.org/\"],\"includeFilter\":[\"http://www.codelibs.org/.*\",\"http://fess.codelibs.org/.*\"],\"maxDepth\":3,\"maxAccessCount\":100,\"numOfThread\":5,\"interval\":1000,\"target\":[{\"pattern\":{\"url\":\"http://www.codelibs.org/.*\",\"mimeType\":\"text/html\"},\"properties\":{\"title\":{\"text\":\"title\"},\"body\":{\"text\":\"body\"},\"bodyAsHtml\":{\"html\":\"body\"},\"projects\":{\"text\":\"ul.nav-listlia\",\"isArray\":true}}},{\"pattern\":{\"url\":\"http://fess.codelibs.org/.*\",\"mimeType\":\"text/html\"},\"properties\":{\"title\":{\"text\":\"title\"},\"body\":{\"text\":\"body\",\"trimSpaces\":true},\"menus\":{\"text\":\"ul.nav-listlia\",\"isArray\":true}}}]}";
+                            + "\",\"url\":[\"http://www.codelibs.org/\",\"http://fess.codelibs.org/\"]"
+                            + ",\"includeFilter\":[\"http://www.codelibs.org/.*\",\"http://fess.codelibs.org/.*\"]"
+                            + ",\"excludeFilter\":[\".*\\\\.txt\",\".*\\\\.png\",\".*\\\\.gif\",\".*\\\\.js\",\".*\\\\.css\"]"
+                            + ",\"maxDepth\":5,\"maxAccessCount\":100,\"numOfThread\":5,\"interval\":1000"
+                            + ",\"target\":[{\"pattern\":{\"url\":\"http://www.codelibs.org/.*\",\"mimeType\":\"text/html\"}"
+                            + ",\"properties\":{\"title\":{\"text\":\"title\"},\"body\":{\"text\":\"body\"},\"bodyAsHtml\":{\"html\":\"body\"},\"projects\":{\"text\":\"ul.nav-listlia\",\"isArray\":true}}}"
+                            + ",{\"pattern\":{\"url\":\"http://fess.codelibs.org/.*\",\"mimeType\":\"text/html\"}"
+                            + ",\"properties\":{\"title\":{\"text\":\"title\"},\"body\":{\"text\":\"body\",\"trimSpaces\":true},\"menus\":{\"text\":\"ul.nav-listlia\",\"isArray\":true}}}]}";
             final IndexResponse response = runner.insert(riverWebIndex, riverWebType, config, riverWebSource);
             if (!response.isCreated()) {
                 fail();
@@ -87,7 +94,7 @@ public class RiverWebTest extends TestCase {
         RiverWeb.main(new String[] { "--config-id", config, "--es-port", runner.node().settings().get("transport.tcp.port"),
                 "--cluster-name", clusterName, "--cleanup" });
 
-        assertTrue(runner.count(index, type).getCount() >= 100);
+        assertTrue(runner.count(index, type).getCount() + " >= 100", runner.count(index, type).getCount() >= 100);
 
         runner.ensureYellow();
     }

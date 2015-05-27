@@ -1,12 +1,12 @@
-package org.codelibs.elasticsearch.web.config;
+package org.codelibs.elasticsearch.web.entity;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-import org.codelibs.elasticsearch.web.entity.ScrapingRule;
+import org.codelibs.robot.entity.ResponseData;
 
 public class RiverConfig {
-
-    private ScrapingRule scrapingRule;
 
     private String index;
 
@@ -15,6 +15,8 @@ public class RiverConfig {
     private boolean overwrite;
 
     private boolean incremental;
+
+    private List<ScrapingRule> scrapingRuleList = new ArrayList<>();
 
     public String getIndex() {
         return index;
@@ -48,13 +50,18 @@ public class RiverConfig {
         this.incremental = incremental;
     }
 
-    public void setScrapingRule(final Map<String, Object> settingMap, final Map<String, Object> patternMap,
+    public void addScrapingRule(final Map<String, Object> settingMap, final Map<String, Object> patternMap,
             final Map<String, Map<String, Object>> scrapingRuleMap) {
-        scrapingRule = new ScrapingRule(settingMap, patternMap, scrapingRuleMap);
+        scrapingRuleList.add(new ScrapingRule(settingMap, patternMap, scrapingRuleMap));
     }
 
-    public ScrapingRule getScrapingRule() {
-        return scrapingRule;
+    public ScrapingRule getScrapingRule(final ResponseData responseData) {
+        for (final ScrapingRule scrapingRule : scrapingRuleList) {
+            if (scrapingRule.matches(responseData)) {
+                return scrapingRule;
+            }
+        }
+        return null;
     }
 
 }

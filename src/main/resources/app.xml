@@ -10,8 +10,7 @@
 	</component>
 
 	<component name="defaultUserAgent" class="java.lang.String">
-		<arg>"Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Elasticsearch River Web/"
-			+ org.codelibs.elasticsearch.web.WebRiverConstants.VERSION + ")"
+		<arg>"Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Elasticsearch River Web/${project.version})"
 		</arg>
 	</component>
 </components>

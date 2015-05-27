@@ -24,7 +24,7 @@ import org.codelibs.core.beans.util.BeanUtil;
 import org.codelibs.core.io.FileUtil;
 import org.codelibs.core.lang.StringUtil;
 import org.codelibs.elasticsearch.web.client.EsClient;
-import org.codelibs.elasticsearch.web.config.RiverConfig;
+import org.codelibs.elasticsearch.web.entity.RiverConfig;
 import org.codelibs.robot.entity.AccessResult;
 import org.codelibs.robot.entity.AccessResultDataImpl;
 import org.codelibs.robot.exception.RobotSystemException;

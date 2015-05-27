@@ -35,11 +35,6 @@
 		class="org.codelibs.elasticsearch.web.entity.EsUrlQueue" instance="prototype">
 	</component>
 
-	<!-- Config -->
-	<component name="riverConfig"
-		class="org.codelibs.elasticsearch.web.config.RiverConfig">
-	</component>
-
 	<!-- Service -->
 	<component name="urlQueueService"
 		class="org.codelibs.elasticsearch.web.service.EsUrlQueueService">

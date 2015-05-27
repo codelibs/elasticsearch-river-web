@@ -10,7 +10,7 @@ import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.codelibs.core.io.ResourceUtil;
-import org.codelibs.elasticsearch.web.config.RiverConfig;
+import org.codelibs.elasticsearch.web.entity.RiverConfig;
 import org.codelibs.robot.entity.ResponseData;
 import org.codelibs.robot.entity.ResultData;
 import org.junit.Test;
@@ -44,7 +44,7 @@ public class ScrapingTransformerTest {
         addScrapingRuleMap(scrapingRuleMap, "text", "section2.body", "div.section:eq(1) ul li", Boolean.TRUE, Boolean.TRUE);
         final Map<String, Object> patternMap = new HashMap<String, Object>();
         patternMap.put("url", url);
-        riverConfig.setScrapingRule(null, patternMap, scrapingRuleMap);
+        riverConfig.addScrapingRule(null, patternMap, scrapingRuleMap);
         InputStream is = null;
         try {
             is = ResourceUtil.getResourceAsStream("html/fess_codelibs_org.html");

@@ -22,7 +22,7 @@ import org.codelibs.core.lang.StringUtil;
 import org.codelibs.core.misc.DynamicProperties;
 import org.codelibs.elasticsearch.web.app.service.ScriptService;
 import org.codelibs.elasticsearch.web.client.EsClient;
-import org.codelibs.elasticsearch.web.config.RiverConfig;
+import org.codelibs.elasticsearch.web.entity.RiverConfig;
 import org.codelibs.elasticsearch.web.interval.WebRiverIntervalController;
 import org.codelibs.elasticsearch.web.util.SettingsUtils;
 import org.codelibs.robot.S2Robot;
@@ -313,7 +313,7 @@ public class RiverWeb {
                     }
                     @SuppressWarnings("unchecked")
                     final Map<String, Object> settingMap = (Map<String, Object>) targetMap.get("settings");
-                    riverConfig.setScrapingRule(settingMap, patternMap, propMap);
+                    riverConfig.addScrapingRule(settingMap, patternMap, propMap);
                 } else {
                     logger.warn("Invalid pattern or target: patternMap: " + patternMap + ", propMap: " + propMap);
                 }
@@ -339,7 +339,7 @@ public class RiverWeb {
     protected void executeScript(final Map<String, Object> crawlSettings, final Map<String, Object> vars, final String target) {
         final Map<String, Object> scriptSettings = SettingsUtils.get(crawlSettings, "script");
         final String script = SettingsUtils.get(scriptSettings, target);
-        final String lang = SettingsUtils.get(scriptSettings, "lang", "groovy");
+        final String lang = SettingsUtils.get(scriptSettings, "lang", WebRiverConstants.DEFAULT_SCRIPT_LANG);
         final String scriptTypeValue = SettingsUtils.get(scriptSettings, "script_type", "inline");
         ScriptType scriptType;
         if (ScriptType.FILE.toString().equalsIgnoreCase(scriptTypeValue)) {

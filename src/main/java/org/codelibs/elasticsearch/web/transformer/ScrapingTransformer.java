@@ -31,8 +31,9 @@ import org.codelibs.core.io.FileUtil;
 import org.codelibs.core.lang.MethodUtil;
 import org.codelibs.core.lang.StringUtil;
 import org.codelibs.core.misc.Base64Util;
+import org.codelibs.elasticsearch.web.WebRiverConstants;
 import org.codelibs.elasticsearch.web.app.service.ScriptService;
-import org.codelibs.elasticsearch.web.config.RiverConfig;
+import org.codelibs.elasticsearch.web.entity.RiverConfig;
 import org.codelibs.elasticsearch.web.entity.ScrapingRule;
 import org.codelibs.elasticsearch.web.util.SettingsUtils;
 import org.codelibs.robot.Constants;
@@ -112,7 +113,7 @@ public class ScrapingTransformer extends HtmlTransformer {
     @Override
     protected void updateCharset(final ResponseData responseData) {
         int preloadSize = preloadSizeForCharset;
-        final ScrapingRule scrapingRule = riverConfig.getScrapingRule();
+        final ScrapingRule scrapingRule = riverConfig.getScrapingRule(responseData);
         if (scrapingRule != null) {
             final Integer s = scrapingRule.getSetting("preloadSizeForCharset", Integer.valueOf(0));
             if (s.intValue() > 0) {
@@ -162,7 +163,7 @@ public class ScrapingTransformer extends HtmlTransformer {
 
     @Override
     protected void storeData(final ResponseData responseData, final ResultData resultData) {
-        final ScrapingRule scrapingRule = riverConfig.getScrapingRule();
+        final ScrapingRule scrapingRule = riverConfig.getScrapingRule(responseData);
         if (scrapingRule == null) {
             logger.info("No scraping rule.");
             return;
@@ -325,7 +326,9 @@ public class ScrapingTransformer extends HtmlTransformer {
         } else if (value instanceof String) {
             return new ScriptInfo(value.toString());
         } else if (value instanceof List) {
-            return new ScriptInfo(String.join("", (List<CharSequence>) value));
+            @SuppressWarnings("unchecked")
+            List<CharSequence> list = (List<CharSequence>) value;
+            return new ScriptInfo(String.join("", list));
         } else if (value instanceof Map) {
             @SuppressWarnings("unchecked")
             final Map<String, Object> scriptMap = (Map<String, Object>) value;
@@ -333,8 +336,8 @@ public class ScrapingTransformer extends HtmlTransformer {
             if (script == null) {
                 return null;
             }
-            return new ScriptInfo(script, SettingsUtils.get(scriptMap, "lang", "groovy"), SettingsUtils.get(scriptMap, "script_type",
-                    "inline"));
+            return new ScriptInfo(script, SettingsUtils.get(scriptMap, "lang", WebRiverConstants.DEFAULT_SCRIPT_LANG), SettingsUtils.get(
+                    scriptMap, "script_type", "inline"));
         }
         return null;
     }
@@ -347,7 +350,7 @@ public class ScrapingTransformer extends HtmlTransformer {
         private final String scriptType;
 
         ScriptInfo(final String script) {
-            this(script, "groovy", "inline");
+            this(script, WebRiverConstants.DEFAULT_SCRIPT_LANG, "inline");
         }
 
         ScriptInfo(final String script, final String lang, final String scriptType) {
