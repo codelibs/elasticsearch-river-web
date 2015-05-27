@@ -12,7 +12,7 @@ This application provides a feature to crawl web sites and extract the content b
 | River Web | elasticsearch | Download |
 |:---------:|:-------------:|:--------:|
 | master    | 1.5.X         | [Snapshot](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/ "Snapshot") |
-| 1.5.0     | 1.5.2         | [ZIP](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/1.5.0/elasticsearch-river-web-1.5.0.zip "ZIP"),[TGZ](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/1.5.0/elasticsearch-river-web-1.5.0.tar.gz "TGZ") |
+| 1.5.1     | 1.5.2         | [ZIP](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/1.5.0/elasticsearch-river-web-1.5.1.zip "ZIP"),[TGZ](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/1.5.0/elasticsearch-river-web-1.5.1.tar.gz "TGZ") |
 
 For old plugin version, see [README_old.md](https://github.com/codelibs/elasticsearch-river-web/blob/master/README_old.md "README_old.md").
 
