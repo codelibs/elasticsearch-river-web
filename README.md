@@ -169,7 +169,7 @@ For example,
 
 If you want to stop the crawler, kill the crawler process and then delete the config document as below:
 
-    $ curl -XDELETE 'localhost:9200/.river_web/config/1'
+    $ curl -XDELETE 'localhost:9200/.river_web/config/my_web'
 
 ## Examples
 
