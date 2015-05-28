@@ -165,7 +165,7 @@ public class ScrapingTransformer extends HtmlTransformer {
     protected void storeData(final ResponseData responseData, final ResultData resultData) {
         final ScrapingRule scrapingRule = riverConfig.getScrapingRule(responseData);
         if (scrapingRule == null) {
-            logger.info("No scraping rule.");
+            logger.info("Skip Scraping: " + responseData.getUrl());
             return;
         }
 
