@@ -62,10 +62,10 @@ public class RiverWeb {
     protected boolean cleanup;
 
     @Option(name = "--es-host")
-    protected String esHost = "localhost";
+    protected String esHost;
 
     @Option(name = "--es-port")
-    protected int esPort = 9300;
+    protected String esPort;
 
     @Option(name = "--cluster-name")
     protected String clusterName;
@@ -120,7 +120,11 @@ public class RiverWeb {
 
     private int execute() {
         // update esClient
-        ((EsClient) esClient).connect(clusterName, esHost, esPort);
+        final String elasticsearchClusterName =
+                clusterName == null ? config.getProperty("elasticsearch.cluster.name", "elasticsearch") : clusterName;
+        final String elasticsearchHost = esHost == null ? config.getProperty("elasticsearch.host", "localhost") : esHost;
+        final int elasticsearchPort = Integer.parseInt(esPort == null ? config.getProperty("elasticsearch.port", "9300") : esPort);
+        ((EsClient) esClient).connect(elasticsearchClusterName, elasticsearchHost, elasticsearchPort);
 
         // Load config data
         final String configIndex = config.getProperty("config.index");
