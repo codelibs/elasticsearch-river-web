@@ -104,10 +104,4 @@ public class EsDataService extends AbstractRobotService implements DataService {
             response = esClient.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(scrollTimeout)).execute().actionGet();
         }
     }
-
-    @Override
-    public void iterateUrlDiff(final String oldSessionId, final String newSessionId, final AccessResultCallback accessResultCallback) {
-        throw new UnsupportedOperationException("Unsupported.");
-    }
-
 }
