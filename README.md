@@ -9,7 +9,7 @@ This application provides a feature to crawl web sites and extract the content b
 
 ## Version
 
-| River Web | elasticsearch | Download |
+| River Web | Tested on ES  | Download |
 |:---------:|:-------------:|:--------:|
 | master    | 1.5.X         | [Snapshot](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/ "Snapshot") |
 | 1.5.1     | 1.5.2         | [ZIP](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/1.5.1/elasticsearch-river-web-1.5.1.zip "ZIP"),[TGZ](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/1.5.1/elasticsearch-river-web-1.5.1.tar.gz "TGZ") |
