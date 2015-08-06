@@ -36,9 +36,11 @@ import org.codelibs.robot.entity.ResultData;
 import org.codelibs.robot.helper.EncodingHelper;
 import org.codelibs.robot.transformer.impl.HtmlTransformer;
 import org.codelibs.robot.util.StreamUtil;
+import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.CompiledScript;
+import org.elasticsearch.script.ExecutableScript;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.script.ScriptService.ScriptType;
 import org.jsoup.Jsoup;
@@ -171,10 +173,27 @@ public class ScrapingTransformer extends HtmlTransformer {
             final ResultData resultData) {
         final ScrapingRule scrapingRule = riverConfig
                 .getScrapingRule(responseData);
-        if (scrapingRule == null) {
-            logger.info("No scraping rule.");
+        try {
+        CountResponse response = riverConfig.getClient().prepareCount(riverConfig.getIndexName(responseData.getSessionId()))
+                .setQuery(QueryBuilders.termQuery("url", responseData.getUrl()))
+                .execute()
+                .actionGet();
+        System.out.println("Counter : "+ response.getCount());
+        logger.info("Counter : "+ response.getCount());
+        if (scrapingRule == null || response.getCount() > 0) {
+            logger.info("No scraping rule :");
             return;
         }
+        } catch (final Exception e){
+        	//NOP
+        	 if (scrapingRule == null) {
+                 logger.info("No scraping rule :"+ riverConfig.getIndexName(responseData.getSessionId()));
+                 return;
+             }
+        }
+        
+        
+       
 
         File file = null;
         try {
@@ -347,7 +366,9 @@ public class ScrapingTransformer extends HtmlTransformer {
         final ScriptService scriptService = riverConfig.getScriptService();
         final CompiledScript compiledScript = scriptService.compile(lang,
                 script, scriptType);
-        return scriptService.execute(compiledScript, vars);
+        ExecutableScript executable = scriptService.executable(compiledScript,
+                vars);
+        return executable.run();
     }
 
     protected ScriptInfo getScriptValue(final Map<String, Object> params) {

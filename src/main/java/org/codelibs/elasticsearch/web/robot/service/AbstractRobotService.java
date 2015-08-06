@@ -13,17 +13,21 @@ import javax.annotation.Resource;
 
 import org.apache.commons.codec.binary.Base64;
 import org.codelibs.elasticsearch.web.config.RiverConfig;
+import org.codelibs.elasticsearch.web.robot.transformer.ScrapingTransformer;
 import org.codelibs.robot.RobotSystemException;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest.OpType;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.query.FilterBuilders.*;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryBuilders.*;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortBuilder;
@@ -33,6 +37,8 @@ import org.seasar.framework.beans.PropertyDesc;
 import org.seasar.framework.beans.factory.BeanDescFactory;
 import org.seasar.framework.beans.util.Beans;
 import org.seasar.framework.util.StringUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractRobotService {
 
@@ -57,7 +63,8 @@ public abstract class AbstractRobotService {
     protected String index;
 
     protected String type;
-
+    private static final Logger logger = LoggerFactory
+            .getLogger(AbstractRobotService.class);
     @Resource
     protected RiverConfig riverConfig;
 
@@ -78,8 +85,30 @@ public abstract class AbstractRobotService {
     protected void insert(final Object target, final OpType opType) {
         final String id = getId(getSessionId(target), getUrl(target));
         final XContentBuilder source = getXContentBuilder(target);
-        riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
+
+        CountResponse counter = riverConfig.getClient().prepareCount(index).setQuery(QueryBuilders.termQuery("url", getUrl(target)))
+.execute().actionGet();
+        Long counterValue = counter.getCount();
+        logger.info("Counter : "+ counterValue);
+        String className = Thread.currentThread().getStackTrace()[2].getClassName();
+        logger.info("Stack trace class : "+ className);
+        switch (className) {
+	        case "org.codelibs.elasticsearch.web.robot.service.EsUrlQueueService":  
+	        	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
                 .setOpType(opType).setRefresh(true).execute().actionGet();
+	            break;
+	        case "org.codelibs.elasticsearch.web.robot.service.EsUrlFilterService":  
+	        	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
+                .setOpType(opType).setRefresh(true).execute().actionGet();
+	            break;
+	        case "org.codelibs.elasticsearch.web.robot.service.EsDataService":  
+	        	if(counterValue.equals(0L)){
+	            	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
+	                    .setOpType(opType).setRefresh(true).execute().actionGet();
+	            }
+	            break;
+        }
+        
     }
 
     protected <T> void insertAll(final List<T> list, final OpType opType) {
@@ -88,12 +117,36 @@ public abstract class AbstractRobotService {
         for (final T target : list) {
             final String id = getId(getSessionId(target), getUrl(target));
             final XContentBuilder source = getXContentBuilder(target);
-            bulkRequest.add(riverConfig.getClient()
-                    .prepareIndex(index, type, id).setSource(source)
-                    .setOpType(opType));
+            CountResponse counter = riverConfig.getClient().prepareCount(index).setQuery(QueryBuilders.termQuery("url",getUrl(target)))
+            		.execute().actionGet();
+            Long counterValue = counter.getCount();
+            logger.info("Counter : "+ counterValue);
+            String className = Thread.currentThread().getStackTrace()[2].getClassName();
+            logger.info("InsertAll className : "+ className);
+            		        
+            switch (className) {
+		        case "org.codelibs.elasticsearch.web.robot.service.EsUrlQueueService":  
+		        	if(counterValue.equals(0L)){
+		            	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
+		                    .setOpType(opType).setRefresh(true).execute().actionGet();
+		            }
+		            break;
+		        case "org.codelibs.elasticsearch.web.robot.service.EsUrlFilterService":  
+		        	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
+	                .setOpType(opType).setRefresh(true).execute().actionGet();
+		            break;
+		        case "org.codelibs.elasticsearch.web.robot.service.EsDataService":  
+		        	if(counterValue.equals(0L)){
+		            	riverConfig.getClient().prepareIndex(index, type, id).setSource(source)
+		                    .setOpType(opType).setRefresh(true).execute().actionGet();
+		            }
+		            break;
+            }
         }
-        final BulkResponse bulkResponse = bulkRequest.setRefresh(true)
+       
+        	final BulkResponse bulkResponse = bulkRequest.setRefresh(true)
                 .execute().actionGet();
+        
         if (bulkResponse.hasFailures()) {
             throw new RobotSystemException(bulkResponse.buildFailureMessage());
         }
