@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE components PUBLIC "-//DBFLUTE//DTD LastaDi 1.0//EN"
+    "http://dbflute.org/meta/lastadi10.dtd">
+<components namespace="fessCrawler">
+    <include path="crawler/transformer_basic.xml"/>
+
+	<component name="scrapingFeatureMap" class="java.util.LinkedHashMap">
+		<postConstruct name="put">
+			<arg>"http://xml.org/sax/features/namespaces"</arg>
+			<arg>"false"</arg>
+		</postConstruct>
+	</component>
+
+	<component name="scrapingTransformer"
+		class="org.codelibs.riverweb.transformer.ScrapingTransformer"
+		instance="singleton">
+		<property name="name">"scrapingTransformer"</property>
+		<property name="featureMap">scrapingFeatureMap</property>
+		<property name="propertyMap">defaultPropertyMap</property>
+		<property name="childUrlRuleMap">allChildUrlRuleMap</property>
+	</component>
+</components>

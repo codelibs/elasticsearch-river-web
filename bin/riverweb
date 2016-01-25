@@ -23,5 +23,5 @@ for JAR_FILE in `ls $LIB_DIR/*.jar 2>/dev/null` ; do
   CP_PATH="$CP_PATH:$JAR_FILE"
 done
 
-java $RIVERWEB_OPT -cp $CP_PATH org.codelibs.elasticsearch.web.RiverWeb $@
+java $RIVERWEB_OPT -cp $CP_PATH org.codelibs.riverweb.RiverWeb $@
 

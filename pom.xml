@@ -2,11 +2,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.codelibs</groupId>
-	<artifactId>elasticsearch-river-web</artifactId>
-	<version>1.5.2-SNAPSHOT</version>
+	<artifactId>river-web</artifactId>
+	<version>2.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
-	<name>Elasticsearch River Web</name>
-	<description>This plugin crawls web sites and extracts the content from Web.</description>
+	<name>River Web for Elasticsearch</name>
+	<description>This application crawls web sites and extracts the content from Web.</description>
 	<inceptionYear>2011</inceptionYear>
 	<url>https://github.com/codelibs/elasticsearch-river-web</url>
 	<licenses>
@@ -20,6 +20,9 @@
 		<name>CodeLibs</name>
 		<url>http://www.codelibs.org/</url>
 	</organization>
+	<issueManagement>
+		<url>https://github.com/codelibs/elasticsearch-river-web/issues</url>
+	</issueManagement>
 	<scm>
 		<connection>scm:git:git@github.com:codelibs/elasticsearch-river-web.git</connection>
 		<developerConnection>scm:git:git@github.com:codelibs/elasticsearch-river-web.git</developerConnection>
@@ -44,13 +47,14 @@
 		</repository>
 	</repositories>
 	<properties>
-		<elasticsearch.version>1.5.2</elasticsearch.version>
-		<lastadi.version>0.6.1</lastadi.version>
-		<s2robot.version>1.0.0-SNAPSHOT</s2robot.version>
+		<elasticsearch.version>2.1.1</elasticsearch.version>
+		<dbflute.version>1.1.1</dbflute.version>
+		<lastadi.version>0.7.0</lastadi.version>
+		<crawler.version>1.0.3-SNAPSHOT</crawler.version>
 		<jta.version>1.2</jta.version>
-		<slf4j.version>1.7.12</slf4j.version>
-		<lucene.version>4.10.4</lucene.version>
-		<utflute.version>0.5.0-sp3</utflute.version>
+		<slf4j.version>1.7.13</slf4j.version>
+		<lucene.version>5.1.3</lucene.version>
+		<utflute.version>0.6.0E</utflute.version>
 	</properties>
 	<build>
 		<resources>
@@ -327,31 +331,27 @@
 		<dependency>
 			<groupId>args4j</groupId>
 			<artifactId>args4j</artifactId>
-			<version>2.0.29</version>
+			<version>2.32</version>
 		</dependency>
 		<dependency>
 			<groupId>org.codelibs</groupId>
 			<artifactId>corelib</artifactId>
-			<version>0.3.0</version>
+			<version>0.3.1</version>
 		</dependency>
 		<dependency>
-			<groupId>org.codelibs.robot</groupId>
-			<artifactId>s2robot-lasta</artifactId>
-			<version>${s2robot.version}</version>
-			<exclusions>
-				<exclusion>
-					<artifactId>asm-debug-all</artifactId>
-					<groupId>org.ow2.asm</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>commons-logging</artifactId>
-					<groupId>commons-logging</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>jcifs</artifactId>
-					<groupId>jcifs</groupId>
-				</exclusion>
-			</exclusions>
+			<groupId>org.codelibs.fess</groupId>
+			<artifactId>fess-crawler-lasta</artifactId>
+			<version>${crawler.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.codelibs.fess</groupId>
+			<artifactId>fess-crawler-es</artifactId>
+			<version>${crawler.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.codelibs.fess</groupId>
+			<artifactId>fess-crawler-webdriver</artifactId>
+			<version>${crawler.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -366,7 +366,7 @@
 		<dependency>
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>
-			<version>1.7.3</version>
+			<version>1.8.3</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -383,7 +383,7 @@
 		<dependency>
 			<groupId>org.codelibs</groupId>
 			<artifactId>elasticsearch-cluster-runner</artifactId>
-			<version>1.5.0.1</version>
+			<version>2.1.1.0</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

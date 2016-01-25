@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE components PUBLIC "-//DBFLUTE//DTD LastaDi 1.0//EN"
+    "http://dbflute.org/meta/lastadi10.dtd">
+<components namespace="fessCrawler">
+	<include path="crawler/container.xml" />
+	<include path="crawler/transformer.xml" />
+
+	<component name="ruleManager"
+		class="org.codelibs.fess.crawler.rule.impl.RuleManagerImpl">
+		<postConstruct name="addRule">
+			<arg>sitemapsRule</arg>
+		</postConstruct>
+		<postConstruct name="addRule">
+			<arg>scrapingRule</arg>
+		</postConstruct>
+	</component>
+
+	<component name="sitemapsRule" class="org.codelibs.fess.crawler.rule.impl.SitemapsRule">
+		<property name="ruleId">"sitemapsRule"</property>
+		<property name="responseProcessor">
+			<component
+				class="org.codelibs.fess.crawler.processor.impl.SitemapsResponseProcessor">
+			</component>
+		</property>
+		<postConstruct name="addRule">
+			<arg>"url"</arg>
+			<arg>".*sitemap.*"
+			</arg>
+		</postConstruct>
+	</component>
+
+	<component name="scrapingRule" class="org.codelibs.fess.crawler.rule.impl.RegexRule">
+		<property name="ruleId">"scraping"</property>
+		<property name="defaultRule">true</property>
+		<property name="responseProcessor">
+			<component
+				class="org.codelibs.fess.crawler.processor.impl.DefaultResponseProcessor">
+				<property name="transformer">scrapingTransformer</property>
+				<property name="successfulHttpCodes">(int[])[200]</property>
+				<property name="notModifiedHttpCodes">(int[])[304]</property>
+			</component>
+		</property>
+	</component>
+
+</components>
