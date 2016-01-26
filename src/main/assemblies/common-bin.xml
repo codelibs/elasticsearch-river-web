@@ -3,23 +3,8 @@
 		<dependencySet>
 			<outputDirectory>/lib</outputDirectory>
 			<useTransitiveFiltering>true</useTransitiveFiltering>
-			<includes>
-				<include>org.elasticsearch:elasticsearch</include>
-				<include>org.lastaflute:lasta-di</include>
-				<include>javax.transaction:javax.transaction-api</include>
-				<include>args4j:args4j</include>
-				<include>org.codelibs:corelib</include>
-				<include>org.codelibs.robot:s2robot</include>
-				<include>org.slf4j:slf4j-log4j12</include>
-				<include>org.slf4j:jcl-over-slf4j</include>
-				<include>org.jsoup:jsoup</include>
-			</includes>
 			<excludes>
 				<exclude>commons-logging:commons-logging</exclude>
-				<exclude>jcifs:jcifs</exclude>
-				<exclude>org.antlr:antlr-runtime</exclude>
-				<exclude>org.ow2.asm:asm</exclude>
-				<exclude>org.ow2.asm:asm-commons</exclude>
 				<exclude>org.apache.lucene:lucene-spatial</exclude>
 				<exclude>org.apache.lucene:lucene-suggest</exclude>
 				<exclude>org.apache.lucene:lucene-sandbox</exclude>
@@ -36,7 +21,7 @@
 			<outputDirectory>/lib</outputDirectory>
 			<useTransitiveDependencies>false</useTransitiveDependencies>
 			<includes>
-				<include>org.codelibs:elasticsearch-river-web</include>
+				<include>org.codelibs:river-web</include>
 			</includes>
 		</dependencySet>
 	</dependencySets>

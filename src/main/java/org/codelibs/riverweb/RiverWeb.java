@@ -6,7 +6,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.IntConsumer;
+import java.util.stream.Stream;
 
 import javax.annotation.Resource;
 
@@ -32,6 +37,8 @@ import org.codelibs.riverweb.interval.WebRiverIntervalController;
 import org.codelibs.riverweb.util.ConfigProperties;
 import org.codelibs.riverweb.util.SettingsUtils;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.ScriptService.ScriptType;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
@@ -50,7 +57,16 @@ public class RiverWeb {
 
     private static final String BASIC_SCHEME = "BASIC";
 
-    @Option(name = "--config-id", required = true)
+    @Option(name = "--queue-timeout")
+    protected long queueTimeout = 300000; // 5min
+
+    @Option(name = "--threads")
+    protected int numThreads = 1;
+
+    @Option(name = "--interval")
+    protected long interval = 1000;
+
+    @Option(name = "--config-id")
     protected String configId;
 
     @Option(name = "--session-id")
@@ -126,13 +142,65 @@ public class RiverWeb {
         esClient.setAddresses(config.getElasticsearchHost(esHosts));
         esClient.connect();
 
+        if (StringUtil.isNotBlank(configId)) {
+            return crawl(configId, sessionId);
+        } else {
+            final String configIndex = config.getConfigIndex();
+            final String queueType = config.getQueueType();
+            final ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
+            final Future<?>[] results = new Future[numThreads];
+            for (int i = 0; i < numThreads; i++) {
+                final int threadId = i + 1;
+                results[i] = threadPool.submit(() -> {
+                    AtomicLong lastProcessed = new AtomicLong(System.currentTimeMillis());
+                    while (SingletonLaContainerFactory.hasContainer() && lastProcessed.get() + queueTimeout > System.currentTimeMillis()) {
+                        try {
+                            esClient.prepareSearch(configIndex).setTypes(queueType).setQuery(QueryBuilders.matchAllQuery()).setSize(1)
+                                    .execute().actionGet().getHits().forEach(hit -> {
+                                if (esClient.prepareDelete(hit.getIndex(), hit.getType(), hit.getId()).execute().actionGet().isFound()) {
+                                    Map<String, Object> source = hit.getSource();
+                                    final Object configId = source.get("config_id");
+                                    final String sessionId = (String) source.get("session_id");
+                                    if (configId instanceof String) {
+                                        print("Config %s is started with Session %s.", configId, sessionId);
+                                        crawl(configId.toString(), sessionId);
+                                        lastProcessed.set(System.currentTimeMillis());
+                                    }
+                                }
+                            });
+                        } catch (IndexNotFoundException e) {
+                            logger.debug("Index is not found.", e);
+                        } catch (Exception e) {
+                            logger.warn("Failed to process a queue.", e);
+                        }
+                        try {
+                            Thread.sleep(interval);
+                        } catch (InterruptedException e) {
+                            // ignore
+                        }
+                    }
+                    print("Thread %d is finished.", threadId);
+                });
+            }
+            Stream.of(results).forEach(f -> {
+                try {
+                    f.get();
+                } catch (Exception e) {
+                    // ignore
+                }
+            });
+            threadPool.shutdown();
+            return 0;
+        }
+    }
+
+    private int crawl(String configId, String sessionId) {
         // Load config data
         final String configIndex = config.getConfigIndex();
         final String configType = config.getConfigType();
         final GetResponse response = esClient.prepareGet(configIndex, configType, configId).execute().actionGet();
-        // TODO get from queue
         if (!response.isExists()) {
-            print("Config ID {} is not found in {}/{}.", configId, configIndex, configType);
+            print("Config ID %s is not found in %s/%s.", configId, configIndex, configType);
             return 1;
         }
 

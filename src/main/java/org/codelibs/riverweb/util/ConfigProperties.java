@@ -29,4 +29,8 @@ public class ConfigProperties extends DynamicProperties {
         return getProperty("config.type");
     }
 
+    public String getQueueType() {
+        return getProperty("queue.type");
+    }
+
 }
