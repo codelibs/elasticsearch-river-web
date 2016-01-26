@@ -6,7 +6,6 @@ import java.util.Map;
 
 import org.codelibs.fess.crawler.entity.ResponseData;
 
- 
 public class RiverConfig {
 
     private String index;
@@ -17,7 +16,7 @@ public class RiverConfig {
 
     private boolean incremental;
 
-    private List<ScrapingRule> scrapingRuleList = new ArrayList<>();
+    private final List<ScrapingRule> scrapingRuleList = new ArrayList<>();
 
     public String getIndex() {
         return index;

@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.commons.io.IOUtils;
 import org.codelibs.core.beans.BeanDesc;
 import org.codelibs.core.beans.factory.BeanDescFactory;
 import org.codelibs.core.beans.util.BeanUtil;
@@ -46,7 +45,6 @@ import org.codelibs.riverweb.app.service.ScriptService;
 import org.codelibs.riverweb.entity.RiverConfig;
 import org.codelibs.riverweb.entity.ScrapingRule;
 import org.codelibs.riverweb.util.SettingsUtils;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.ScriptService.ScriptType;
 import org.jsoup.Jsoup;
@@ -148,7 +146,7 @@ public class ScrapingTransformer extends HtmlTransformer {
                 encoding = parseCharset(content);
             }
         } catch (final IOException e) {
-            throw new  CrawlingAccessException("Could not load a content.", e);
+            throw new CrawlingAccessException("Could not load a content.", e);
         }
 
         try {
@@ -195,11 +193,11 @@ public class ScrapingTransformer extends HtmlTransformer {
 
         final Boolean isHtmlParsed = scrapingRule.getSetting("html", Boolean.TRUE);
         if (isHtmlParsed.booleanValue()) {
-             try (InputStream is = new BufferedInputStream(new FileInputStream(file))){
-                 document = Jsoup.parse(is, charsetName, responseData.getUrl());
+            try (InputStream is = new BufferedInputStream(new FileInputStream(file))) {
+                document = Jsoup.parse(is, charsetName, responseData.getUrl());
             } catch (final IOException e) {
                 throw new CrawlingAccessException("Could not parse " + responseData.getUrl(), e);
-              }
+            }
         }
 
         final Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
@@ -323,7 +321,7 @@ public class ScrapingTransformer extends HtmlTransformer {
             return new ScriptInfo(value.toString());
         } else if (value instanceof List) {
             @SuppressWarnings("unchecked")
-            List<CharSequence> list = (List<CharSequence>) value;
+            final List<CharSequence> list = (List<CharSequence>) value;
             return new ScriptInfo(String.join("", list));
         } else if (value instanceof Map) {
             @SuppressWarnings("unchecked")
@@ -332,8 +330,8 @@ public class ScrapingTransformer extends HtmlTransformer {
             if (script == null) {
                 return null;
             }
-            return new ScriptInfo(script, SettingsUtils.get(scriptMap, "lang", WebRiverConstants.DEFAULT_SCRIPT_LANG), SettingsUtils.get(
-                    scriptMap, "script_type", "inline"));
+            return new ScriptInfo(script, SettingsUtils.get(scriptMap, "lang", WebRiverConstants.DEFAULT_SCRIPT_LANG),
+                    SettingsUtils.get(scriptMap, "script_type", "inline"));
         }
         return null;
     }
@@ -533,8 +531,10 @@ public class ScrapingTransformer extends HtmlTransformer {
         }
 
         if (overwrite) {
-            esClient.prepareDeleteByQuery(indexName).setQuery(QueryBuilders.termQuery("url", responseData.getUrl())).execute().actionGet();
-            esClient.admin().indices().prepareRefresh(indexName).execute().actionGet();
+            final int count = esClient.deleteByQuery(indexName, typeName, QueryBuilders.termQuery("url", responseData.getUrl()));
+            if (count > 0) {
+                esClient.admin().indices().prepareRefresh(indexName).execute().actionGet();
+            }
         }
 
         @SuppressWarnings("unchecked")

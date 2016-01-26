@@ -107,7 +107,7 @@ public class RiverWeb {
 
         try {
             exitMethod.accept(riverWeb.execute());
-        } catch (Exception e) {
+        } catch (final Exception e) {
             print(e.getMessage());
             exitMethod.accept(1);
             logger.error("Failed to process your request.", e);

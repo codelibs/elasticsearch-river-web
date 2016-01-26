@@ -13,7 +13,7 @@ import javax.script.ScriptException;
 import org.codelibs.core.io.FileUtil;
 import org.codelibs.fess.crawler.client.EsClient;
 import org.codelibs.riverweb.ScriptExecutionException;
- import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.script.ScriptService.ScriptType;
 
 public class ScriptService {
