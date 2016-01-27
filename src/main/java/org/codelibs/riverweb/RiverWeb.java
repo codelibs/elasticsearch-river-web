@@ -147,7 +147,7 @@ public class RiverWeb {
     private int execute() {
         // update esClient
         esClient.setClusterName(config.getElasticsearchClusterName(clusterName));
-        esClient.setAddresses(config.getElasticsearchHost(esHosts));
+        esClient.setAddresses(config.getElasticsearchHosts(esHosts));
         esClient.connect();
 
         if (StringUtil.isNotBlank(configId)) {

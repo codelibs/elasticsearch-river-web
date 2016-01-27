@@ -16,8 +16,8 @@ public class ConfigProperties extends DynamicProperties {
         return clusterName == null ? getProperty("elasticsearch.cluster.name", "elasticsearch") : clusterName;
     }
 
-    public String[] getElasticsearchHost(String esHosts) {
-        return Stream.of((esHosts == null ? getProperty("elasticsearch.host", "localhost") : esHosts).split(",")).map(host -> host.trim())
+    public String[] getElasticsearchHosts(String esHosts) {
+        return Stream.of((esHosts == null ? getProperty("elasticsearch.hosts", "localhost") : esHosts).split(",")).map(host -> host.trim())
                 .toArray(n -> new String[n]);
     }
 
