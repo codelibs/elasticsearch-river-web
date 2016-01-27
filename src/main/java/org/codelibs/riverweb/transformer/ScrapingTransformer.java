@@ -239,6 +239,12 @@ public class ScrapingTransformer extends HtmlTransformer {
                 } else {
                     logger.info("The max file size(" + fileSize + "/" + maxFileSize + " is exceeded: " + responseData.getUrl());
                 }
+            } else if ("source".equals(type)) {
+                try {
+                    strList.add(trimSpaces(FileUtil.readText(file, charsetName), isTrimSpaces));
+                } catch (Exception e) {
+                    logger.warn("Failed to read type:source from " + responseData.getUrl(), e);
+                }
             } else if (document != null) {
                 processCssQuery(document, propName, params, isTrimSpaces, strList);
             }
