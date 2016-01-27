@@ -81,6 +81,9 @@ public class RiverWeb {
     @Option(name = "--cluster-name")
     protected String clusterName;
 
+    @Option(name = "--quiet")
+    protected boolean quiet;
+
     @Resource
     protected org.codelibs.fess.crawler.client.EsClient esClient;
 
@@ -124,7 +127,7 @@ public class RiverWeb {
         try {
             exitMethod.accept(riverWeb.execute());
         } catch (final Exception e) {
-            print(e.getMessage());
+            riverWeb.print(e.getMessage());
             exitMethod.accept(1);
             logger.error("Failed to process your request.", e);
         } finally {
@@ -132,8 +135,13 @@ public class RiverWeb {
         }
     }
 
-    private static void print(final String format, final Object... args) {
-        System.out.println(String.format(format, args));
+    private void print(final String format, final Object... args) {
+        final String log = String.format(format, args);
+        if (quiet) {
+            logger.info(log);
+        } else {
+            System.out.println(log);
+        }
     }
 
     private int execute() {
@@ -153,7 +161,9 @@ public class RiverWeb {
                 final int threadId = i + 1;
                 results[i] = threadPool.submit(() -> {
                     AtomicLong lastProcessed = new AtomicLong(System.currentTimeMillis());
-                    while (SingletonLaContainerFactory.hasContainer() && lastProcessed.get() + queueTimeout > System.currentTimeMillis()) {
+                    while (SingletonLaContainerFactory.hasContainer()
+                            && (queueTimeout <= 0 || lastProcessed.get() + queueTimeout > System.currentTimeMillis())) {
+                        logger.debug("Checking queue: {}/{}", configIndex, queueType);
                         try {
                             esClient.prepareSearch(configIndex).setTypes(queueType).setQuery(QueryBuilders.matchAllQuery()).setSize(1)
                                     .execute().actionGet().getHits().forEach(hit -> {
@@ -166,6 +176,8 @@ public class RiverWeb {
                                         crawl(configId.toString(), sessionId);
                                         lastProcessed.set(System.currentTimeMillis());
                                     }
+                                } else if (logger.isDebugEnabled()) {
+                                    logger.debug("No data in queue.");
                                 }
                             });
                         } catch (IndexNotFoundException e) {
