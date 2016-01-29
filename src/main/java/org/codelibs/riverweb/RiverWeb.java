@@ -26,6 +26,8 @@ import org.apache.http.impl.auth.NTLMScheme;
 import org.codelibs.core.lang.StringUtil;
 import org.codelibs.fess.crawler.Crawler;
 import org.codelibs.fess.crawler.CrawlerContext;
+import org.codelibs.fess.crawler.client.CrawlerClient;
+import org.codelibs.fess.crawler.client.CrawlerClientFactory;
 import org.codelibs.fess.crawler.client.http.Authentication;
 import org.codelibs.fess.crawler.client.http.HcHttpClient;
 import org.codelibs.fess.crawler.client.http.RequestHeader;
@@ -248,7 +250,16 @@ public class RiverWeb {
 
             // HttpClient Parameters
             final Map<String, Object> paramMap = new HashMap<String, Object>();
-            crawler.getClientFactory().setInitParameterMap(paramMap);
+            final CrawlerClientFactory clientFactory = crawler.getClientFactory();
+
+            // web driver
+            final List<String> wdUrlList = (List<String>) crawlSettings.get("web_driver_urls");
+            if (wdUrlList != null) {
+                CrawlerClient client = SingletonLaContainer.getComponent("webDriverClient");
+                wdUrlList.stream().forEach(regex -> clientFactory.addClient(regex, client, 0));
+            }
+
+            clientFactory.setInitParameterMap(paramMap);
 
             // user agent
             final String userAgent = SettingsUtils.get(crawlSettings, "user_agent", defaultUserAgent);
