@@ -31,7 +31,6 @@ import org.codelibs.fess.crawler.client.http.HcHttpClient;
 import org.codelibs.fess.crawler.client.http.RequestHeader;
 import org.codelibs.fess.crawler.client.http.impl.AuthenticationImpl;
 import org.codelibs.fess.crawler.client.http.ntlm.JcifsEngine;
-import org.codelibs.fess.crawler.exception.EsAccessException;
 import org.codelibs.riverweb.app.service.ScriptService;
 import org.codelibs.riverweb.entity.RiverConfig;
 import org.codelibs.riverweb.interval.WebRiverIntervalController;
@@ -176,6 +175,7 @@ public class RiverWeb {
                                     if (configId instanceof String) {
                                         print("Config %s is started with Session %s.", configId, sessionId);
                                         try {
+                                            crawler = SingletonLaContainer.getComponent(Crawler.class);
                                             crawl(configId.toString(), sessionId);
                                         } finally {
                                             print("Config %s is finished.", configId);
@@ -359,7 +359,11 @@ public class RiverWeb {
             final List<String> includeFilterList = (List<String>) crawlSettings.get("include_urls");
             if (includeFilterList != null) {
                 for (final String regex : includeFilterList) {
-                    crawler.addIncludeFilter(regex);
+                    try {
+                        crawler.addIncludeFilter(regex);
+                    } catch (DocumentAlreadyExistsException e) {
+                        logger.warn(regex + " exists in " + sessionId);
+                    }
                 }
             }
             // exclude regex
@@ -367,7 +371,11 @@ public class RiverWeb {
             final List<String> excludeFilterList = (List<String>) crawlSettings.get("exclude_urls");
             if (excludeFilterList != null) {
                 for (final String regex : excludeFilterList) {
-                    crawler.addExcludeFilter(regex);
+                    try {
+                        crawler.addExcludeFilter(regex);
+                    } catch (DocumentAlreadyExistsException e) {
+                        logger.warn(regex + " exists in " + sessionId);
+                    }
                 }
             }
 
