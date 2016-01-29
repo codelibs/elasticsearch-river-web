@@ -31,6 +31,7 @@ import org.codelibs.fess.crawler.client.http.HcHttpClient;
 import org.codelibs.fess.crawler.client.http.RequestHeader;
 import org.codelibs.fess.crawler.client.http.impl.AuthenticationImpl;
 import org.codelibs.fess.crawler.client.http.ntlm.JcifsEngine;
+import org.codelibs.fess.crawler.exception.EsAccessException;
 import org.codelibs.riverweb.app.service.ScriptService;
 import org.codelibs.riverweb.entity.RiverConfig;
 import org.codelibs.riverweb.interval.WebRiverIntervalController;
@@ -38,6 +39,7 @@ import org.codelibs.riverweb.util.ConfigProperties;
 import org.codelibs.riverweb.util.SettingsUtils;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.index.engine.DocumentAlreadyExistsException;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.ScriptService.ScriptType;
 import org.kohsuke.args4j.CmdLineParser;
@@ -173,8 +175,12 @@ public class RiverWeb {
                                     final String sessionId = (String) source.get("session_id");
                                     if (configId instanceof String) {
                                         print("Config %s is started with Session %s.", configId, sessionId);
-                                        crawl(configId.toString(), sessionId);
-                                        lastProcessed.set(System.currentTimeMillis());
+                                        try {
+                                            crawl(configId.toString(), sessionId);
+                                        } finally {
+                                            print("Config %s is finished.", configId);
+                                            lastProcessed.set(System.currentTimeMillis());
+                                        }
                                     }
                                 } else if (logger.isDebugEnabled()) {
                                     logger.debug("No data in queue.");
@@ -342,7 +348,11 @@ public class RiverWeb {
                 return 1;
             }
             for (final String url : urlList) {
-                crawler.addUrl(url);
+                try {
+                    crawler.addUrl(url);
+                } catch (DocumentAlreadyExistsException e) {
+                    logger.warn(url + " exists in " + sessionId);
+                }
             }
             // include regex
             @SuppressWarnings("unchecked")
