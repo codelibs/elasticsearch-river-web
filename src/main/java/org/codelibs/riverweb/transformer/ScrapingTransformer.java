@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
@@ -68,6 +69,8 @@ public class ScrapingTransformer extends HtmlTransformer {
     private static final String ARGS_QUERY_TYPE = "args";
 
     private static final String IS_ARRAY_PROP_NAME = "is_array";
+
+    private static final String IS_DISTINCT_PROP_NAME = "is_distinct";
 
     private static final String IS_CHILD_URL_PROP_NAME = "is_child";
 
@@ -214,6 +217,7 @@ public class ScrapingTransformer extends HtmlTransformer {
             final boolean isTrimSpaces = SettingsUtils.get(params, TRIM_SPACES_PROP_NAME, Boolean.FALSE).booleanValue();
             boolean isArray = SettingsUtils.get(params, IS_ARRAY_PROP_NAME, Boolean.FALSE).booleanValue();
             boolean isChildUrl = SettingsUtils.get(params, IS_CHILD_URL_PROP_NAME, Boolean.FALSE).booleanValue();
+            boolean isDistinct = SettingsUtils.get(params, IS_DISTINCT_PROP_NAME, Boolean.FALSE).booleanValue();
 
             final List<String> strList = new ArrayList<String>();
 
@@ -236,6 +240,7 @@ public class ScrapingTransformer extends HtmlTransformer {
                     strList.add(Base64Util.encode(FileUtil.readBytes(file)));
                     isArray = false;
                     isChildUrl = false;
+                    isDistinct = false;
                 } else {
                     logger.info("The max file size(" + fileSize + "/" + maxFileSize + " is exceeded: " + responseData.getUrl());
                 }
@@ -251,6 +256,13 @@ public class ScrapingTransformer extends HtmlTransformer {
 
             Object propertyValue;
             final ScriptInfo scriptInfo = getScriptValue(params);
+            if (isDistinct) {
+                final Set<String> strSet = new HashSet<>();
+                final List<String> distinctList = strList.stream().filter(s -> strSet.add(s) && (!isTrimSpaces || StringUtil.isNotBlank(s)))
+                        .collect(Collectors.toList());
+                strList.clear();
+                strList.addAll(distinctList);
+            }
             if (scriptInfo == null) {
                 propertyValue = isArray ? strList : String.join(" ", strList);
             } else {
@@ -620,11 +632,8 @@ public class ScrapingTransformer extends HtmlTransformer {
     protected void storeChildUrls(final ResponseData responseData, final ResultData resultData) {
         final Set<String> childLinkSet = childUrlSetLocal.get();
         if (childLinkSet != null) {
-            List<RequestData> requestDataList = new ArrayList<>();
-            for (final String childUrl : childLinkSet) {
-                requestDataList.add(RequestDataBuilder.newRequestData().get().url(childUrl).build());
-            }
-            requestDataList = convertChildUrlList(requestDataList);
+            List<RequestData> requestDataList = convertChildUrlList(childLinkSet.stream().filter(u -> StringUtil.isNotBlank(u))
+                    .map(u -> RequestDataBuilder.newRequestData().get().url(u).build()).collect(Collectors.toList()));
             resultData.addAllUrl(requestDataList);
 
             final RequestData requestData = responseData.getRequestData();
