@@ -47,7 +47,7 @@
 		</repository>
 	</repositories>
 	<properties>
-		<elasticsearch.version>2.1.1</elasticsearch.version>
+		<elasticsearch.version>2.1.2</elasticsearch.version>
 		<dbflute.version>1.1.1</dbflute.version>
 		<lastadi.version>0.7.0</lastadi.version>
 		<crawler.version>1.0.3-SNAPSHOT</crawler.version>
