@@ -50,7 +50,7 @@
 		<elasticsearch.version>2.1.2</elasticsearch.version>
 		<dbflute.version>1.1.1</dbflute.version>
 		<lastadi.version>0.7.0</lastadi.version>
-		<crawler.version>1.0.3-SNAPSHOT</crawler.version>
+		<crawler.version>1.0.3</crawler.version>
 		<jta.version>1.2</jta.version>
 		<slf4j.version>1.7.13</slf4j.version>
 		<lucene.version>5.1.3</lucene.version>
