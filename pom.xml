@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.codelibs</groupId>
 	<artifactId>river-web</artifactId>
-	<version>2.0.0-SNAPSHOT</version>
+	<version>2.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>River Web for Elasticsearch</name>
 	<description>This application crawls web sites and extracts the content from Web.</description>
@@ -50,7 +50,7 @@
 		<elasticsearch.version>2.1.2</elasticsearch.version>
 		<dbflute.version>1.1.1</dbflute.version>
 		<lastadi.version>0.7.0</lastadi.version>
-		<crawler.version>1.0.3</crawler.version>
+		<crawler.version>1.0.4-SNAPSHOT</crawler.version>
 		<jta.version>1.2</jta.version>
 		<slf4j.version>1.7.13</slf4j.version>
 		<lucene.version>5.1.3</lucene.version>
