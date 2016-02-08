@@ -11,10 +11,10 @@ This application provides a feature to crawl web sites and extract the content b
 
 | River Web | Tested on ES  | Download |
 |:---------:|:-------------:|:--------:|
-| master    | 2.1.X         | [Snapshot](http://maven.codelibs.org/org/codelibs/river-web/ "Snapshot") |
-| 2.0.0     | 2.1.2         | [Download](https://github.com/codelibs/elasticsearch-river-web/releases/tag/river-web-2.0.0 "2.0.0") |
+| master    | 1.5.X         | [Snapshot](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/ "Snapshot") |
+| 1.5.1     | 1.5.2         | [ZIP](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/1.5.1/elasticsearch-river-web-1.5.1.zip "ZIP"),[TGZ](http://maven.codelibs.org/org/codelibs/elasticsearch-river-web/1.5.1/elasticsearch-river-web-1.5.1.tar.gz "TGZ") |
 
-For old version, see [README\_ver1.md](https://github.com/codelibs/elasticsearch-river-web/blob/master/README_ver1.md "README_ver1.md") or [README\_ver1.5.md](https://github.com/codelibs/elasticsearch-river-web/blob/master/README_ver1.5.md "README_ver1.5.md").
+For old plugin version, see [README_ver1.md](https://github.com/codelibs/elasticsearch-river-web/blob/master/README_ver1.md "README_ver1.md").
 
 ### Issues/Questions
 
@@ -77,17 +77,17 @@ Feel free to add any properties other than the above if you need them.
 
 ### Register Crawl Config Data
 
-A crawling configuration is created by registering a document to .river\_web index as below.
+A crawling configuration is created by registering a document to .river_web index as below.
 This example crawls sites of http://www.codelibs.org/ and http://fess.codelibs.org/.
 
     $ curl -XPUT 'localhost:9200/.river_web/config/my_web' -d '{
         "index" : "webindex",
         "type" : "my_web",
         "url" : ["http://www.codelibs.org/", "http://fess.codelibs.org/"],
-        "include_urls" : ["http://www.codelibs.org/.*", "http://fess.codelibs.org/.*"],
-        "max_depth" : 3,
-        "max_access_count" : 100,
-        "num_of_thread" : 5,
+        "includeFilter" : ["http://www.codelibs.org/.*", "http://fess.codelibs.org/.*"],
+        "maxDepth" : 3,
+        "maxAccessCount" : 100,
+        "numOfThread" : 5,
         "interval" : 1000,
         "target" : [
           {
@@ -140,16 +140,16 @@ The configuration is:
 | index                         | string  | Stored index name.                              |
 | type                          | string  | Stored type name.                               |
 | url                           | array   | Start point of URL for crawling.                |
-| include\_urls                 | array   | White list of URL for crawling.                 |
-| exclude\_urls                 | array   | Black list of URL for crawling.                 |
-| max\_depth                    | int     | Depth of crawling documents.                    |
-| max\_access\_count            | int     | The number of crawling documents.               |
-| num\_of\_thread               | int     | The number of crawler threads.                  |
+| includeFilter                 | array   | White list of URL for crawling.                 |
+| excludeFilter                 | array   | Black list of URL for crawling.                 |
+| maxDepth                      | int     | Depth of crawling documents.                    |
+| maxAccessCount                | int     | The number of crawling documents.               |
+| numOfThread                   | int     | The number of crawler threads.                  |
 | interval                      | int     | Interval time (ms) to crawl documents.          |
 | incremental                   | boolean | Incremental crawling.                           |
 | overwrite                     | boolean | Delete documents of old duplicated url.         |
-| user\_agent                   | string  | User-agent name when crawling.                  |
-| robots\_txt                   | boolean | If you want to ignore robots.txt, false.        |
+| userAgent                     | string  | User-agent name when crawling.                  |
+| robotsTxt                     | boolean | If you want to ignore robots.txt, false.        |
 | authentications               | object  | Specify BASIC/DIGEST/NTLM authentication info.  |
 | target.urlPattern             | string  | URL pattern to extract contents by CSS Query.   |
 | target.properties.name        | string  | "name" is used as a property name in the index. |
@@ -179,10 +179,10 @@ If you want to stop the crawler, kill the crawler process and then delete the co
         "index" : "webindex",
         "type" : "fess_site",
         "url" : ["http://fess.codelibs.org/"],
-        "include_urls" : ["http://fess.codelibs.org/.*"],
-        "max_depth" : 3,
-        "max_access_count" : 1000,
-        "num_of_thread" : 5,
+        "includeFilter" : ["http://fess.codelibs.org/.*"],
+        "maxDepth" : 3,
+        "maxAccessCount" : 1000,
+        "numOfThread" : 5,
         "interval" : 1000,
         "target" : [
           {
@@ -210,12 +210,12 @@ If you want to stop the crawler, kill the crawler process and then delete the co
         "index" : "webindex",
         "type" : "my_web",
         "url" : ["http://news.yahoo.com/"],
-        "include_urls" : ["http://news.yahoo.com/.*"],
-        "max_depth" : 1,
-        "max_access_count" : 10,
-        "num_of_thread" : 3,
+        "includeFilter" : ["http://news.yahoo.com/.*"],
+        "maxDepth" : 1,
+        "maxAccessCount" : 10,
+        "numOfThread" : 3,
         "interval" : 3000,
-        "user_agent" : "Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko",
+        "userAgent" : "Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko",
         "target" : [
           {
             "pattern" : {
@@ -255,7 +255,7 @@ River Web supports BASIC/DIGEST/NTLM authentication.
 Set authentications object.
 
     ...
-    "num_of_thread" : 5,
+    "numOfThread" : 5,
     "interval" : 1000,
     "authentications":[
       {
@@ -446,7 +446,7 @@ To insert scripts, put "script" property as below:
 
 ### What does "No scraping rule." mean?
 
-In a river setting, "url" is starting urls to crawl a site, "include_urls" filters urls whether are crawled or not, and "target.pattern.url" is a rule to store extracted web data.
+In a river setting, "url" is starting urls to crawl a site, "includeFilter" filters urls whether are crawled or not, and "target.pattern.url" is a rule to store extracted web data.
 If a crawling url does not match "target.pattern.url", you would see the message.
 Therefore, it means the crawled url does not have an extraction rule.
 
@@ -466,7 +466,7 @@ For example, if you want to grab a content of description's meta tag, the config
 
 ### Incremental crawling dose not work?
 
-"url" field needs to be "not\_analyzed" in a mapping of your stored index.
+"url" field needs to be "not_analyzed" in a mapping of your stored index.
 See [Create Index To Store Crawl Data](https://github.com/codelibs/elasticsearch-river-web#create-index-to-store-crawl-data "Create Index To Store Crawl Data").
 
 
