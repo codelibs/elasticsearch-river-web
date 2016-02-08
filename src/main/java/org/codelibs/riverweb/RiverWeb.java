@@ -253,6 +253,7 @@ public class RiverWeb {
             final CrawlerClientFactory clientFactory = crawler.getClientFactory();
 
             // web driver
+            @SuppressWarnings("unchecked")
             final List<String> wdUrlList = (List<String>) crawlSettings.get("web_driver_urls");
             if (wdUrlList != null) {
                 CrawlerClient client = SingletonLaContainer.getComponent("webDriverClient");
@@ -268,7 +269,7 @@ public class RiverWeb {
             }
 
             // robots.txt parser
-            final Boolean robotsTxtEnabled = SettingsUtils.get(crawlSettings, "robots_txt", Boolean.TRUE);
+            final Boolean robotsTxtEnabled = SettingsUtils.get(crawlSettings, "robots_txt", config.isRobotsTxtEnabled());
             paramMap.put(HcHttpClient.ROBOTS_TXT_ENABLED_PROPERTY, robotsTxtEnabled);
 
             // proxy

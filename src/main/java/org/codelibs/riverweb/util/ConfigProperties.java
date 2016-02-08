@@ -33,4 +33,8 @@ public class ConfigProperties extends DynamicProperties {
         return getProperty("queue.type");
     }
 
+    public boolean isRobotsTxtEnabled() {
+        return Boolean.valueOf(getProperty("robots.txt.enabled", Boolean.TRUE.toString()));
+    }
+
 }
