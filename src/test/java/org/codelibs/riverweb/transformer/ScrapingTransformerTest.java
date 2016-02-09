@@ -47,11 +47,10 @@ public class ScrapingTransformerTest {
         riverConfig.addScrapingRule(null, patternMap, scrapingRuleMap);
         InputStream is = null;
         try {
-            is = ResourceUtil.getResourceAsStream("html/fess_codelibs_org.html");
             final ResponseData responseData = new ResponseData();
             responseData.setSessionId(sessionId);
             responseData.setUrl(url);
-            responseData.setResponseBody(is);
+            responseData.setResponseBody(ResourceUtil.getResourceAsFile("html/fess_codelibs_org.html"), false);
             responseData.setCharSet("UTF-8");
             final ResultData resultData = new ResultData();
 
