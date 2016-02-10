@@ -111,7 +111,9 @@ public class RiverWeb {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                SingletonLaContainerFactory.destroy();
+                synchronized (this) {
+                    SingletonLaContainerFactory.destroy();
+                }
             }
         });
 
@@ -168,7 +170,7 @@ public class RiverWeb {
                             && (queueTimeout <= 0 || lastProcessed.get() + queueTimeout > System.currentTimeMillis())) {
                         logger.debug("Checking queue: {}/{}", configIndex, queueType);
                         try {
-                            esClient.prepareSearch(configIndex).setTypes(queueType).setQuery(QueryBuilders.matchAllQuery()).setSize(1)
+                            esClient.prepareSearch(configIndex).setTypes(queueType).setQuery(QueryBuilders.matchAllQuery()).setSize(10)
                                     .execute().actionGet().getHits().forEach(hit -> {
                                 if (esClient.prepareDelete(hit.getIndex(), hit.getType(), hit.getId()).execute().actionGet().isFound()) {
                                     Map<String, Object> source = hit.getSource();
@@ -185,7 +187,7 @@ public class RiverWeb {
                                         }
                                     }
                                 } else if (logger.isDebugEnabled()) {
-                                    logger.debug("No data in queue.");
+                                    logger.debug("No data in queue: " + hit.getIndex() + "/" + hit.getType() + "/" + hit.getId());
                                 }
                             });
                         } catch (IndexNotFoundException e) {
