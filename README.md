@@ -83,7 +83,7 @@ This example crawls sites of http://www.codelibs.org/ and http://fess.codelibs.o
     $ curl -XPUT 'localhost:9200/.river_web/config/my_web' -d '{
         "index" : "webindex",
         "type" : "my_web",
-        "url" : ["http://www.codelibs.org/", "http://fess.codelibs.org/"],
+        "urls" : ["http://www.codelibs.org/", "http://fess.codelibs.org/"],
         "include_urls" : ["http://www.codelibs.org/.*", "http://fess.codelibs.org/.*"],
         "max_depth" : 3,
         "max_access_count" : 100,
@@ -139,7 +139,7 @@ The configuration is:
 |:------------------------------|:-------:|:------------------------------------------------|
 | index                         | string  | Stored index name.                              |
 | type                          | string  | Stored type name.                               |
-| url                           | array   | Start point of URL for crawling.                |
+| urls                          | array   | Start point of URL for crawling.                |
 | include\_urls                 | array   | White list of URL for crawling.                 |
 | exclude\_urls                 | array   | Black list of URL for crawling.                 |
 | max\_depth                    | int     | Depth of crawling documents.                    |
@@ -178,7 +178,7 @@ If you want to stop the crawler, kill the crawler process and then delete the co
     $ curl -XPUT 'localhost:9200/.river_web/fess/fess_site' -d '{
         "index" : "webindex",
         "type" : "fess_site",
-        "url" : ["http://fess.codelibs.org/"],
+        "urls" : ["http://fess.codelibs.org/"],
         "include_urls" : ["http://fess.codelibs.org/.*"],
         "max_depth" : 3,
         "max_access_count" : 1000,
@@ -209,7 +209,7 @@ If you want to stop the crawler, kill the crawler process and then delete the co
     $ curl -XPUT 'localhost:9200/.river_web/config/yahoo_site' -d '{
         "index" : "webindex",
         "type" : "my_web",
-        "url" : ["http://news.yahoo.com/"],
+        "urls" : ["http://news.yahoo.com/"],
         "include_urls" : ["http://news.yahoo.com/.*"],
         "max_depth" : 1,
         "max_access_count" : 10,
@@ -326,7 +326,7 @@ and then start your river. In "properties" object, when a value of "type" is "at
     curl -XPUT localhost:9200/.river_web/config/2 -d '{
           "index" : "web",
           "type" : "data",
-          "url" : "http://...",
+          "urls" : "http://...",
     ...
           "target" : [
     ...
@@ -477,4 +477,4 @@ crawled data are stored to ".s2robot" index during cralwing, data extracted from
 ## Powered by
 
 * [Lasta Di](https://github.com/lastaflute/lasta-di "Lasta Di"): DI Container
-* [S2Robot](https://github.com/codelibs/s2robot "S2Robot"): Web Crawler
+* [Fess Crawler](https://github.com/codelibs/fess-crawler "Fess Crawler"): Web Crawler
