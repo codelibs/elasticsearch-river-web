@@ -97,9 +97,6 @@ public class RiverWeb {
     protected ScriptService scriptService;
 
     @Resource
-    protected Crawler crawler;
-
-    @Resource
     protected RiverConfig riverConfig;
 
     @Resource
@@ -156,7 +153,7 @@ public class RiverWeb {
         esClient.connect();
 
         if (StringUtil.isNotBlank(configId)) {
-            return crawl(configId, sessionId);
+            return crawl(SingletonLaContainer.getComponent(Crawler.class), configId, sessionId);
         } else {
             final String configIndex = config.getConfigIndex();
             final String queueType = config.getQueueType();
@@ -179,8 +176,7 @@ public class RiverWeb {
                                     if (configId instanceof String) {
                                         print("Config %s is started with Session %s.", configId, sessionId);
                                         try {
-                                            crawler = SingletonLaContainer.getComponent(Crawler.class);
-                                            crawl(configId.toString(), sessionId);
+                                            crawl(SingletonLaContainer.getComponent(Crawler.class), configId.toString(), sessionId);
                                         } finally {
                                             print("Config %s is finished.", configId);
                                             lastProcessed.set(System.currentTimeMillis());
@@ -216,7 +212,7 @@ public class RiverWeb {
         }
     }
 
-    private int crawl(String configId, String sessionId) {
+    private int crawl(Crawler crawler, String configId, String sessionId) {
         // Load config data
         final String configIndex = config.getConfigIndex();
         final String configType = config.getConfigType();
