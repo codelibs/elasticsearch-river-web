@@ -254,6 +254,16 @@ public class RiverWeb {
             final Map<String, Object> paramMap = new HashMap<String, Object>();
             final CrawlerClientFactory clientFactory = crawler.getClientFactory();
 
+            final Integer connectionTimeout = SettingsUtils.get(crawlSettings, "connection_timeout", config.getConnectionTimeout());
+            if (connectionTimeout != null) {
+                paramMap.put(HcHttpClient.CONNECTION_TIMEOUT_PROPERTY, connectionTimeout);
+            }
+
+            final Integer soTimeout = SettingsUtils.get(crawlSettings, "so_timeout", config.getSoTimeout());
+            if (soTimeout != null) {
+                paramMap.put(HcHttpClient.SO_TIMEOUT_PROPERTY, soTimeout);
+            }
+
             // web driver
             @SuppressWarnings("unchecked")
             final List<String> wdUrlList = (List<String>) crawlSettings.get("web_driver_urls");

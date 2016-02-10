@@ -2,6 +2,7 @@ package org.codelibs.riverweb.util;
 
 import java.util.stream.Stream;
 
+import org.codelibs.core.lang.StringUtil;
 import org.codelibs.core.misc.DynamicProperties;
 
 public class ConfigProperties extends DynamicProperties {
@@ -37,4 +38,19 @@ public class ConfigProperties extends DynamicProperties {
         return Boolean.valueOf(getProperty("robots.txt.enabled", Boolean.TRUE.toString()));
     }
 
+    public Integer getConnectionTimeout() {
+        String value = getProperty("timeout.connection");
+        if (StringUtil.isNotBlank(value)) {
+            return Integer.valueOf(value);
+        }
+        return null;
+    }
+
+    public Integer getSoTimeout() {
+        String value = getProperty("timeout.socket");
+        if (StringUtil.isNotBlank(value)) {
+            return Integer.valueOf(value);
+        }
+        return null;
+    }
 }
