@@ -336,7 +336,7 @@
 		<dependency>
 			<groupId>org.codelibs</groupId>
 			<artifactId>corelib</artifactId>
-			<version>0.3.1</version>
+			<version>0.3.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.codelibs.fess</groupId>
