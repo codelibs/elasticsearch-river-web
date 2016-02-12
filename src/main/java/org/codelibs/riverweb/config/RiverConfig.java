@@ -1,10 +1,11 @@
-package org.codelibs.riverweb.entity;
+package org.codelibs.riverweb.config;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.codelibs.fess.crawler.entity.ResponseData;
+import org.codelibs.riverweb.entity.ScrapingRule;
 
 public class RiverConfig {
 

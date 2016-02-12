@@ -12,13 +12,14 @@ import org.apache.commons.io.IOUtils;
 import org.codelibs.core.io.ResourceUtil;
 import org.codelibs.fess.crawler.entity.ResponseData;
 import org.codelibs.fess.crawler.entity.ResultData;
-import org.codelibs.riverweb.entity.RiverConfig;
+import org.codelibs.riverweb.config.RiverConfig;
+import org.codelibs.riverweb.config.RiverConfigManager;
 import org.junit.Test;
 
 public class ScrapingTransformerTest {
     @Test
     public void fess_codelibs_org() {
-        final RiverConfig riverConfig = new RiverConfig();
+        final RiverConfigManager riverConfigManager = new RiverConfigManager();
         final ScrapingTransformer transformer = new ScrapingTransformer() {
             @SuppressWarnings("unchecked")
             @Override
@@ -31,10 +32,12 @@ public class ScrapingTransformerTest {
                 assertThat(((List<String>) ((Map<String, Object>) dataMap.get("section2")).get("body")).size(), is(12));
             }
         };
-        transformer.riverConfig = riverConfig;
+        transformer.riverConfigManager = riverConfigManager;
 
         final String sessionId = "test";
         final String url = "http://fess.codelibs.org/";
+        final RiverConfig riverConfig = riverConfigManager.get(sessionId);
+        transformer.riverConfigLocal.set(riverConfig);
 
         final Map<String, Map<String, Object>> scrapingRuleMap = new HashMap<String, Map<String, Object>>();
         addScrapingRuleMap(scrapingRuleMap, "text", "nav.sideMenus", "div.sidebar-nav ul li", Boolean.TRUE, Boolean.TRUE);

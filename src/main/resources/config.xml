@@ -7,6 +7,6 @@
 		</arg>
 	</component>
 
-	<component name="riverConfig" class="org.codelibs.riverweb.entity.RiverConfig">
+	<component name="riverConfigManager" class="org.codelibs.riverweb.config.RiverConfigManager">
 	</component>
 </components>

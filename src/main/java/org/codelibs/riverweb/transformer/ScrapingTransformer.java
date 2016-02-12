@@ -43,7 +43,8 @@ import org.codelibs.fess.crawler.helper.EncodingHelper;
 import org.codelibs.fess.crawler.transformer.impl.HtmlTransformer;
 import org.codelibs.riverweb.WebRiverConstants;
 import org.codelibs.riverweb.app.service.ScriptService;
-import org.codelibs.riverweb.entity.RiverConfig;
+import org.codelibs.riverweb.config.RiverConfig;
+import org.codelibs.riverweb.config.RiverConfigManager;
 import org.codelibs.riverweb.entity.ScrapingRule;
 import org.codelibs.riverweb.util.SettingsUtils;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -90,23 +91,30 @@ public class ScrapingTransformer extends HtmlTransformer {
     public String[] copiedResonseDataFields = new String[] { "url", "parentUrl", "httpStatusCode", "method", "charSet", "contentLength",
             "mimeType", "executionTime", "lastModified" };
 
-    protected RiverConfig riverConfig;
-
     private EsClient esClient;
+
+    protected RiverConfigManager riverConfigManager;
 
     protected ThreadLocal<Set<String>> childUrlSetLocal = new ThreadLocal<Set<String>>();
 
+    protected ThreadLocal<RiverConfig> riverConfigLocal = new ThreadLocal<>();
+
+
     @PostConstruct
     public void init() {
-        riverConfig = SingletonLaContainer.getComponent(RiverConfig.class);
         esClient = SingletonLaContainer.getComponent(EsClient.class);
+        riverConfigManager = SingletonLaContainer.getComponent(RiverConfigManager.class);
     }
 
     @Override
     public ResultData transform(final ResponseData responseData) {
+        final RiverConfig riverConfig = riverConfigManager.get(responseData.getSessionId());
+
         try {
+            riverConfigLocal.set(riverConfig);
             return super.transform(responseData);
         } finally {
+            riverConfigLocal.remove();
             childUrlSetLocal.remove();
         }
     }
@@ -114,7 +122,7 @@ public class ScrapingTransformer extends HtmlTransformer {
     @Override
     protected void updateCharset(final ResponseData responseData) {
         int preloadSize = preloadSizeForCharset;
-        final ScrapingRule scrapingRule = riverConfig.getScrapingRule(responseData);
+        final ScrapingRule scrapingRule = riverConfigLocal.get().getScrapingRule(responseData);
         if (scrapingRule != null) {
             final Integer s = scrapingRule.getSetting("preloadSizeForCharset", Integer.valueOf(0));
             if (s.intValue() > 0) {
@@ -164,14 +172,14 @@ public class ScrapingTransformer extends HtmlTransformer {
 
     @Override
     protected void storeData(final ResponseData responseData, final ResultData resultData) {
-        final ScrapingRule scrapingRule = riverConfig.getScrapingRule(responseData);
-        if (scrapingRule == null) {
-            logger.info("Skip Scraping: " + responseData.getUrl());
-            return;
-        }
-
         File file = null;
         try {
+            final ScrapingRule scrapingRule = riverConfigLocal.get().getScrapingRule(responseData);
+            if (scrapingRule == null) {
+                logger.info("Skip Scraping: " + responseData.getUrl());
+                return;
+            }
+
             file = File.createTempFile("river-web-", ".tmp");
             CopyUtil.copy(responseData.getResponseBody(), file);
             processData(scrapingRule, file, responseData, resultData);
@@ -540,6 +548,7 @@ public class ScrapingTransformer extends HtmlTransformer {
 
     protected void storeIndex(final ResponseData responseData, final Map<String, Object> dataMap) {
         final String sessionId = responseData.getSessionId();
+        final RiverConfig riverConfig = riverConfigLocal.get();
         final String indexName = riverConfig.getIndex();
         final String typeName = riverConfig.getType();
         final boolean overwrite = riverConfig.isOverwrite();

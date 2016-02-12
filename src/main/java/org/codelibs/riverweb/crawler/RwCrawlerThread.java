@@ -6,7 +6,8 @@ import org.codelibs.fess.crawler.CrawlerThread;
 import org.codelibs.fess.crawler.client.CrawlerClient;
 import org.codelibs.fess.crawler.client.EsClient;
 import org.codelibs.fess.crawler.entity.UrlQueue;
-import org.codelibs.riverweb.entity.RiverConfig;
+import org.codelibs.riverweb.config.RiverConfig;
+import org.codelibs.riverweb.config.RiverConfigManager;
 import org.codelibs.riverweb.util.ConversionUtil;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -22,7 +23,8 @@ public class RwCrawlerThread extends CrawlerThread {
 
     @Override
     protected boolean isContentUpdated(final CrawlerClient client, final UrlQueue<?> urlQueue) {
-        final RiverConfig riverConfig = SingletonLaContainer.getComponent(RiverConfig.class);
+        final RiverConfigManager riverConfigManager = SingletonLaContainer.getComponent(RiverConfigManager.class);
+        final RiverConfig riverConfig = riverConfigManager.get(crawlerContext.getSessionId());
         if (riverConfig.isIncremental()) {
             final EsClient esClient = SingletonLaContainer.getComponent(EsClient.class);
             try {

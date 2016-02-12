@@ -34,7 +34,8 @@ import org.codelibs.fess.crawler.client.http.RequestHeader;
 import org.codelibs.fess.crawler.client.http.impl.AuthenticationImpl;
 import org.codelibs.fess.crawler.client.http.ntlm.JcifsEngine;
 import org.codelibs.riverweb.app.service.ScriptService;
-import org.codelibs.riverweb.entity.RiverConfig;
+import org.codelibs.riverweb.config.RiverConfig;
+import org.codelibs.riverweb.config.RiverConfigManager;
 import org.codelibs.riverweb.interval.WebRiverIntervalController;
 import org.codelibs.riverweb.util.ConfigProperties;
 import org.codelibs.riverweb.util.SettingsUtils;
@@ -98,7 +99,7 @@ public class RiverWeb {
     protected ScriptService scriptService;
 
     @Resource
-    protected RiverConfig riverConfig;
+    protected RiverConfigManager riverConfigManager;
 
     @Resource
     protected String defaultUserAgent;
@@ -236,6 +237,7 @@ public class RiverWeb {
         vars.put("client", esClient);
         vars.put("sessionId", sessionId);
 
+        final RiverConfig riverConfig = riverConfigManager.get(sessionId);
         try {
             // invoke execute event script
             executeScript(crawlSettings, vars, "execute");
@@ -452,6 +454,7 @@ public class RiverWeb {
         } finally {
             // invoke finish event script
             executeScript(crawlSettings, vars, "finish");
+            riverConfigManager.remove(sessionId);
 
             if (cleanup) {
                 crawler.cleanup(sessionId);
