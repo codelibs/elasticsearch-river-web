@@ -42,6 +42,7 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.engine.DocumentAlreadyExistsException;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.script.ScriptService.ScriptType;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
@@ -167,8 +168,10 @@ public class RiverWeb {
                             && (queueTimeout <= 0 || lastProcessed.get() + queueTimeout > System.currentTimeMillis())) {
                         logger.debug("Checking queue: {}/{}", configIndex, queueType);
                         try {
-                            esClient.prepareSearch(configIndex).setTypes(queueType).setQuery(QueryBuilders.matchAllQuery()).setSize(10)
-                                    .execute().actionGet().getHits().forEach(hit -> {
+                            esClient.prepareSearch(configIndex).setTypes(queueType)
+                                    .setQuery(
+                                            QueryBuilders.functionScoreQuery().add(ScoreFunctionBuilders.randomFunction(System.nanoTime())))
+                                    .setSize(config.getQueueParsingSize()).execute().actionGet().getHits().forEach(hit -> {
                                 if (esClient.prepareDelete(hit.getIndex(), hit.getType(), hit.getId()).execute().actionGet().isFound()) {
                                     Map<String, Object> source = hit.getSource();
                                     final Object configId = source.get("config_id");

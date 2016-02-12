@@ -53,4 +53,12 @@ public class ConfigProperties extends DynamicProperties {
         }
         return null;
     }
+
+    public int getQueueParsingSize() {
+        String value = getProperty("queue.parsing.size");
+        if (StringUtil.isNotBlank(value)) {
+            return Integer.parseInt(value);
+        }
+        return 20;
+    }
 }
