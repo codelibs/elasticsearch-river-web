@@ -11,7 +11,8 @@ This application provides a feature to crawl web sites and extract the content b
 
 | River Web | Tested on ES  | Download |
 |:---------:|:-------------:|:--------:|
-| master    | 2.1.X         | [Snapshot](http://maven.codelibs.org/org/codelibs/river-web/ "Snapshot") |
+| master    | 2.2.X         | [Snapshot](http://maven.codelibs.org/org/codelibs/river-web/ "Snapshot") |
+| 2.0.1     | 2.2.0         | [Download](https://github.com/codelibs/elasticsearch-river-web/releases/tag/river-web-2.0.1 "2.0.1") |
 | 2.0.0     | 2.1.2         | [Download](https://github.com/codelibs/elasticsearch-river-web/releases/tag/river-web-2.0.0 "2.0.0") |
 
 For old version, see [README\_ver1.md](https://github.com/codelibs/elasticsearch-river-web/blob/master/README_ver1.md "README_ver1.md") or [README\_ver1.5.md](https://github.com/codelibs/elasticsearch-river-web/blob/master/README_ver1.5.md "README_ver1.5.md").
