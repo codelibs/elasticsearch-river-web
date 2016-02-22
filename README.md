@@ -7,6 +7,8 @@ Elasticsearch River Web is a web crawler application for Elasticsearch.
 This application provides a feature to crawl web sites and extract the content by CSS Query.
 (As of version 1.5, River Web is not Elasticsearch plugin)
 
+If you want to use Full Text Search Server, please see [Fess](https://github.com/codelibs/fess "Fess").
+
 ## Version
 
 | River Web | Tested on ES  | Download |
