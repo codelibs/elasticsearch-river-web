@@ -477,7 +477,7 @@ See [Create Index To Store Crawl Data](https://github.com/codelibs/elasticsearch
 
 crawled data are stored to ".s2robot" index during cralwing, data extracted from them are stored to your index specified by a river setting, and then data in "robot" index are removed when the crawler is finished.
 
-## Powered by
+## Powered By
 
 * [Lasta Di](https://github.com/lastaflute/lasta-di "Lasta Di"): DI Container
 * [Fess Crawler](https://github.com/codelibs/fess-crawler "Fess Crawler"): Web Crawler
