@@ -33,6 +33,9 @@ import org.codelibs.fess.crawler.client.http.HcHttpClient;
 import org.codelibs.fess.crawler.client.http.RequestHeader;
 import org.codelibs.fess.crawler.client.http.impl.AuthenticationImpl;
 import org.codelibs.fess.crawler.client.http.ntlm.JcifsEngine;
+import org.codelibs.fess.crawler.service.impl.EsDataService;
+import org.codelibs.fess.crawler.service.impl.EsUrlFilterService;
+import org.codelibs.fess.crawler.service.impl.EsUrlQueueService;
 import org.codelibs.riverweb.app.service.ScriptService;
 import org.codelibs.riverweb.config.RiverConfig;
 import org.codelibs.riverweb.config.RiverConfigManager;
@@ -457,7 +460,31 @@ public class RiverWeb {
             riverConfigManager.remove(sessionId);
 
             if (cleanup) {
-                crawler.cleanup(sessionId);
+                final EsUrlFilterService urlFilterService = SingletonLaContainer.getComponent(EsUrlFilterService.class);
+                final EsUrlQueueService urlQueueService = SingletonLaContainer.getComponent(EsUrlQueueService.class);
+                final EsDataService dataService = SingletonLaContainer.getComponent(EsDataService.class);
+
+                try {
+                    // clear url filter
+                    urlFilterService.delete(sessionId);
+                } catch (Exception e) {
+                    logger.warn("Failed to delete UrlFilter for " + sessionId, e);
+                }
+
+                try {
+                    // clear queue
+                    urlQueueService.clearCache();
+                    urlQueueService.delete(sessionId);
+                } catch (Exception e) {
+                    logger.warn("Failed to delete UrlQueue for " + sessionId, e);
+                }
+
+                try {
+                    // clear
+                    dataService.delete(sessionId);
+                } catch (Exception e) {
+                    logger.warn("Failed to delete AccessResult for " + sessionId, e);
+                }
             }
         }
 
