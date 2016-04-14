@@ -47,13 +47,13 @@
 		</repository>
 	</repositories>
 	<properties>
-		<elasticsearch.version>2.2.0</elasticsearch.version>
+		<elasticsearch.version>2.3.1</elasticsearch.version>
 		<dbflute.version>1.1.1</dbflute.version>
 		<lastadi.version>0.7.0</lastadi.version>
 		<crawler.version>1.0.7</crawler.version>
 		<jta.version>1.2</jta.version>
 		<slf4j.version>1.7.13</slf4j.version>
-		<lucene.version>5.4.1</lucene.version>
+		<lucene.version>5.5.0</lucene.version>
 		<utflute.version>0.6.0E</utflute.version>
 	</properties>
 	<build>
@@ -383,7 +383,7 @@
 		<dependency>
 			<groupId>org.codelibs</groupId>
 			<artifactId>elasticsearch-cluster-runner</artifactId>
-			<version>2.2.0.0</version>
+			<version>2.3.0.0</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
