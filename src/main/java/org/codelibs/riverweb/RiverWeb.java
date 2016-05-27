@@ -43,6 +43,7 @@ import org.codelibs.riverweb.interval.WebRiverIntervalController;
 import org.codelibs.riverweb.util.ConfigProperties;
 import org.codelibs.riverweb.util.SettingsUtils;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.engine.DocumentAlreadyExistsException;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -91,6 +92,9 @@ public class RiverWeb {
 
     @Option(name = "--quiet")
     protected boolean quiet;
+
+    @Option(name = "--queue-query")
+    protected String queueQuery;
 
     @Resource
     protected org.codelibs.fess.crawler.client.EsClient esClient;
@@ -172,10 +176,14 @@ public class RiverWeb {
                             && (queueTimeout <= 0 || lastProcessed.get() + queueTimeout > System.currentTimeMillis())) {
                         logger.debug("Checking queue: {}/{}", configIndex, queueType);
                         try {
-                            esClient.prepareSearch(configIndex).setTypes(queueType)
-                                    .setQuery(
-                                            QueryBuilders.functionScoreQuery().add(ScoreFunctionBuilders.randomFunction(System.nanoTime())))
-                                    .setSize(config.getQueueParsingSize()).execute().actionGet().getHits().forEach(hit -> {
+                            final SearchRequestBuilder builder = esClient.prepareSearch(configIndex).setTypes(queueType);
+                            if (StringUtil.isNotBlank(queueQuery)) {
+                                builder.setQuery(queueQuery);
+                            } else {
+                                builder.setQuery(
+                                        QueryBuilders.functionScoreQuery().add(ScoreFunctionBuilders.randomFunction(System.nanoTime())));
+                            }
+                            builder.setSize(config.getQueueParsingSize()).execute().actionGet().getHits().forEach(hit -> {
                                 if (esClient.prepareDelete(hit.getIndex(), hit.getType(), hit.getId()).execute().actionGet().isFound()) {
                                     Map<String, Object> source = hit.getSource();
                                     final Object configId = source.get("config_id");
