@@ -36,11 +36,11 @@ import org.codelibs.fess.crawler.client.http.ntlm.JcifsEngine;
 import org.codelibs.fess.crawler.service.impl.EsDataService;
 import org.codelibs.fess.crawler.service.impl.EsUrlFilterService;
 import org.codelibs.fess.crawler.service.impl.EsUrlQueueService;
-import org.codelibs.riverweb.app.service.ScriptService;
 import org.codelibs.riverweb.config.RiverConfig;
 import org.codelibs.riverweb.config.RiverConfigManager;
 import org.codelibs.riverweb.interval.WebRiverIntervalController;
 import org.codelibs.riverweb.util.ConfigProperties;
+import org.codelibs.riverweb.util.ScriptUtils;
 import org.codelibs.riverweb.util.SettingsUtils;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -48,7 +48,6 @@ import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.engine.DocumentAlreadyExistsException;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
-import org.elasticsearch.script.ScriptService.ScriptType;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
@@ -58,7 +57,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RiverWeb {
-    private static final Logger logger = LoggerFactory.getLogger(RiverWeb.class);
+    public static final Logger logger = LoggerFactory.getLogger(RiverWeb.class);
 
     private static final String NTLM_SCHEME = "NTLM";
 
@@ -101,9 +100,6 @@ public class RiverWeb {
 
     @Resource
     protected ConfigProperties config;
-
-    @Resource
-    protected ScriptService scriptService;
 
     @Resource
     protected RiverConfigManager riverConfigManager;
@@ -249,9 +245,15 @@ public class RiverWeb {
         vars.put("sessionId", sessionId);
 
         final RiverConfig riverConfig = riverConfigManager.get(sessionId);
+        final Map<String, Object> scriptSettings = SettingsUtils.get(crawlSettings, "script");
         try {
             // invoke execute event script
-            executeScript(crawlSettings, vars, "execute");
+            ScriptUtils.execute(scriptSettings, "execute", v -> {
+                v.putAll(vars);
+                v.put("container", SingletonLaContainerFactory.getContainer());
+                v.put("settings", crawlSettings);
+                v.put("logger", RiverWeb.logger);
+            });
 
             @SuppressWarnings("unchecked")
             final List<Map<String, Object>> targetList = (List<Map<String, Object>>) crawlSettings.get("target");
@@ -437,6 +439,7 @@ public class RiverWeb {
             riverConfig.setType(SettingsUtils.get(crawlSettings, "type", configId));
             riverConfig.setOverwrite(SettingsUtils.get(crawlSettings, "overwrite", Boolean.FALSE));
             riverConfig.setIncremental(SettingsUtils.get(crawlSettings, "incremental", Boolean.FALSE));
+            riverConfig.setScriptSettings(scriptSettings);
 
             // crawl config
             for (final Map<String, Object> targetMap : targetList) {
@@ -464,7 +467,12 @@ public class RiverWeb {
 
         } finally {
             // invoke finish event script
-            executeScript(crawlSettings, vars, "finish");
+            ScriptUtils.execute(scriptSettings, "finish", v -> {
+                v.putAll(vars);
+                v.put("container", SingletonLaContainerFactory.getContainer());
+                v.put("settings", crawlSettings);
+                v.put("logger", RiverWeb.logger);
+            });
             riverConfigManager.remove(sessionId);
 
             if (cleanup) {
@@ -497,33 +505,6 @@ public class RiverWeb {
         }
 
         return 0;
-    }
-
-    protected void executeScript(final Map<String, Object> crawlSettings, final Map<String, Object> vars, final String target) {
-        final Map<String, Object> scriptSettings = SettingsUtils.get(crawlSettings, "script");
-        final String script = SettingsUtils.get(scriptSettings, target);
-        final String lang = SettingsUtils.get(scriptSettings, "lang", WebRiverConstants.DEFAULT_SCRIPT_LANG);
-        final String scriptTypeValue = SettingsUtils.get(scriptSettings, "script_type", "inline");
-        ScriptType scriptType;
-        if (ScriptType.FILE.toString().equalsIgnoreCase(scriptTypeValue)) {
-            scriptType = ScriptType.FILE;
-        } else if (ScriptType.INDEXED.toString().equalsIgnoreCase(scriptTypeValue)) {
-            scriptType = ScriptType.INDEXED;
-        } else {
-            scriptType = ScriptType.INLINE;
-        }
-        if (StringUtil.isNotBlank(script)) {
-            final Map<String, Object> localVars = new HashMap<String, Object>(vars);
-            localVars.put("container", SingletonLaContainerFactory.getContainer());
-            localVars.put("settings", crawlSettings);
-            localVars.put("logger", logger);
-            try {
-                final Object result = scriptService.execute(lang, script, scriptType, localVars);
-                logger.info("[{}] \"{}\" => {}", target, script, result);
-            } catch (final Exception e) {
-                logger.warn("Failed to execute script: {}", e, script);
-            }
-        }
     }
 
 }

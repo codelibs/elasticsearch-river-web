@@ -17,6 +17,8 @@ public class RiverConfig {
 
     private boolean incremental;
 
+    private Map<String, Object> scriptSettings;
+
     private final List<ScrapingRule> scrapingRuleList = new ArrayList<>();
 
     public String getIndex() {
@@ -65,4 +67,11 @@ public class RiverConfig {
         return null;
     }
 
+    public Map<String, Object> getScriptSettings() {
+        return scriptSettings;
+    }
+
+    public void setScriptSettings(final Map<String, Object> scriptSettings) {
+        this.scriptSettings = scriptSettings;
+    }
 }

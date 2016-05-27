@@ -1,20 +1,24 @@
 package org.codelibs.riverweb.crawler;
 
 import java.util.Date;
+import java.util.Map;
 
 import org.codelibs.fess.crawler.CrawlerThread;
 import org.codelibs.fess.crawler.client.CrawlerClient;
 import org.codelibs.fess.crawler.client.EsClient;
 import org.codelibs.fess.crawler.entity.UrlQueue;
+import org.codelibs.riverweb.RiverWeb;
 import org.codelibs.riverweb.config.RiverConfig;
 import org.codelibs.riverweb.config.RiverConfigManager;
 import org.codelibs.riverweb.util.ConversionUtil;
+import org.codelibs.riverweb.util.ScriptUtils;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHitField;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortOrder;
 import org.lastaflute.di.core.SingletonLaContainer;
+import org.lastaflute.di.core.factory.SingletonLaContainerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,5 +50,27 @@ public class RwCrawlerThread extends CrawlerThread {
             }
         }
         return super.isContentUpdated(client, urlQueue);
+    }
+
+    protected boolean isValid(final UrlQueue<?> urlQueue) {
+        if (urlQueue == null) {
+            return false;
+        }
+        final RiverConfigManager riverConfigManager = SingletonLaContainer.getComponent(RiverConfigManager.class);
+        final RiverConfig riverConfig = riverConfigManager.get(urlQueue.getSessionId());
+        if (riverConfig != null) {
+            final Map<String, Object> scriptSettings = riverConfig.getScriptSettings();
+            if (scriptSettings != null) {
+                Object result = ScriptUtils.execute(scriptSettings, "url_validation", v -> {
+                    v.put("container", SingletonLaContainerFactory.getContainer());
+                    v.put("urlQueue", urlQueue);
+                    v.put("logger", RiverWeb.logger);
+                });
+                if (result instanceof Boolean) {
+                    return ((Boolean) result).booleanValue();
+                }
+            }
+        }
+        return super.isValid(urlQueue);
     }
 }
