@@ -38,6 +38,10 @@ public class ConfigProperties extends DynamicProperties {
         return Boolean.valueOf(getProperty("robots.txt.enabled", Boolean.TRUE.toString()));
     }
 
+    public boolean isRedirectsEnabled() {
+        return Boolean.valueOf(getProperty("auto.redirect.enabled", Boolean.FALSE.toString()));
+    }
+
     public Integer getConnectionTimeout() {
         String value = getProperty("timeout.connection");
         if (StringUtil.isNotBlank(value)) {

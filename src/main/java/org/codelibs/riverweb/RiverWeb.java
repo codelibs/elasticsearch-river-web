@@ -298,6 +298,10 @@ public class RiverWeb {
             final Boolean robotsTxtEnabled = SettingsUtils.get(crawlSettings, "robots_txt", config.isRobotsTxtEnabled());
             paramMap.put(HcHttpClient.ROBOTS_TXT_ENABLED_PROPERTY, robotsTxtEnabled);
 
+            // redirect automatically
+            final Boolean redirectsEnabled = SettingsUtils.get(crawlSettings, "auto_redirect", config.isRedirectsEnabled());
+            paramMap.put(HcHttpClient.REDIRECTS_ENABLED, redirectsEnabled);
+
             // proxy
             final Map<String, Object> proxyMap = SettingsUtils.get(crawlSettings, "proxy", null);
             if (proxyMap != null) {
