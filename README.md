@@ -13,7 +13,8 @@ If you want to use Full Text Search Server, please see [Fess](https://github.com
 
 | River Web | Tested on ES  | Download |
 |:---------:|:-------------:|:--------:|
-| master    | 2.3.X         | [Snapshot](http://maven.codelibs.org/org/codelibs/river-web/ "Snapshot") |
+| master    | 2.4.X         | [Snapshot](http://maven.codelibs.org/org/codelibs/river-web/ "Snapshot") |
+| 2.4.0     | 2.4.0         | [Download](https://github.com/codelibs/elasticsearch-river-web/releases/tag/river-web-2.4.0 "2.4.0") |
 | 2.0.2     | 2.3.1         | [Download](https://github.com/codelibs/elasticsearch-river-web/releases/tag/river-web-2.0.2 "2.0.2") |
 | 2.0.1     | 2.2.0         | [Download](https://github.com/codelibs/elasticsearch-river-web/releases/tag/river-web-2.0.1 "2.0.1") |
 | 2.0.0     | 2.1.2         | [Download](https://github.com/codelibs/elasticsearch-river-web/releases/tag/river-web-2.0.0 "2.0.0") |
