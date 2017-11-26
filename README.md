@@ -1,3 +1,5 @@
+(__River Web does not sync up with the latest elasticsearch. Fess is Enterprise Search Server and contains the same features as River Web. See [Fess](https://github.com/codelibs/fess)__)
+
 Elasticsearch River Web
 =======================
 
