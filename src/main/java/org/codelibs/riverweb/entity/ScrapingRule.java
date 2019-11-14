@@ -38,7 +38,7 @@ public class ScrapingRule {
             }
         }
         if (logger.isDebugEnabled()) {
-            logger.debug("patternMap: " + patternMap);
+            logger.debug("patternMap: {}", patternMap);
         }
     }
 
