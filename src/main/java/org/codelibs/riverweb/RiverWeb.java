@@ -194,7 +194,7 @@ public class RiverWeb {
                                         }
                                     }
                                 } else if (logger.isDebugEnabled()) {
-                                    logger.debug("No data in queue: " + hit.getIndex() + "/" + hit.getType() + "/" + hit.getId());
+                                    logger.debug("No data in queue: {}/{}/{}", hit.getIndex(), hit.getType(), hit.getId());
                                 }
                             });
                         } catch (IndexNotFoundException e) {
@@ -453,8 +453,8 @@ public class RiverWeb {
                 final Map<String, Map<String, Object>> propMap = (Map<String, Map<String, Object>>) targetMap.get("properties");
                 if (patternMap != null && propMap != null) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("patternMap: " + patternMap);
-                        logger.debug("propMap: " + propMap);
+                        logger.debug("patternMap: {}", patternMap);
+                        logger.debug("propMap: {}", propMap);
                     }
                     @SuppressWarnings("unchecked")
                     final Map<String, Object> settingMap = (Map<String, Object>) targetMap.get("settings");

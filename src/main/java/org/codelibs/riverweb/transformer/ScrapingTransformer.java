@@ -216,8 +216,8 @@ public class ScrapingTransformer extends HtmlTransformer {
             op.include(copiedResonseDataFields).excludeNull().excludeWhitespace();
         });
         if (logger.isDebugEnabled()) {
-            logger.debug("ruleMap: " + scrapingRuleMap);
-            logger.debug("dataMap: " + dataMap);
+            logger.debug("ruleMap: {}", scrapingRuleMap);
+            logger.debug("dataMap: {}", dataMap);
         }
         for (final Map.Entry<String, Map<String, Object>> entry : scrapingRuleMap.entrySet()) {
             final String propName = entry.getKey();
